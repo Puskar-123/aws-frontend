@@ -1,0 +1,375 @@
+/* RESET */
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background-color: #0d1117;
+  overflow-x: hidden;
+}
+
+/* PAGE */
+.profile-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* TOP NAV */
+.profile-top-nav {
+  margin-top: 10px;
+  padding: 0 40px;
+}
+
+/* MAIN LAYOUT */
+.profile-container {
+  display: flex;
+  gap: 60px;
+  padding: 40px 80px;   /* 🔥 full width spacing */
+  flex: 1;
+  color: #c9d1d9;
+}
+
+/* LEFT SIDE */
+.profile-left {
+  width: 300px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+/* IMAGE */
+.profile-image {
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  background-color: gray;
+  margin-bottom: 20px;
+}
+
+/* NAME */
+.profile-name {
+  font-size: 24px;
+  font-weight: 600;
+  color: #f0f6fc;
+  margin-bottom: 12px;
+}
+
+/* FOLLOW BUTTON */
+.follow-btn {
+  width: 100%;
+  padding: 10px;
+  background-color: #21262d;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  color: #c9d1d9;
+  cursor: pointer;
+  margin-bottom: 15px;
+}
+
+.follow-btn:hover {
+  background-color: #30363d;
+}
+
+/* FOLLOW INFO */
+.profile-follow {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  font-size: 14px;
+  color: #8b949e;
+}
+
+.profile-follow span:hover {
+  color: #58a6ff;
+  cursor: pointer;
+}
+
+/* RIGHT SIDE */
+.profile-right {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* HEATMAP CARD */
+.heatmap-wrapper {
+  background-color: #161b22;
+  padding: 25px;
+  border-radius: 10px;
+  border: 1px solid #30363d;
+  width: 600px;   /* 🔥 like GitHub */
+}
+
+/* TITLE */
+.section-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 15px;
+  color: #f0f6fc;
+}
+
+/* LOGOUT BUTTON */
+.logout-btn {
+  margin-top: 250px;
+  align-self: flex-end;
+
+  padding: 8px 16px;
+  background-color: #da3633;
+  border: none;
+  border-radius: 6px;
+  color: white;
+  cursor: pointer;
+}
+
+.logout-btn:hover {
+  background-color: #f85149;
+}
+
+.profile-nav {
+  margin-top: 10px;
+}
+
+.follow-btn {
+  margin-top: 15px;
+  padding: 10px 20px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  background: #21262d;
+  color: white;
+  transition: 0.2s;
+}
+
+.follow-btn.active {
+  background: #238636;
+}
+
+.follow-btn:hover {
+  opacity: 0.9;
+}
+
+/* .profile-container {
+  display: flex;
+  gap: 50px;
+  padding: 40px;
+  background-color: #0d1117;
+  min-height: 100vh;
+  color: #c9d1d9;
+}
+.profile-left {
+  width: 260px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;  
+  text-align: center;   
+}
+
+
+.profile-image {
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  background-color: gray;
+  margin-bottom: 20px;
+}
+
+
+.profile-name {
+  font-size: 22px;
+  font-weight: 600;
+  color: #f0f6fc;
+  margin-bottom: 10px;
+}
+
+
+.follow-btn {
+  width: 100%;
+  padding: 8px;
+  background-color: #21262d;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  color: #c9d1d9;
+  cursor: pointer;
+  margin-bottom: 15px;
+}
+
+.follow-btn:hover {
+  background-color: #30363d;
+}
+
+
+.profile-follow {
+  display: flex;
+  justify-content: center;
+  align-items: center;   
+  gap: 12px;
+  font-size: 14px;
+  color: #8b949e;
+}
+
+
+.profile-follow span {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+
+.profile-follow span:hover {
+  color: #58a6ff;
+}
+
+.profile-right {
+  flex: 1;
+}
+
+.section-title {
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 15px;
+  color: white;
+}
+
+.heatmap-wrapper {
+  background-color: #161b22;
+  padding: 20px;
+  border-radius: 10px;
+}
+
+.logout-btn {
+  margin-top: 100px;       
+  align-self: flex-end;    
+
+  padding: 8px 16px;
+  background-color: #da3633;
+  border: none;
+  border-radius: 6px;
+  color: white;
+  cursor: pointer;
+}
+
+.logout-btn:hover {
+  background-color: #f85149;
+}
+.profile-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #0d1117;
+}
+
+.profile-top-nav {
+  margin-top: 10px;
+  padding: 0 40px;
+}
+
+.profile-container {
+  flex: 1;   
+} */
+
+/* .profile-page-wrapper {
+  display: flex;
+  min-height: 100vh;
+  color: whitesmoke;
+  width: 100%;
+   flex-wrap: wrap; 
+}
+
+.user-profile-section {
+  width: 250px;
+
+  display: flex;
+  flex-direction: column;
+  padding: 40px 10px;
+}
+
+.user-repo-section {
+  margin: 0px auto;
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.user-name {
+ 
+  margin: 10px 20px 10px 10px;
+ 
+}
+
+.profile-image {
+  margin: 10px auto;
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background-color: grey;
+}
+
+.follow-btn {
+  background-color: #20272d;
+  width: 250px;
+  margin: 10px auto;
+  height: 40px;
+  border-radius: 10px;
+  color: whitesmoke;
+}
+
+.follower {
+  display: flex;
+  justify-content: center;
+  width: 250px;
+  height: 30px;
+  gap: 10px;
+  margin: 10px auto;
+}
+
+.repo-card-wrapper {
+  margin: 0 auto;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 20px;
+  padding: 40px 20px;
+}
+
+.repo {
+  border: 0.5px solid grey;
+  border-radius: 10px;
+  width: 400px;
+  height: 210px;
+  padding: 20px 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.repo-name {
+  cursor: pointer;
+  color: #408ced;
+  font-size: 20px;
+}
+
+.description {
+  color: grey;
+  font-size: 15px;
+}
+
+@media screen and (max-width: 750px) {
+  .repo {
+    width: 100%;
+  }
+}
+
+@media screen and (max-width: 570px) {
+  .user-profile-section {
+    margin: auto;
+  }
+
+  .profile-page-wrapper {
+    display: block;
+  }
+}
+
+#logout:hover {
+  border: 1px solid white;
+} */

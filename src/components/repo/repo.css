@@ -1,0 +1,175 @@
+/* ================= CONTAINER ================= */
+.repo-container {
+  padding: 30px;
+  background: #0d1117;
+  min-height: 100vh;
+  color: #c9d1d9;
+}
+
+/* ================= HEADER ================= */
+.repo-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.repo-header h1 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* ================= VISIBILITY BADGE ================= */
+.visibility {
+  background: #238636;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  color: white;
+}
+
+/* ================= DESCRIPTION ================= */
+.repo-desc {
+  color: #8b949e;
+  margin-top: 5px;
+}
+
+/* ================= PUSH BUTTON ================= */
+.push-btn {
+  background: #238636;
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.push-btn:hover {
+  background: #2ea043;
+}
+
+/* ================= TABS ================= */
+.repo-tabs {
+  margin-top: 20px;
+  display: flex;
+  gap: 20px;
+  border-bottom: 1px solid #30363d;
+  padding-bottom: 10px;
+}
+
+.repo-tabs span {
+  cursor: pointer;
+  color: #8b949e;
+  padding-bottom: 5px;
+}
+
+.repo-tabs .active {
+  color: white;
+  border-bottom: 2px solid #f78166;
+}
+
+/* ================= BOX ================= */
+.repo-box {
+  margin-top: 20px;
+  background: #161b22;
+  padding: 20px;
+  border-radius: 10px;
+}
+
+/* ================= GIT INFO ================= */
+.git-url {
+  background: #0d1117;
+  padding: 10px;
+  margin: 10px 0;
+  border-radius: 5px;
+  font-size: 14px;
+}
+
+.git-commands {
+  background: #0d1117;
+  padding: 15px;
+  border-radius: 5px;
+  font-family: monospace;
+  overflow-x: auto;
+}
+
+/* ================= FILE LIST ================= */
+.file-item {
+  padding: 10px;
+  border-bottom: 1px solid #30363d;
+  cursor: pointer;
+  transition: background 0.2s ease
+}
+
+.file-item:hover {
+  background: #161b22;
+}
+
+/* ================= STATES ================= */
+.loading {
+  color: white;
+  padding: 30px;
+}
+
+.error {
+  color: red;
+  padding: 30px;
+}
+
+.no-files {
+  color: #8b949e;
+}
+/* .repo-container {
+  padding: 40px;
+  background: #0d1117;
+  min-height: 100vh;
+  color: #c9d1d9;
+}
+
+.badge {
+  background: #21262d;
+  padding: 3px 8px;
+  border-radius: 20px;
+  font-size: 12px;
+  margin-left: 10px;
+}
+
+.repo-tabs {
+  display: flex;
+  gap: 20px;
+  margin: 20px 0;
+  border-bottom: 1px solid #30363d;
+  padding-bottom: 10px;
+}
+
+.repo-tabs span {
+  cursor: pointer;
+  color: #8b949e;
+}
+
+.repo-tabs .active {
+  color: white;
+  border-bottom: 2px solid #f78166;
+  padding-bottom: 5px;
+}
+
+.repo-box {
+  background: #161b22;
+  padding: 20px;
+  border-radius: 10px;
+}
+
+.git-url {
+  background: #0d1117;
+  padding: 10px;
+  border-radius: 6px;
+  margin: 10px 0;
+}
+
+pre {
+  background: #0d1117;
+  padding: 10px;
+  border-radius: 6px;
+  overflow-x: auto;
+} */

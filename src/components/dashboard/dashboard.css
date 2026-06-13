@@ -1,0 +1,16 @@
+#dashboard {
+  display: flex;
+  width: 1080px;
+  justify-content: space-between;
+}
+.repo-item {
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 6px;
+  transition: 0.2s;
+}
+
+.repo-item:hover {
+  background: #161b22;
+  color: #58a6ff;
+}

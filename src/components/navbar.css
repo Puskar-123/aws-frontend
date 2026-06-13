@@ -1,0 +1,81 @@
+/* .nav { 
+  display: flex; 
+  justify-content: space-between; 
+  padding-bottom: 10px; 
+  border-bottom: 2px solid white;
+ } 
+ .nav img { 
+  height: 50px; border-radius: 100%; 
+} 
+.nav div { 
+  display: flex; 
+} 
+.nav h3 {
+   margin-left: 15px; 
+   color: white; 
+  } 
+  .nav p { 
+    margin-left: 50px; 
+    font-weight: bold; 
+    color: white; 
+  } 
+  .nav h3:hover, 
+  .nav p:hover { 
+    text-decoration: underline; 
+  } 
+  this is Navebar.css */
+
+nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;   /* ✅ vertical align */
+  padding: 10px 40px;
+  background-color: #0d1117;
+  border-bottom: 1px solid #30363d;
+}
+
+/* LEFT SIDE */
+nav a {
+  text-decoration: none;
+}
+
+nav > a > div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* LOGO */
+nav img {
+  height: 32px;   /* ✅ FIXED BIG LOGO */
+  width: 32px;
+  border-radius: 50%;
+}
+
+/* TITLE */
+nav h3 {
+  color: white;
+  margin: 0;
+  font-size: 18px;
+}
+
+/* RIGHT SIDE */
+nav > div {
+  display: flex;
+  align-items: center;
+  gap: 30px;   /* spacing between links */
+}
+
+/* LINKS */
+nav p {
+  margin: 0;
+  font-weight: 500;
+  color: #c9d1d9;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+nav p:hover {
+  color: white;
+  text-decoration: underline;
+}
