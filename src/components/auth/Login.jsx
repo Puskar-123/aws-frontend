@@ -3,9 +3,6 @@ import axios from "axios";
 import { useAuth } from "../../authContext";
 import { useNavigate, Link } from "react-router-dom";
 
-import { PageHeader } from "@primer/react/drafts";
-import { Box, Button } from "@primer/react";
-
 import "./auth.css";
 import logo from "../../assets/github-mark-white.svg";
 
@@ -146,8 +143,7 @@ export default Login;
 // import axios from "axios";
 // import { useAuth } from "../../authContext";
 
-// import { PageHeader } from "@primer/react/drafts";
-// import { Box, Button } from "@primer/react";
+
 // import "./auth.css";
 
 // import logo from "../../assets/github-mark-white.svg";
