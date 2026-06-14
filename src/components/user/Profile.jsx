@@ -41,7 +41,7 @@ const Profile = () => {
   const fetchUserDetails = async () => {
     try {
       const res = await axios.get(
-        `http://localhost:3002/user/profile/${userId}`
+        `http://13.51.176.106/user/profile/${userId}`
       );
       setUserDetails(res.data);
     } catch (err) {
@@ -53,7 +53,7 @@ const Profile = () => {
   const checkFollowStatus = async () => {
     try {
       const res = await axios.get(
-        `http://localhost:3002/user/is-following/${userId}/${profileUserId}`
+        `http://13.51.176.106/user/is-following/${userId}/${profileUserId}`
       );
 
       setIsFollowing(res.data.isFollowing);
@@ -68,7 +68,7 @@ const Profile = () => {
     if (userId === profileUserId) return;
 
     try {
-      await axios.post(`http://localhost:3002/user/follow`, {
+      await axios.post(`http://13.51.176.106/user/follow`, {
         followerId: userId,
         followingId: profileUserId,
       });
