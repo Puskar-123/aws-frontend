@@ -1,19 +1,17 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useAuth } from "../../authContext";
-import { Link } from "react-router-dom";
-
 import "./auth.css";
+import { Box, Button } from "@primer/react";
+import { PageHeader } from "@primer/react/drafts";
 import logo from "../../assets/github-mark-white.svg";
+import { Link } from "react-router-dom";
 
 const Signup = () => {
   const [email, setEmail] = useState("");
-  const [username, setUsername] =
-    useState("");
-  const [password, setPassword] =
-    useState("");
-  const [loading, setLoading] =
-    useState(false);
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const { setCurrentUser } = useAuth();
 
@@ -22,33 +20,22 @@ const Signup = () => {
 
     try {
       setLoading(true);
+      const res = await axios.post("http://13.51.176.106:3002/signup", {
+        email: email,
+        password: password,
+        username: username,
+      });
 
-      const res = await axios.post(
-        "http://13.51.176.106/signup",
-        {
-          email,
-          username,
-          password,
-        }
-      );
-
-      localStorage.setItem(
-        "token",
-        res.data.token
-      );
-
-      localStorage.setItem(
-        "userId",
-        res.data.userId
-      );
+      localStorage.setItem("token", res.data.token);
+      localStorage.setItem("userId", res.data.userId);
 
       setCurrentUser(res.data.userId);
+      setLoading(false);
 
       window.location.href = "/";
     } catch (err) {
       console.error(err);
       alert("Signup Failed!");
-    } finally {
       setLoading(false);
     }
   };
@@ -56,77 +43,81 @@ const Signup = () => {
   return (
     <div className="login-wrapper">
       <div className="login-logo-container">
-        <img
-          className="logo-login"
-          src={logo}
-          alt="CodeHub"
-        />
+        <img className="logo-login" src={logo} alt="Logo" />
       </div>
 
       <div className="login-box-wrapper">
-        <h1 className="auth-title">
-          Create Account
-        </h1>
-
-        <div className="login-box">
-          <div>
-            <label className="label">
-              Username
-            </label>
-
-            <input
-              className="input"
-              type="text"
-              value={username}
-              onChange={(e) =>
-                setUsername(e.target.value)
-              }
-            />
-          </div>
-
-          <div>
-            <label className="label">
-              Email Address
-            </label>
-
-            <input
-              className="input"
-              type="email"
-              value={email}
-              onChange={(e) =>
-                setEmail(e.target.value)
-              }
-            />
-          </div>
-
-          <div>
-            <label className="label">
-              Password
-            </label>
-
-            <input
-              className="input"
-              type="password"
-              value={password}
-              onChange={(e) =>
-                setPassword(e.target.value)
-              }
-            />
-          </div>
-
-          <button
+        <div className="login-heading">
+          <Button
+            variant="primary"
             className="login-btn"
             disabled={loading}
             onClick={handleSignup}
           >
             {loading ? "Loading..." : "Signup"}
-          </button>
+          </Button>
+          {/* <Box sx={{ padding: 1 }}>
+            <PageHeader>
+              <PageHeader.TitleArea variant="large">
+                <PageHeader.Title>Sign Up</PageHeader.Title>
+              </PageHeader.TitleArea>
+            </PageHeader>
+          </Box> */}
+        </div>
+
+        <div className="login-box">
+          <div>
+            <label className="label">Username</label>
+            <input
+              autoComplete="off"
+              name="Username"
+              id="Username"
+              className="input"
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+            />
+          </div>
+
+          <div>
+            <label className="label">Email address</label>
+            <input
+              autoComplete="off"
+              name="Email"
+              id="Email"
+              className="input"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </div>
+
+          <div className="div">
+            <label className="label">Password</label>
+            <input
+              autoComplete="off"
+              name="Password"
+              id="Password"
+              className="input"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          </div>
+
+          <Button
+            variant="primary"
+            className="login-btn"
+            disabled={loading}
+            onClick={handleSignup}
+          >
+            {loading ? "Loading..." : "Signup"}
+          </Button>
         </div>
 
         <div className="pass-box">
           <p>
-            Already have an account?{" "}
-            <Link to="/auth">Login</Link>
+            Already have an account? <Link to="/auth">Login</Link>
           </p>
         </div>
       </div>

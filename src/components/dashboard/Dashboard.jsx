@@ -32,7 +32,7 @@ const Dashboard = () => {
   // 🔥 Fetch suggested repositories
   const fetchSuggestedRepositories = async () => {
     try {
-      const response = await fetch(`http://13.51.176.106/repo/all`);
+      const response = await fetch(`http://13.51.176.106:3002/repo/all`);
 
       if (!response.ok) throw new Error("Failed to fetch suggested repositories");
 
