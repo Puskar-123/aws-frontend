@@ -22,7 +22,7 @@ const Create = () => {
   }
 
   try {
-    const res = await fetch("http://13.51.176.106/repo/create", {
+    const res = await fetch("http://13.51.176.106:3002/repo/create", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
