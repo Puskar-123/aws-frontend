@@ -7,7 +7,6 @@ import "./auth.css";
 import logo from "../../assets/github-mark-white.svg";
 
 const Login = () => {
-
   const navigate = useNavigate();
   const { setCurrentUser } = useAuth();
 
@@ -15,124 +14,101 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
-
   const handleLogin = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  try {
-    setLoading(true);
+    try {
+      setLoading(true);
 
-    const res = await axios.post("http://localhost:3002/user/login", {
-        email,
-        password,
-      });
+      const res = await axios.post(
+        "http://localhost:3002/user/login",
+        {
+          email,
+          password,
+        }
+      );
 
-      console.log("LOGIN RESPONSE:", res.data); // 🔥 DEBUG
-
-      // ✅ CHECK RESPONSE SAFETY
-      if (!res.data.token || !res.data.userId) {
-        alert("Invalid server response");
-        setLoading(false);
-        return;
-      }
-
-      // ✅ SAVE DATA
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("userId", res.data.userId);
 
       setCurrentUser(res.data.userId);
 
-      setLoading(false);
-
-      // ✅ REDIRECT
       navigate("/dashboard");
-
     } catch (error) {
-      console.error("LOGIN ERROR:", error);
+      console.error(error);
 
-      // 🔥 SHOW REAL ERROR MESSAGE
       if (error.response) {
-        alert(error.response.data.error || "Login failed");
+        alert(error.response.data.error || "Login Failed");
       } else {
         alert("Server not reachable");
       }
-
+    } finally {
       setLoading(false);
     }
   };
 
-
   return (
     <div className="login-wrapper">
-
-      {/* GitHub Logo */}
       <div className="login-logo-container">
-        <img className="logo-login" src={logo} alt="GitHub Logo" />
+        <img
+          className="logo-login"
+          src={logo}
+          alt="CodeHub"
+        />
       </div>
 
-
       <div className="login-box-wrapper">
-
-        <div className="login-heading">
-          <Box sx={{ padding: 1 }}>
-            <PageHeader>
-              <PageHeader.TitleArea variant="large">
-                <PageHeader.Title>Sign In</PageHeader.Title>
-              </PageHeader.TitleArea>
-            </PageHeader>
-          </Box>
-        </div>
-
+        <h1 className="auth-title">Sign In</h1>
 
         <div className="login-box">
-
           <div>
-            <label className="label">Email address</label>
+            <label className="label">
+              Email Address
+            </label>
 
             <input
-              autoComplete="off"
               className="input"
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) =>
+                setEmail(e.target.value)
+              }
             />
           </div>
 
-
-          <div className="div">
-            <label className="label">Password</label>
+          <div>
+            <label className="label">
+              Password
+            </label>
 
             <input
-              autoComplete="off"
               className="input"
               type="password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) =>
+                setPassword(e.target.value)
+              }
             />
           </div>
 
-
-          <Button
-            variant="primary"
+          <button
             className="login-btn"
             disabled={loading}
             onClick={handleLogin}
           >
             {loading ? "Loading..." : "Login"}
-          </Button>
-
+          </button>
         </div>
-
 
         <div className="pass-box">
           <p>
             New to CodeHub?{" "}
-            <Link to="/signup">Create an account</Link>
+            <Link to="/signup">
+              Create an account
+            </Link>
           </p>
         </div>
-
       </div>
-
     </div>
   );
 };
