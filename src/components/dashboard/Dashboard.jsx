@@ -16,7 +16,7 @@ const Dashboard = () => {
   // 🔥 Fetch user's repositories
   const fetchRepositories = async () => {
     try {
-      const response = await fetch(`http://13.51.176.106/repo/user/${userId}`);
+      const response = await fetch(`http://13.51.176.106:3002/repo/user/${userId}`);
 
       if (!response.ok) throw new Error("Failed to fetch repositories");
 
