@@ -20,12 +20,11 @@ const Signup = () => {
 
     try {
       setLoading(true);
-      const res = await axios.post("http://13.51.176.106:3002/signup", {
+      const res = await axios.post("https://api.codehub.sbs/signup", {
         email: email,
         password: password,
         username: username,
       });
-
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("userId", res.data.userId);
 

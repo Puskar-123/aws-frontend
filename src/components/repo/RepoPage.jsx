@@ -15,7 +15,7 @@ const RepoPage = () => {
 
   const fetchRepo = async () => {
     try {
-      const res = await fetch(`http://13.51.176.106:3002/repo/${id}`);
+      const res = await fetch(`/repo/${id}`);
       const data = await res.json();
 
       console.log("REPO DATA:", data);
@@ -31,14 +31,14 @@ const RepoPage = () => {
   // 🚀 PUSH FUNCTION
   const handlePush = async () => {
     try {
-      const res = await fetch(`http://13.51.176.106:3002/repo/push/${id}`, {
+      const res = await fetch(`https://api.codehub.sbs/repo/push/${id}`, {
         method: "POST",
       });
 
       const data = await res.json();
 
       console.log("PUSH RESPONSE:", data);
-
+// https://api.codehub.sbs
       if (!res.ok) {
         alert(data.error || "Push failed");
         return;
