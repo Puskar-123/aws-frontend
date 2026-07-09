@@ -9,8 +9,12 @@ const RepoPage = () => {
   const [repo, setRepo] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // 📂 Selected files
+  // File Upload
   const [selectedFiles, setSelectedFiles] = useState([]);
+
+  // Commit
+  const [commitMessage, setCommitMessage] = useState("");
+  const [committing, setCommitting] = useState(false);
 
   useEffect(() => {
     fetchRepo();
@@ -47,7 +51,7 @@ const RepoPage = () => {
   };
 
   // ==========================
-  // ADD FILES TO STAGING
+  // ADD FILES
   // ==========================
   const handleAddFiles = async () => {
     if (selectedFiles.length === 0) {
@@ -89,6 +93,52 @@ const RepoPage = () => {
   };
 
   // ==========================
+  // COMMIT
+  // ==========================
+  const handleCommit = async () => {
+    if (!commitMessage.trim()) {
+      alert("Please enter a commit message.");
+      return;
+    }
+
+    try {
+      setCommitting(true);
+
+      const res = await fetch(
+        `https://api.codehub.sbs/repo/commit/${id}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            message: commitMessage,
+          }),
+        }
+      );
+
+      const data = await res.json();
+
+      console.log("COMMIT RESPONSE:", data);
+
+      if (!res.ok) {
+        alert(data.error || "Commit failed");
+        return;
+      }
+
+      alert(data.message);
+
+      setCommitMessage("");
+
+    } catch (err) {
+      console.error(err);
+      alert("Commit failed");
+    } finally {
+      setCommitting(false);
+    }
+  };
+
+  // ==========================
   // PUSH
   // ==========================
   const handlePush = async () => {
@@ -112,9 +162,10 @@ const RepoPage = () => {
       alert("✅ Push successful!");
 
       fetchRepo();
+
     } catch (err) {
       console.error(err);
-      alert("Push error");
+      alert("Push failed");
     }
   };
 
@@ -153,21 +204,56 @@ const RepoPage = () => {
             📂 Add Files
           </button>
 
+        </div>
+
+        {/* COMMIT SECTION */}
+
+        <div
+          style={{
+            marginTop: "20px",
+            display: "flex",
+            gap: "10px",
+            alignItems: "center",
+          }}
+        >
+          <input
+            type="text"
+            placeholder="Commit message"
+            value={commitMessage}
+            onChange={(e) =>
+              setCommitMessage(e.target.value)
+            }
+            style={{
+              flex: 1,
+              padding: "10px",
+              borderRadius: "6px",
+            }}
+          />
+
+          <button
+            onClick={handleCommit}
+            className="push-btn"
+            disabled={committing}
+          >
+            {committing ? "Committing..." : "📝 Commit"}
+          </button>
+
           <button
             onClick={handlePush}
             className="push-btn"
           >
             🚀 Push
           </button>
-
         </div>
 
         {/* DESCRIPTION */}
+
         <p className="repo-description">
           {repo.description || "No description"}
         </p>
 
         {/* VISIBILITY */}
+
         <p className="repo-visibility">
           Visibility:{" "}
           <strong>
@@ -180,6 +266,7 @@ const RepoPage = () => {
         <hr />
 
         {/* FILES */}
+
         <h3>Files</h3>
 
         {repo.content?.length === 0 ? (
@@ -188,7 +275,6 @@ const RepoPage = () => {
           </p>
         ) : (
           <div className="file-list">
-
             {repo.content.map((file, index) => (
               <div
                 key={index}
@@ -197,7 +283,6 @@ const RepoPage = () => {
                 📄 {file.filename}
               </div>
             ))}
-
           </div>
         )}
 
