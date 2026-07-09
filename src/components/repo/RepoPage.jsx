@@ -15,7 +15,7 @@ const RepoPage = () => {
 
   const fetchRepo = async () => {
     try {
-      const res = await fetch(`/repo/${id}`);
+      const res = await fetch(`https://api.codehub.sbs/repo/${id}`);
       const data = await res.json();
 
       console.log("REPO DATA:", data);
