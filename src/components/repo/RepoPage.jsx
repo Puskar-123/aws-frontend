@@ -9,10 +9,16 @@ const RepoPage = () => {
   const [repo, setRepo] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // 📂 Selected files
+  const [selectedFiles, setSelectedFiles] = useState([]);
+
   useEffect(() => {
     fetchRepo();
   }, [id]);
 
+  // ==========================
+  // FETCH REPOSITORY
+  // ==========================
   const fetchRepo = async () => {
     try {
       const res = await fetch(`https://api.codehub.sbs/repo/${id}`);
@@ -20,25 +26,84 @@ const RepoPage = () => {
 
       console.log("REPO DATA:", data);
 
-      setRepo(data);
-      setLoading(false);
+      if (!res.ok) {
+        setRepo(null);
+      } else {
+        setRepo(data);
+      }
     } catch (err) {
       console.error(err);
+      setRepo(null);
+    } finally {
       setLoading(false);
     }
   };
 
-  // 🚀 PUSH FUNCTION
+  // ==========================
+  // FILE SELECT
+  // ==========================
+  const handleFileSelect = (e) => {
+    setSelectedFiles(Array.from(e.target.files));
+  };
+
+  // ==========================
+  // ADD FILES TO STAGING
+  // ==========================
+  const handleAddFiles = async () => {
+    if (selectedFiles.length === 0) {
+      alert("Please select files first.");
+      return;
+    }
+
+    try {
+      const formData = new FormData();
+
+      selectedFiles.forEach((file) => {
+        formData.append("files", file);
+      });
+
+      const res = await fetch(
+        `https://api.codehub.sbs/repo/add/${id}`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+      const data = await res.json();
+
+      console.log("ADD RESPONSE:", data);
+
+      if (!res.ok) {
+        alert(data.error || "Failed to add files");
+        return;
+      }
+
+      alert(data.message);
+
+      setSelectedFiles([]);
+    } catch (err) {
+      console.error(err);
+      alert("Upload failed");
+    }
+  };
+
+  // ==========================
+  // PUSH
+  // ==========================
   const handlePush = async () => {
     try {
-      const res = await fetch(`https://api.codehub.sbs/repo/push/${id}`, {
-        method: "POST",
-      });
+      const res = await fetch(
+        `https://api.codehub.sbs/repo/push/${id}`,
+        {
+          method: "POST",
+        }
+      );
 
       const data = await res.json();
 
       console.log("PUSH RESPONSE:", data);
-// https://api.codehub.sbs
+
       if (!res.ok) {
         alert(data.error || "Push failed");
         return;
@@ -46,17 +111,23 @@ const RepoPage = () => {
 
       alert("✅ Push successful!");
 
-      fetchRepo(); // reload files
-
+      fetchRepo();
     } catch (err) {
       console.error(err);
       alert("Push error");
     }
   };
 
-  if (loading) return <h2 className="loading">Loading...</h2>;
+  // ==========================
+  // LOADING
+  // ==========================
+  if (loading) {
+    return <h2 className="loading">Loading...</h2>;
+  }
 
-  if (!repo) return <h2 className="error">Repository not found ❌</h2>;
+  if (!repo) {
+    return <h2 className="error">Repository not found ❌</h2>;
+  }
 
   return (
     <>
@@ -66,11 +137,29 @@ const RepoPage = () => {
 
         {/* HEADER */}
         <div className="repo-header">
+
           <h1>{repo.name}</h1>
 
-          <button onClick={handlePush} className="push-btn">
+          <input
+            type="file"
+            multiple
+            onChange={handleFileSelect}
+          />
+
+          <button
+            onClick={handleAddFiles}
+            className="push-btn"
+          >
+            📂 Add Files
+          </button>
+
+          <button
+            onClick={handlePush}
+            className="push-btn"
+          >
             🚀 Push
           </button>
+
         </div>
 
         {/* DESCRIPTION */}
@@ -82,24 +171,33 @@ const RepoPage = () => {
         <p className="repo-visibility">
           Visibility:{" "}
           <strong>
-            {repo.visibility === "public" ? "Public" : "Private"}
+            {repo.visibility === "public"
+              ? "Public"
+              : "Private"}
           </strong>
         </p>
 
         <hr />
 
-        {/* FILE SECTION */}
+        {/* FILES */}
         <h3>Files</h3>
 
         {repo.content?.length === 0 ? (
-          <p className="no-files">No files yet</p>
+          <p className="no-files">
+            No files yet
+          </p>
         ) : (
           <div className="file-list">
-            {repo.content.map((file, i) => (
-              <div key={i} className="file-item">
+
+            {repo.content.map((file, index) => (
+              <div
+                key={index}
+                className="file-item"
+              >
                 📄 {file.filename}
               </div>
             ))}
+
           </div>
         )}
 
