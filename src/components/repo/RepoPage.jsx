@@ -77,6 +77,15 @@ const RepoPage = () => {
         setRepo(null);
       } else {
         setRepo(data);
+
+        // Automatically open README.md
+        const readme = data.content?.find(
+          (file) => file.filename.toLowerCase() === "readme.md"
+        );
+
+        if (readme) {
+          previewFile(readme.filename);
+        }
       }
     } catch (err) {
       console.error(err);
@@ -84,8 +93,7 @@ const RepoPage = () => {
     } finally {
       setLoading(false);
     }
-  };
-
+   };
   // ==========================
   // FETCH COMMIT HISTORY
   // ==========================
