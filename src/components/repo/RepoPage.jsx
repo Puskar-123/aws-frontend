@@ -367,6 +367,8 @@ const handleFileSelect = (e) => {
 {/* FILES */}
 {/* ========================== */}
 
+   {/* FILES */}
+
     <h3>Files</h3>
 
     {repo.content?.length === 0 ? (
@@ -376,26 +378,25 @@ const handleFileSelect = (e) => {
     ) : (
       <div className="file-list">
         {repo.content.map((file, index) => (
-          <div
-            key={index}
-            className="file-item"
+        <div
+          key={index}
+          className="file-item"
+        >
+          <a
+            href={`https://api.codehub.sbs/repo/file/${id}/${encodeURIComponent(file.filename)}`}
+            target="_blank"
+            rel="noreferrer"
+            style={{
+              color: "inherit",
+              textDecoration: "none",
+            }}
           >
-            <a
-              href={`https://api.codehub.sbs/repo/file/${id}/${encodeURIComponent(file.filename)}`}
-              target="_blank"
-              rel="noreferrer"
-              style={{
-                color: "inherit",
-                textDecoration: "none",
-                cursor: "pointer",
-              }}
-            >
-              📄 {file.filename}
-            </a>
-          </div>
+            📄 {file.filename}
+          </a>
+        </div>
         ))}
       </div>
-        )}
+    )}
 
         <hr />
         {/* ========================== */}
