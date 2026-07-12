@@ -189,6 +189,7 @@ const RepoPage = () => {
       }
 
       alert("⬇ Pull successful!");
+      fetchRepo();
     } catch (err) {
       console.error(err);
       alert("Pull failed");
