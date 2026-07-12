@@ -64,22 +64,29 @@ const RepoPage = () => {
   // ==========================
 
   const fetchHistory = async () => {
-    try {
-      const res = await fetch(
-        `https://api.codehub.sbs/repo/history/${id}`
-      );
+  try {
+    const res = await fetch(
+      `https://api.codehub.sbs/repo/history/${id}`
+    );
 
-      const data = await res.json();
+    const data = await res.json();
 
-      console.log("HISTORY:", data);
+    console.log("HISTORY:", data);
 
-      if (res.ok) {
-        setHistory(data.commits || []);
-      }
-    } catch (err) {
-      console.error(err);
+    if (res.ok) {
+      setHistory(data.commits || []);
     }
+  } catch (err) {
+    console.error(err);
+  }
   };
+  // ==========================
+// FILE SELECT
+// ==========================
+
+const handleFileSelect = (e) => {
+  setSelectedFiles(Array.from(e.target.files));
+};
 
     // ==========================
   // ADD FILES
