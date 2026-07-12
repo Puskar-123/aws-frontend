@@ -36,21 +36,26 @@ const RepoPage = () => {
   }, [id]);
 
 
-  const previewFile = async (filename) => {
-  try {
-    const res = await fetch(
-      `https://api.codehub.sbs/repo/preview/${id}/${encodeURIComponent(filename)}`
-    );
+    const previewFile = async (filename) => {
+    console.log("Clicked:", filename);
 
-    const data = await res.json();
+      try {
+        const res = await fetch(
+          `https://api.codehub.sbs/repo/preview/${id}/${encodeURIComponent(filename)}`
+        );
 
-    setPreview(data.content);
-    setSelectedFile(filename);
+        console.log("Status:", res.status);
 
-  } catch (err) {
-    console.error(err);
-  }
-  };
+        const data = await res.json();
+
+        console.log("Preview Response:", data);
+
+        setPreview(data.content);
+        setSelectedFile(filename);
+      } catch (err) {
+        console.error("Preview Error:", err);
+      }
+    };
   // ==========================
   // FETCH REPOSITORY
   // ==========================
