@@ -3,6 +3,9 @@ import { useParams } from "react-router-dom";
 import Navbar from "../Navbar";
 import "./repo.css";
 
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+
 const RepoPage = () => {
   const { id } = useParams();
   const [preview, setPreview] = useState("");
@@ -430,9 +433,11 @@ const handleFileSelect = (e) => {
   <div className="preview-box">
     <h3>📄 {selectedFile}</h3>
 
-    <pre>{preview}</pre>
+    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+      {preview}
+    </ReactMarkdown>
   </div>
-)}
+  )}
 
 <hr />
 
