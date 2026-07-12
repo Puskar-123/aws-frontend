@@ -5,7 +5,8 @@ import "./repo.css";
 
 const RepoPage = () => {
   const { id } = useParams();
-    
+  const [preview, setPreview] = useState("");
+  const [selectedFile, setSelectedFile] = useState("");
   console.log("URL id =", id);
 
   // ==========================
@@ -34,6 +35,22 @@ const RepoPage = () => {
     fetchHistory();
   }, [id]);
 
+
+  const previewFile = async (filename) => {
+  try {
+    const res = await fetch(
+      `https://api.codehub.sbs/repo/preview/${id}/${encodeURIComponent(filename)}`
+    );
+
+    const data = await res.json();
+
+    setPreview(data.content);
+    setSelectedFile(filename);
+
+  } catch (err) {
+    console.error(err);
+  }
+  };
   // ==========================
   // FETCH REPOSITORY
   // ==========================
@@ -365,11 +382,9 @@ const handleFileSelect = (e) => {
         </p>
 
         <hr />
-{/* ========================== */}
-{/* FILES */}
-{/* ========================== */}
-
-   {/* FILES */}
+    {/* ========================== */}
+    {/* FILES */}
+    {/* ========================== */}
 
     <h3>Files</h3>
 
@@ -380,98 +395,85 @@ const handleFileSelect = (e) => {
     ) : (
       <div className="file-list">
         {repo.content.map((file, index) => (
-        <div
-          key={index}
-          className="file-item"
-        >
-          <a
-            href={`https://api.codehub.sbs/repo/file/${id}/${encodeURIComponent(file.filename)}`}
-            target="_blank"
-            rel="noreferrer"
-            style={{
-              color: "inherit",
-              textDecoration: "none",
-            }}
+          <div
+            key={index}
+            className="file-item"
+            onClick={() => previewFile(file.filename)}
           >
-            📄 {file.filename}
-          </a>
-        </div>
+            <span>
+              📄 {file.filename}
+            </span>
+
+            <a
+              href={`https://api.codehub.sbs/repo/file/${id}/${encodeURIComponent(file.filename)}`}
+              download
+              className="download-link"
+              onClick={(e) => e.stopPropagation()}
+            >
+              ⬇ Download
+            </a>
+          </div>
         ))}
       </div>
     )}
 
-        <hr />
-        {/* ========================== */}
-        {/* COMMIT HISTORY */}
-        {/* ========================== */}
+{/* ========================== */}
+{/* FILE PREVIEW */}
+{/* ========================== */}
 
-        <h3>🕒 Commit History</h3>
+{selectedFile && (
+  <div className="preview-box">
+    <h3>📄 {selectedFile}</h3>
 
-        {history.length === 0 ? (
-          <p className="no-files">
-            No commits yet.
+    <pre>{preview}</pre>
+  </div>
+)}
+
+<hr />
+
+  {/* ========================== */}
+  {/* COMMIT HISTORY */}
+  {/* ========================== */}
+
+  <h3>🕒 Commit History</h3>
+
+  {history.length === 0 ? (
+    <p className="no-files">
+      No commits yet.
+    </p>
+  ) : (
+    history
+      .slice()
+      .reverse()
+      .map((commit, index) => (
+        <div
+          key={index}
+          className="commit-card"
+        >
+          <h4 className="commit-title">
+            📝 {commit.message}
+          </h4>
+
+          <p className="commit-time">
+            {new Date(commit.time).toLocaleString()}
           </p>
-        ) : (
-          history
-            .slice()
-            .reverse()
-            .map((commit, index) => (
-              <div
-                key={index}
-                style={{
-                  border: "1px solid #444",
-                  borderRadius: "8px",
-                  padding: "15px",
-                  marginBottom: "20px",
-                  background: "#1e1e1e",
-                }}
-              >
-                <h4
-                  style={{
-                    marginBottom: "8px",
-                    color: "#4CAF50",
-                  }}
-                >
-                  📝 {commit.message}
-                </h4>
 
-                <p
-                  style={{
-                    fontSize: "13px",
-                    color: "#bbb",
-                    marginBottom: "10px",
-                  }}
-                >
-                  {new Date(commit.time).toLocaleString()}
-                </p>
+          <strong>Files:</strong>
 
-                <strong>Files:</strong>
+          <ul className="commit-files">
+            {commit.files.map((file, i) => (
+              <li key={i}>
+                📄 {file.filename}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))
+    )}
 
-                <ul
-                  style={{
-                    marginTop: "10px",
-                    paddingLeft: "20px",
-                  }}
-                >
-                  {commit.files.map((file, i) => (
-                    <li
-                      key={i}
-                      style={{
-                        marginBottom: "6px",
-                      }}
-                    >
-                      📄 {file.filename}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))
-        )}
+  </div>   
+      </>         
+    );
+  };
 
-      </div>
-    </>
-  );
-};
-
-export default RepoPage;
-
+  export default RepoPage;

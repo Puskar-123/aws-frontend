@@ -19,7 +19,7 @@
   gap: 10px;
 }
 
-/* ================= VISIBILITY BADGE ================= */
+/* ================= VISIBILITY ================= */
 .visibility {
   background: #238636;
   padding: 4px 10px;
@@ -34,7 +34,7 @@
   margin-top: 5px;
 }
 
-/* ================= PUSH BUTTON ================= */
+/* ================= BUTTONS ================= */
 .push-btn {
   background: #238636;
   color: white;
@@ -95,18 +95,93 @@
 }
 
 /* ================= FILE LIST ================= */
+
+.file-list {
+  margin-top: 15px;
+}
+
 .file-item {
-  padding: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 15px;
   border-bottom: 1px solid #30363d;
   cursor: pointer;
-  transition: background 0.2s ease
+  transition: background 0.2s ease;
 }
 
 .file-item:hover {
   background: #161b22;
 }
 
+.download-link {
+  color: #58a6ff;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.download-link:hover {
+  text-decoration: underline;
+}
+
+/* ================= FILE PREVIEW ================= */
+
+.preview-box {
+  margin-top: 25px;
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 10px;
+  padding: 20px;
+}
+
+.preview-box h3 {
+  margin-bottom: 15px;
+  color: white;
+}
+
+.preview-box pre {
+  background: #0d1117;
+  color: #c9d1d9;
+  padding: 15px;
+  border-radius: 8px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: Consolas, monospace;
+}
+
+/* ================= COMMIT HISTORY ================= */
+
+.commit-card {
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 10px;
+  padding: 15px;
+  margin-bottom: 20px;
+}
+
+.commit-title {
+  color: #4CAF50;
+  margin-bottom: 8px;
+}
+
+.commit-time {
+  color: #8b949e;
+  font-size: 13px;
+  margin-bottom: 10px;
+}
+
+.commit-files {
+  margin-top: 10px;
+  padding-left: 20px;
+}
+
+.commit-files li {
+  margin-bottom: 5px;
+}
+
 /* ================= STATES ================= */
+
 .loading {
   color: white;
   padding: 30px;
@@ -120,56 +195,3 @@
 .no-files {
   color: #8b949e;
 }
-/* .repo-container {
-  padding: 40px;
-  background: #0d1117;
-  min-height: 100vh;
-  color: #c9d1d9;
-}
-
-.badge {
-  background: #21262d;
-  padding: 3px 8px;
-  border-radius: 20px;
-  font-size: 12px;
-  margin-left: 10px;
-}
-
-.repo-tabs {
-  display: flex;
-  gap: 20px;
-  margin: 20px 0;
-  border-bottom: 1px solid #30363d;
-  padding-bottom: 10px;
-}
-
-.repo-tabs span {
-  cursor: pointer;
-  color: #8b949e;
-}
-
-.repo-tabs .active {
-  color: white;
-  border-bottom: 2px solid #f78166;
-  padding-bottom: 5px;
-}
-
-.repo-box {
-  background: #161b22;
-  padding: 20px;
-  border-radius: 10px;
-}
-
-.git-url {
-  background: #0d1117;
-  padding: 10px;
-  border-radius: 6px;
-  margin: 10px 0;
-}
-
-pre {
-  background: #0d1117;
-  padding: 10px;
-  border-radius: 6px;
-  overflow-x: auto;
-} */
