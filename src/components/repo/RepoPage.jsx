@@ -82,7 +82,7 @@ const RepoPage = () => {
         const readme = data.content?.find(
           (file) => file.filename.toLowerCase() === "readme.md"
         );
-
+        console.log("README found:", readme);
         if (readme) {
           previewFile(readme.filename);
         }
