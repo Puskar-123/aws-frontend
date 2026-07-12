@@ -129,7 +129,6 @@ const RepoPage = () => {
       alert(data.message);
 
       setCommitMessage("");
-
     } catch (err) {
       console.error(err);
       alert("Commit failed");
@@ -162,10 +161,37 @@ const RepoPage = () => {
       alert("✅ Push successful!");
 
       fetchRepo();
-
     } catch (err) {
       console.error(err);
       alert("Push failed");
+    }
+  };
+
+  // ==========================
+  // PULL
+  // ==========================
+  const handlePull = async () => {
+    try {
+      const res = await fetch(
+        `https://api.codehub.sbs/repo/pull/${id}`,
+        {
+          method: "POST",
+        }
+      );
+
+      const data = await res.json();
+
+      console.log("PULL RESPONSE:", data);
+
+      if (!res.ok) {
+        alert(data.error || "Pull failed");
+        return;
+      }
+
+      alert("⬇ Pull successful!");
+    } catch (err) {
+      console.error(err);
+      alert("Pull failed");
     }
   };
 
@@ -187,6 +213,7 @@ const RepoPage = () => {
       <div className="repo-container">
 
         {/* HEADER */}
+
         <div className="repo-header">
 
           <h1>{repo.name}</h1>
@@ -214,17 +241,17 @@ const RepoPage = () => {
             display: "flex",
             gap: "10px",
             alignItems: "center",
+            flexWrap: "wrap",
           }}
         >
           <input
             type="text"
             placeholder="Commit message"
             value={commitMessage}
-            onChange={(e) =>
-              setCommitMessage(e.target.value)
-            }
+            onChange={(e) => setCommitMessage(e.target.value)}
             style={{
               flex: 1,
+              minWidth: "250px",
               padding: "10px",
               borderRadius: "6px",
             }}
@@ -243,6 +270,13 @@ const RepoPage = () => {
             className="push-btn"
           >
             🚀 Push
+          </button>
+
+          <button
+            onClick={handlePull}
+            className="push-btn"
+          >
+            ⬇ Pull
           </button>
         </div>
 
