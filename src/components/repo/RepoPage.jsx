@@ -1,10 +1,35 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import Navbar from "../Navbar";
 import "./repo.css";
 
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { encodeRepoPath, normalizeRepoPath } from "../../utils/repoPath";
+
+const API_BASE = "https://api.codehub.sbs";
+
+const authHeaders = () => {
+  const token = localStorage.getItem("token");
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
+const readResponseData = async (response) => {
+  const contentType = response.headers.get("content-type") || "";
+  const data = contentType.includes("application/json")
+    ? await response.json()
+    : { error: await response.text() };
+  if (!response.ok) throw new Error(data.error || data.message || `Request failed (${response.status})`);
+  return data;
+};
+
+const isProtectedDisplayPath = (filePath) => {
+  const basename = String(filePath || "").replace(/\\/g, "/").split("/").at(-1).toLowerCase();
+  return basename === ".env"
+    || (basename.startsWith(".env.") && basename !== ".env.example")
+    || basename.endsWith(".pem")
+    || basename.endsWith(".key");
+};
 
 const RepoPage = () => {
   const { id } = useParams();
@@ -19,6 +44,7 @@ const RepoPage = () => {
 
   const [repo, setRepo] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [repoWarning, setRepoWarning] = useState("");
 
   // File Upload
   const [selectedFiles, setSelectedFiles] = useState([]);
@@ -35,11 +61,6 @@ const RepoPage = () => {
   // ==========================
 
   useEffect(() => {
-    fetchRepo();
-    fetchHistory();
-  }, [id]);
-
-  useEffect(() => {
     if (folderInputRef.current) {
       folderInputRef.current.setAttribute("webkitdirectory", "");
       folderInputRef.current.setAttribute("directory", "");
@@ -47,58 +68,56 @@ const RepoPage = () => {
   }, []);
 
 
-    const previewFile = async (filename) => {
-    console.log("Clicked:", filename);
-
-      try {
-        const res = await fetch(
-          `https://api.codehub.sbs/repo/preview/${id}/${encodeURIComponent(filename)}`
-        );
-
-        console.log("Status:", res.status);
-
-        const data = await res.json();
-
-        console.log("Preview Response:", data);
-
-        setPreview(data.content);
-        setSelectedFile(filename);
-      } catch (err) {
-        console.error("Preview Error:", err);
-      }
-    };
+  const previewFile = useCallback(async (filePath) => {
+    try {
+      const res = await fetch(
+        `${API_BASE}/repo/preview/${id}/${encodeRepoPath(filePath)}`,
+        { headers: authHeaders() }
+      );
+      const data = await readResponseData(res);
+      setPreview(data.previewSupported === false
+        ? `Binary preview is not supported (${data.contentType || "unknown content type"}).`
+        : data.content || "");
+      setSelectedFile(data.path || normalizeRepoPath(filePath));
+    } catch (err) {
+      console.error("Preview Error:", err);
+      setPreview(`Unable to preview file: ${err.message}`);
+      setSelectedFile(normalizeRepoPath(filePath));
+    }
+  }, [id]);
 
   // ==========================
 // DELETE FILE
 // ==========================
 
-const deleteFile = async (filename) => {
-  const ok = window.confirm(`Delete ${filename}?`);
+const deleteFile = async (filePath) => {
+  const ok = window.confirm(`Delete ${filePath}?`);
 
   if (!ok) return;
 
   try {
     const res = await fetch(
-      `https://api.codehub.sbs/repo/file/${id}/${encodeURIComponent(filename)}`,
+      `${API_BASE}/repo/file/${id}/${encodeRepoPath(filePath)}`,
       {
         method: "DELETE",
+        headers: authHeaders(),
       }
     );
-
-    const data = await res.json();
+    const data = await readResponseData(res);
 
     alert(data.message);
 
     fetchRepo();
     fetchHistory();
 
-    if (selectedFile === filename) {
+    if (selectedFile === normalizeRepoPath(filePath)) {
       setSelectedFile("");
       setPreview("");
     }
 
   } catch (err) {
     console.error(err);
+    alert(`Delete failed: ${err.message}`);
   }
 };
 
@@ -106,18 +125,20 @@ const deleteFile = async (filename) => {
 // RENAME FILE
 // ==========================
 
-const renameFile = async (filename) => {
-  const newName = prompt("Enter new filename:", filename);
+const renameFile = async (filePath) => {
+  const currentName = normalizeRepoPath(filePath).split("/").at(-1);
+  const newName = prompt("Enter a new filename or relative path:", currentName);
 
-  if (!newName || newName === filename) return;
+  if (!newName || newName === currentName) return;
 
   try {
     const res = await fetch(
-      `https://api.codehub.sbs/repo/file/${id}/${encodeURIComponent(filename)}`,
+      `${API_BASE}/repo/file/${id}/${encodeRepoPath(filePath)}`,
       {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
+          ...authHeaders(),
         },
         body: JSON.stringify({
           newName,
@@ -125,7 +146,7 @@ const renameFile = async (filename) => {
       }
     );
 
-    const data = await res.json();
+    const data = await readResponseData(res);
 
     alert(data.message);
 
@@ -134,19 +155,42 @@ const renameFile = async (filename) => {
 
   } catch (err) {
     console.error(err);
+    alert(`Rename failed: ${err.message}`);
+  }
+};
+
+const downloadFile = async (filePath) => {
+  try {
+    const response = await fetch(
+      `${API_BASE}/repo/file/${id}/${encodeRepoPath(filePath)}`,
+      { headers: authHeaders() }
+    );
+    if (!response.ok) {
+      await readResponseData(response);
+      return;
+    }
+    const blob = await response.blob();
+    const objectUrl = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = objectUrl;
+    link.download = normalizeRepoPath(filePath).split("/").at(-1);
+    link.click();
+    URL.revokeObjectURL(objectUrl);
+  } catch (error) {
+    alert(`Download failed: ${error.message}`);
   }
 };
   // ==========================
   // FETCH REPOSITORY
   // ==========================
 
-  const fetchRepo = async () => {
+  const fetchRepo = useCallback(async () => {
     try {
       const res = await fetch(
-        `https://api.codehub.sbs/repo/${id}`
+        `${API_BASE}/repo/${id}`,
+        { headers: authHeaders() }
       );
-
-      const data = await res.json();
+      const data = await readResponseData(res);
 
       console.log("REPO DATA:", data);
 
@@ -154,14 +198,17 @@ const renameFile = async (filename) => {
         setRepo(null);
       } else {
         setRepo(data);
+        setRepoWarning((data.warnings || []).join(" "));
 
         // Automatically open README.md
-        const readme = data.content?.find(
-          (file) => file.filename.toLowerCase() === "readme.md"
-        );
-        console.log("README found:", readme);
+        const readme = data.content?.find((file) => {
+          const normalized = file.path?.replace(/\\/g, "/").toLowerCase();
+          return file.filename?.toLowerCase() === "readme.md"
+            || normalized === "readme.md"
+            || normalized?.endsWith("/readme.md");
+        });
         if (readme) {
-          previewFile(readme.filename);
+          previewFile(readme.path);
         }
       }
     } catch (err) {
@@ -170,18 +217,19 @@ const renameFile = async (filename) => {
     } finally {
       setLoading(false);
     }
-   };
+   }, [id, previewFile]);
   // ==========================
   // FETCH COMMIT HISTORY
   // ==========================
 
-  const fetchHistory = async () => {
+  const fetchHistory = useCallback(async () => {
   try {
     const res = await fetch(
-      `https://api.codehub.sbs/repo/history/${id}`
+      `${API_BASE}/repo/history/${id}`,
+      { headers: authHeaders() }
     );
 
-    const data = await res.json();
+    const data = await readResponseData(res);
 
     console.log("HISTORY:", data);
 
@@ -191,7 +239,12 @@ const renameFile = async (filename) => {
   } catch (err) {
     console.error(err);
   }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    fetchRepo();
+    fetchHistory();
+  }, [fetchHistory, fetchRepo]);
   // ==========================
 // FILE SELECT
 // ==========================
@@ -235,14 +288,15 @@ const handleFileSelect = (e) => {
       });
 
       const res = await fetch(
-        `https://api.codehub.sbs/repo/add/${id}`,
+        `${API_BASE}/repo/add/${id}`,
         {
           method: "POST",
           body: formData,
+          headers: authHeaders(),
         }
       );
 
-      const data = await res.json();
+      const data = await readResponseData(res);
 
       console.log("ADD RESPONSE:", data);
 
@@ -278,11 +332,12 @@ const handleFileSelect = (e) => {
       setCommitting(true);
 
       const res = await fetch(
-        `https://api.codehub.sbs/repo/commit/${id}`,
+        `${API_BASE}/repo/commit/${id}`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            ...authHeaders(),
           },
           body: JSON.stringify({
             message: commitMessage,
@@ -290,7 +345,7 @@ const handleFileSelect = (e) => {
         }
       );
 
-      const data = await res.json();
+      const data = await readResponseData(res);
 
       console.log("COMMIT RESPONSE:", data);
 
@@ -321,13 +376,14 @@ const handleFileSelect = (e) => {
   const handlePush = async () => {
     try {
       const res = await fetch(
-        `https://api.codehub.sbs/repo/push/${id}`,
+        `${API_BASE}/repo/push/${id}`,
         {
           method: "POST",
+          headers: authHeaders(),
         }
       );
 
-      const data = await res.json();
+      const data = await readResponseData(res);
 
       console.log("PUSH RESPONSE:", data);
 
@@ -354,13 +410,14 @@ const handleFileSelect = (e) => {
   const handlePull = async () => {
     try {
       const res = await fetch(
-        `https://api.codehub.sbs/repo/pull/${id}`,
+        `${API_BASE}/repo/pull/${id}`,
         {
           method: "POST",
+          headers: authHeaders(),
         }
       );
 
-      const data = await res.json();
+      const data = await readResponseData(res);
 
       console.log("PULL RESPONSE:", data);
 
@@ -391,6 +448,9 @@ const handleFileSelect = (e) => {
   if (!repo) {
     return <h2 className="error">Repository not found ❌</h2>;
   }
+  const visibleFiles = (repo.content || []).filter((file) =>
+    !isProtectedDisplayPath(file.path || file.filename)
+  );
     return (
     <>
       <Navbar />
@@ -471,6 +531,8 @@ const handleFileSelect = (e) => {
     {repo.description || "No description"}
   </p>
 
+  {repoWarning && <p className="error">⚠ {repoWarning}</p>}
+
   {/* ========================== */}
   {/* VISIBILITY */}
   {/* ========================== */}
@@ -491,47 +553,47 @@ const handleFileSelect = (e) => {
 
 <h3>Files</h3>
 
-{repo.content?.length === 0 ? (
+{visibleFiles.length === 0 ? (
   <p className="no-files">
     No files yet
   </p>
 ) : (
   <div className="file-list">
-    {repo.content.map((file, index) => (
+    {visibleFiles.map((file) => (
       <div
-        key={index}
+        key={file.path}
         className="file-item"
       >
         <span
           className="file-name"
           onClick={() => previewFile(file.path)}
         >
-          📄 {file.filename}
+          📄 {file.path}
         </span>
 
         <div className="file-actions">
 
           <button
             className="rename-btn"
-            onClick={() => renameFile(file.filename)}
+            onClick={() => renameFile(file.path)}
           >
             ✏ Rename
           </button>
 
           <button
             className="delete-btn"
-            onClick={() => deleteFile(file.filename)}
+            onClick={() => deleteFile(file.path)}
           >
             🗑 Delete
           </button>
 
-          <a
-            href={`https://api.codehub.sbs/repo/file/${id}/${encodeURIComponent(file.filename)}`}
-            download
+          <button
+            type="button"
+            onClick={() => downloadFile(file.path)}
             className="download-link"
           >
             ⬇ Download
-          </a>
+          </button>
 
         </div>
       </div>
