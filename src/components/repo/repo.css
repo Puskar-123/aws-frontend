@@ -164,36 +164,6 @@
   font-family: Consolas, monospace;
 }
 
-/* ================= COMMIT HISTORY ================= */
-
-.commit-card {
-  background: #161b22;
-  border: 1px solid #30363d;
-  border-radius: 10px;
-  padding: 15px;
-  margin-bottom: 20px;
-}
-
-.commit-title {
-  color: #4CAF50;
-  margin-bottom: 8px;
-}
-
-.commit-time {
-  color: #8b949e;
-  font-size: 13px;
-  margin-bottom: 10px;
-}
-
-.commit-files {
-  margin-top: 10px;
-  padding-left: 20px;
-}
-
-.commit-files li {
-  margin-bottom: 5px;
-}
-
 /* ================= STATES ================= */
 
 .loading {

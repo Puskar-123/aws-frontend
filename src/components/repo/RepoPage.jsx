@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import Navbar from "../Navbar";
+import CommitHistory from "../commit/CommitHistory";
 import RepositoryBrowser from "../repository/RepositoryBrowser";
 import "./repo.css";
 import { encodeRepoPath, normalizeRepoPath } from "../../utils/repoPath";
@@ -497,45 +498,7 @@ const handleFileSelect = (e) => {
 
 <hr />
 
-  {/* ========================== */}
-  {/* COMMIT HISTORY */}
-  {/* ========================== */}
-
-  <h3>🕒 Commit History</h3>
-
-  {history.length === 0 ? (
-    <p className="no-files">
-      No commits yet.
-    </p>
-  ) : (
-    history
-      .slice()
-      .reverse()
-      .map((commit, index) => (
-        <div
-          key={index}
-          className="commit-card"
-        >
-          <h4 className="commit-title">
-            📝 {commit.message}
-          </h4>
-
-          <p className="commit-time">
-            {new Date(commit.time).toLocaleString()}
-          </p>
-
-          <strong>Files:</strong>
-
-          <ul className="commit-files">
-            {commit.files.map((file, i) => (
-              <li key={i}>
-                📄 {file.filename}
-              </li>
-            ))}
-          </ul>
-        </div>
-      ))
-    )}
+  <CommitHistory repositoryId={id} commits={history} />
 
   </div>   
       </>         
