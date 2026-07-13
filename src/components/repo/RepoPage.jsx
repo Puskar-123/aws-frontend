@@ -207,6 +207,11 @@ const handleFileSelect = (e) => {
 
       selectedFiles.forEach((file) => {
         formData.append("files", file);
+
+        formData.append(
+          "paths",
+          file.webkitRelativePath || file.name
+        );
       });
 
       const res = await fetch(
@@ -382,6 +387,8 @@ const handleFileSelect = (e) => {
 
         <input
           type="file"
+          webkitdirectory=""
+          directory=""
           multiple
           onChange={handleFileSelect}
         />
