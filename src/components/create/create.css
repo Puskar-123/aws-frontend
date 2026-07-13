@@ -65,3 +65,20 @@
 .create-btn:hover {
   background-color: #2ea043;
 }
+
+.checkbox-group{
+    margin:20px 0;
+}
+
+.checkbox-group label{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    cursor:pointer;
+    font-size:16px;
+}
+
+.checkbox-group input{
+    width:18px;
+    height:18px;
+}

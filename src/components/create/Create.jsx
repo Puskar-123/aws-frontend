@@ -7,101 +7,126 @@ const Create = () => {
   const navigate = useNavigate();
 
   const [success, setSuccess] = useState("");
+
   const [repoName, setRepoName] = useState("");
   const [description, setDescription] = useState("");
   const [visibility, setVisibility] = useState("public");
 
+  // NEW
+  const [addReadme, setAddReadme] = useState(false);
+
   const handleSubmit = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  const userId = localStorage.getItem("userId");
+    const userId = localStorage.getItem("userId");
 
-  if (!userId) {
-    alert("User not logged in");
-    return;
-  }
+    if (!userId) {
+      alert("User not logged in");
+      return;
+    }
 
-  try {
-    const res = await fetch("https://api.codehub.sbs/repo/create", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        name: repoName,
-        description,
-        visibility,
-        owner: userId,
-        content: [],   
-        issues: [],    
-      }),
-    });
+    try {
+      const res = await fetch(
+        "https://api.codehub.sbs/repo/create",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
 
-    const data = await res.json();  
+          body: JSON.stringify({
+            name: repoName,
+            description,
+            visibility,
+            owner: userId,
+            content: [],
+            issues: [],
+            addReadme, // NEW
+          }),
+        }
+      );
+
+      const data = await res.json();
 
       console.log("API RESPONSE:", data);
 
-      // ❌ handle error
       if (!res.ok) {
         alert(data.error || "Failed to create repo");
         return;
       }
 
-      // ✅ success
       setSuccess("Repository created successfully!");
 
-      // 🚀 USE ID INSTEAD OF NAME
       setTimeout(() => {
         navigate(`/repo/${data.repositoryID}`);
       }, 1000);
 
-    setRepoName("");
-    setDescription("");
-    setVisibility("public");
+      setRepoName("");
+      setDescription("");
+      setVisibility("public");
+      setAddReadme(false);
 
-  } catch (err) {
-    console.error("ERROR:", err);
-    alert("Server error");
-  }
-};
+    } catch (err) {
+      console.error(err);
+      alert("Server error");
+    }
+  };
 
   return (
     <>
       <Navbar />
 
-      {success && <div className="success-msg">{success}</div>}
+      {success && (
+        <div className="success-msg">
+          {success}
+        </div>
+      )}
 
       <div className="create-container">
+
         <h2>Create a new repository</h2>
 
-        <form className="create-form" onSubmit={handleSubmit}>
-          
+        <form
+          className="create-form"
+          onSubmit={handleSubmit}
+        >
+
           <label>Repository name *</label>
+
           <input
             type="text"
             value={repoName}
-            onChange={(e) => setRepoName(e.target.value)}
+            onChange={(e) =>
+              setRepoName(e.target.value)
+            }
             required
           />
 
           <label>Description</label>
+
           <input
             type="text"
             value={description}
-            onChange={(e) => setDescription(e.target.value)}
+            onChange={(e) =>
+              setDescription(e.target.value)
+            }
           />
 
           <label>Visibility</label>
 
           <div className="radio-group">
+
             <label>
               <input
                 type="radio"
                 name="visibility"
                 value="public"
                 checked={visibility === "public"}
-                onChange={() => setVisibility("public")}  // ✅ FIX HERE
+                onChange={() =>
+                  setVisibility("public")
+                }
               />
+
               Public
             </label>
 
@@ -111,16 +136,47 @@ const Create = () => {
                 name="visibility"
                 value="private"
                 checked={visibility === "private"}
-                onChange={() => setVisibility("private")} // ✅ FIX HERE
+                onChange={() =>
+                  setVisibility("private")
+                }
               />
+
               Private
             </label>
+
           </div>
 
-          <button type="submit" className="create-btn">
-            Create repository
+          {/* NEW README OPTION */}
+
+          <label>Initialize Repository</label>
+
+          <div className="checkbox-group">
+
+            <label>
+
+              <input
+                type="checkbox"
+                checked={addReadme}
+                onChange={(e) =>
+                  setAddReadme(e.target.checked)
+                }
+              />
+
+              Initialize this repository with a README.md
+
+            </label>
+
+          </div>
+
+          <button
+            type="submit"
+            className="create-btn"
+          >
+            Create Repository
           </button>
+
         </form>
+
       </div>
     </>
   );
