@@ -1,10 +1,8 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import Navbar from "../Navbar";
+import RepositoryBrowser from "../repository/RepositoryBrowser";
 import "./repo.css";
-
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 import { encodeRepoPath, normalizeRepoPath } from "../../utils/repoPath";
 
 const API_BASE = "https://api.codehub.sbs";
@@ -33,8 +31,6 @@ const isProtectedDisplayPath = (filePath) => {
 
 const RepoPage = () => {
   const { id } = useParams();
-  const [preview, setPreview] = useState("");
-  const [selectedFile, setSelectedFile] = useState("");
   const folderInputRef = useRef(null);
   console.log("URL id =", id);
 
@@ -55,6 +51,9 @@ const RepoPage = () => {
 
   // Commit History
   const [history, setHistory] = useState([]);
+  const visibleFiles = useMemo(() => (repo?.content || []).filter((file) =>
+    !isProtectedDisplayPath(file.path || file.filename)
+  ), [repo?.content]);
 
   // ==========================
   // LOAD DATA
@@ -68,118 +67,6 @@ const RepoPage = () => {
   }, []);
 
 
-  const previewFile = useCallback(async (filePath) => {
-    try {
-      const res = await fetch(
-        `${API_BASE}/repo/preview/${id}/${encodeRepoPath(filePath)}`,
-        { headers: authHeaders() }
-      );
-      const data = await readResponseData(res);
-      setPreview(data.previewSupported === false
-        ? `Binary preview is not supported (${data.contentType || "unknown content type"}).`
-        : data.content || "");
-      setSelectedFile(data.path || normalizeRepoPath(filePath));
-    } catch (err) {
-      console.error("Preview Error:", err);
-      setPreview(`Unable to preview file: ${err.message}`);
-      setSelectedFile(normalizeRepoPath(filePath));
-    }
-  }, [id]);
-
-  // ==========================
-// DELETE FILE
-// ==========================
-
-const deleteFile = async (filePath) => {
-  const ok = window.confirm(`Delete ${filePath}?`);
-
-  if (!ok) return;
-
-  try {
-    const res = await fetch(
-      `${API_BASE}/repo/file/${id}/${encodeRepoPath(filePath)}`,
-      {
-        method: "DELETE",
-        headers: authHeaders(),
-      }
-    );
-    const data = await readResponseData(res);
-
-    alert(data.message);
-
-    fetchRepo();
-    fetchHistory();
-
-    if (selectedFile === normalizeRepoPath(filePath)) {
-      setSelectedFile("");
-      setPreview("");
-    }
-
-  } catch (err) {
-    console.error(err);
-    alert(`Delete failed: ${err.message}`);
-  }
-};
-
-// ==========================
-// RENAME FILE
-// ==========================
-
-const renameFile = async (filePath) => {
-  const currentName = normalizeRepoPath(filePath).split("/").at(-1);
-  const newName = prompt("Enter a new filename or relative path:", currentName);
-
-  if (!newName || newName === currentName) return;
-
-  try {
-    const res = await fetch(
-      `${API_BASE}/repo/file/${id}/${encodeRepoPath(filePath)}`,
-      {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          ...authHeaders(),
-        },
-        body: JSON.stringify({
-          newName,
-        }),
-      }
-    );
-
-    const data = await readResponseData(res);
-
-    alert(data.message);
-
-    fetchRepo();
-    fetchHistory();
-
-  } catch (err) {
-    console.error(err);
-    alert(`Rename failed: ${err.message}`);
-  }
-};
-
-const downloadFile = async (filePath) => {
-  try {
-    const response = await fetch(
-      `${API_BASE}/repo/file/${id}/${encodeRepoPath(filePath)}`,
-      { headers: authHeaders() }
-    );
-    if (!response.ok) {
-      await readResponseData(response);
-      return;
-    }
-    const blob = await response.blob();
-    const objectUrl = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = objectUrl;
-    link.download = normalizeRepoPath(filePath).split("/").at(-1);
-    link.click();
-    URL.revokeObjectURL(objectUrl);
-  } catch (error) {
-    alert(`Download failed: ${error.message}`);
-  }
-};
   // ==========================
   // FETCH REPOSITORY
   // ==========================
@@ -200,16 +87,6 @@ const downloadFile = async (filePath) => {
         setRepo(data);
         setRepoWarning((data.warnings || []).join(" "));
 
-        // Automatically open README.md
-        const readme = data.content?.find((file) => {
-          const normalized = file.path?.replace(/\\/g, "/").toLowerCase();
-          return file.filename?.toLowerCase() === "readme.md"
-            || normalized === "readme.md"
-            || normalized?.endsWith("/readme.md");
-        });
-        if (readme) {
-          previewFile(readme.path);
-        }
       }
     } catch (err) {
       console.error(err);
@@ -217,7 +94,7 @@ const downloadFile = async (filePath) => {
     } finally {
       setLoading(false);
     }
-   }, [id, previewFile]);
+   }, [id]);
   // ==========================
   // FETCH COMMIT HISTORY
   // ==========================
@@ -242,9 +119,57 @@ const downloadFile = async (filePath) => {
   }, [id]);
 
   useEffect(() => {
-    fetchRepo();
-    fetchHistory();
+    const loadRepository = async () => {
+      await Promise.all([fetchRepo(), fetchHistory()]);
+    };
+    loadRepository();
   }, [fetchHistory, fetchRepo]);
+
+  const deleteFile = async (filePath) => {
+    const ok = window.confirm(`Delete ${filePath}?`);
+    if (!ok) return false;
+
+    try {
+      const res = await fetch(
+        `${API_BASE}/repo/file/${id}/${encodeRepoPath(filePath)}`,
+        { method: "DELETE", headers: authHeaders() },
+      );
+      const data = await readResponseData(res);
+      alert(data.message);
+      await Promise.all([fetchRepo(), fetchHistory()]);
+      return true;
+    } catch (err) {
+      console.error(err);
+      alert(`Delete failed: ${err.message}`);
+      return false;
+    }
+  };
+
+  const renameFile = async (filePath) => {
+    const currentName = normalizeRepoPath(filePath).split("/").at(-1);
+    const newName = prompt("Enter a new filename or relative path:", currentName);
+    if (!newName || newName === currentName) return null;
+
+    try {
+      const res = await fetch(
+        `${API_BASE}/repo/file/${id}/${encodeRepoPath(filePath)}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json", ...authHeaders() },
+          body: JSON.stringify({ newName }),
+        },
+      );
+      const data = await readResponseData(res);
+      alert(data.message);
+      await Promise.all([fetchRepo(), fetchHistory()]);
+      return data.file || null;
+    } catch (err) {
+      console.error(err);
+      alert(`Rename failed: ${err.message}`);
+      return null;
+    }
+  };
+
   // ==========================
 // FILE SELECT
 // ==========================
@@ -448,9 +373,6 @@ const handleFileSelect = (e) => {
   if (!repo) {
     return <h2 className="error">Repository not found ❌</h2>;
   }
-  const visibleFiles = (repo.content || []).filter((file) =>
-    !isProtectedDisplayPath(file.path || file.filename)
-  );
     return (
     <>
       <Navbar />
@@ -551,69 +473,13 @@ const handleFileSelect = (e) => {
 {/* FILES */}
 {/* ========================== */}
 
-<h3>Files</h3>
-
-{visibleFiles.length === 0 ? (
-  <p className="no-files">
-    No files yet
-  </p>
-) : (
-  <div className="file-list">
-    {visibleFiles.map((file) => (
-      <div
-        key={file.path}
-        className="file-item"
-      >
-        <span
-          className="file-name"
-          onClick={() => previewFile(file.path)}
-        >
-          📄 {file.path}
-        </span>
-
-        <div className="file-actions">
-
-          <button
-            className="rename-btn"
-            onClick={() => renameFile(file.path)}
-          >
-            ✏ Rename
-          </button>
-
-          <button
-            className="delete-btn"
-            onClick={() => deleteFile(file.path)}
-          >
-            🗑 Delete
-          </button>
-
-          <button
-            type="button"
-            onClick={() => downloadFile(file.path)}
-            className="download-link"
-          >
-            ⬇ Download
-          </button>
-
-        </div>
-      </div>
-    ))}
-  </div>
-)}
-
-{/* ========================== */}
-{/* FILE PREVIEW */}
-{/* ========================== */}
-
-{selectedFile && (
-  <div className="preview-box">
-    <h3>📄 {selectedFile}</h3>
-
-    <ReactMarkdown remarkPlugins={[remarkGfm]}>
-      {preview}
-    </ReactMarkdown>
-  </div>
-  )}
+<RepositoryBrowser
+  repositoryId={id}
+  repositoryName={repo.name}
+  files={visibleFiles}
+  onRename={renameFile}
+  onDelete={deleteFile}
+/>
 
 <hr />
 
