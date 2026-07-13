@@ -31,6 +31,7 @@ const isProtectedDisplayPath = (filePath) => {
 
 const RepoPage = () => {
   const { id } = useParams();
+  const invalidRepositoryId = !id || id === "undefined";
   const folderInputRef = useRef(null);
   console.log("URL id =", id);
 
@@ -72,6 +73,11 @@ const RepoPage = () => {
   // ==========================
 
   const fetchRepo = useCallback(async () => {
+    if (invalidRepositoryId) {
+      console.error("Invalid repository ID:", id);
+      return;
+    }
+
     try {
       const res = await fetch(
         `${API_BASE}/repo/${id}`,
@@ -94,12 +100,14 @@ const RepoPage = () => {
     } finally {
       setLoading(false);
     }
-   }, [id]);
+   }, [id, invalidRepositoryId]);
   // ==========================
   // FETCH COMMIT HISTORY
   // ==========================
 
   const fetchHistory = useCallback(async () => {
+  if (invalidRepositoryId) return;
+
   try {
     const res = await fetch(
       `${API_BASE}/repo/history/${id}`,
@@ -116,14 +124,16 @@ const RepoPage = () => {
   } catch (err) {
     console.error(err);
   }
-  }, [id]);
+  }, [id, invalidRepositoryId]);
 
   useEffect(() => {
+    if (invalidRepositoryId) return;
+
     const loadRepository = async () => {
       await Promise.all([fetchRepo(), fetchHistory()]);
     };
     loadRepository();
-  }, [fetchHistory, fetchRepo]);
+  }, [fetchHistory, fetchRepo, invalidRepositoryId]);
 
   const deleteFile = async (filePath) => {
     const ok = window.confirm(`Delete ${filePath}?`);
@@ -365,6 +375,10 @@ const handleFileSelect = (e) => {
   // ==========================
   // LOADING
   // ==========================
+
+  if (invalidRepositoryId) {
+    return <h2 className="error">Repository not found ❌</h2>;
+  }
 
   if (loading) {
     return <h2 className="loading">Loading...</h2>;

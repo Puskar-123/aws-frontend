@@ -6,8 +6,6 @@ import { useNavigate } from "react-router-dom";
 const Create = () => {
   const navigate = useNavigate();
 
-  const [success, setSuccess] = useState("");
-
   const [repoName, setRepoName] = useState("");
   const [description, setDescription] = useState("");
   const [visibility, setVisibility] = useState("public");
@@ -40,12 +38,10 @@ const Create = () => {
           },
 
           body: JSON.stringify({
+            owner: userId,
             name: repoName.trim(),
             description,
             visibility,
-            owner: userId,
-            content: [],
-            issues: [],
             addReadme,
           }),
         }
@@ -53,48 +49,33 @@ const Create = () => {
 
       const data = await res.json();
 
-      console.log("FULL RESPONSE:", data);
-      alert(JSON.stringify(data));
-
       console.log("API RESPONSE:", data);
 
       if (!res.ok) {
-        alert(data.error || "Failed to create repository");
+        alert(data.error || "Repository creation failed");
         return;
       }
 
-      setSuccess("Repository created successfully!");
+      const repositoryId =
+        data.repository?._id ||
+        data.repository?.id;
 
-      // Reset Form
-      setRepoName("");
-      setDescription("");
-      setVisibility("public");
-      setAddReadme(false);
+      if (!repositoryId) {
+        console.error("Repository ID missing:", data);
+        alert("Repository created, but repository ID was not returned.");
+        return;
+      }
 
-      const repoId = data.repositoryID;
-
-      console.log("Created Repository ID:", repoId);
-
-      setTimeout(() => {
-        setSuccess("");
-        navigate(`/repo/${repoId}`);
-      }, 1000);
-
+      navigate(`/repo/${repositoryId}`);
     } catch (err) {
-      console.error(err);
-      alert("Server Error");
+      console.error("Create repository error:", err);
+      alert("Unable to create repository");
     }
   };
 
   return (
     <>
       <Navbar />
-
-      {success && (
-        <div className="success-msg">
-          {success}
-        </div>
-      )}
 
       <div className="create-container">
 
