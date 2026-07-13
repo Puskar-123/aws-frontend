@@ -68,7 +68,7 @@ const Create = () => {
       setVisibility("public");
       setAddReadme(false);
 
-      const repoId = data.repository._id;
+      const repoId = data.repositoryID;
 
       console.log("Created Repository ID:", repoId);
 
