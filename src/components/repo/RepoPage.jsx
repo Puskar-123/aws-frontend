@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import Navbar from "../Navbar";
 import "./repo.css";
@@ -10,6 +10,7 @@ const RepoPage = () => {
   const { id } = useParams();
   const [preview, setPreview] = useState("");
   const [selectedFile, setSelectedFile] = useState("");
+  const folderInputRef = useRef(null);
   console.log("URL id =", id);
 
   // ==========================
@@ -37,6 +38,13 @@ const RepoPage = () => {
     fetchRepo();
     fetchHistory();
   }, [id]);
+
+  useEffect(() => {
+    if (folderInputRef.current) {
+      folderInputRef.current.setAttribute("webkitdirectory", "");
+      folderInputRef.current.setAttribute("directory", "");
+    }
+  }, []);
 
 
     const previewFile = async (filename) => {
@@ -393,29 +401,28 @@ const handleFileSelect = (e) => {
       {/* HEADER */}
       {/* ========================== */}
 
-      <div className="repo-header">
+    <div className="repo-header">
 
-        <h1>{repo.name}</h1>
+      <h1>{repo.name}</h1>
 
-        <label className="upload-btn">
-          📁 Upload Project Folder
+      <label className="upload-btn">
+        📁 Upload Project Folder
 
-          <input
-            type="file"
-            webkitdirectory=""
-            directory=""
-            multiple
-            hidden
-            onChange={handleFileSelect}
-          />
-        </label>
+        <input
+          ref={folderInputRef}
+          type="file"
+          multiple
+          hidden
+          onChange={handleFileSelect}
+        />
+      </label>
 
-        <button
-          onClick={handleAddFiles}
-          className="push-btn"
-        >
-          📂 Add Files
-        </button>
+      <button
+        onClick={handleAddFiles}
+        className="push-btn"
+      >
+        📂 Add Files
+      </button>
 
       </div>
 
