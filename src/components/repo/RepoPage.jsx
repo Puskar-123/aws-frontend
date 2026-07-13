@@ -189,7 +189,19 @@ const renameFile = async (filename) => {
 // ==========================
 
 const handleFileSelect = (e) => {
-  setSelectedFiles(Array.from(e.target.files));
+  const files = Array.from(e.target.files);
+
+  console.log("Selected Files:");
+
+  files.forEach((file) => {
+    console.log({
+      name: file.name,
+      relativePath: file.webkitRelativePath,
+      size: file.size,
+    });
+  });
+
+  setSelectedFiles(files);
 };
 
   // ==========================
@@ -385,13 +397,18 @@ const handleFileSelect = (e) => {
 
         <h1>{repo.name}</h1>
 
-        <input
-          type="file"
-          webkitdirectory=""
-          directory=""
-          multiple
-          onChange={handleFileSelect}
-        />
+        <label className="upload-btn">
+          📁 Upload Project Folder
+
+          <input
+            type="file"
+            webkitdirectory=""
+            directory=""
+            multiple
+            hidden
+            onChange={handleFileSelect}
+          />
+        </label>
 
         <button
           onClick={handleAddFiles}
