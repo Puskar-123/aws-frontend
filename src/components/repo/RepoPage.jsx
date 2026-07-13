@@ -497,7 +497,7 @@ const handleFileSelect = (e) => {
       >
         <span
           className="file-name"
-          onClick={() => previewFile(file.filename)}
+          onClick={() => previewFile(file.path)}
         >
           📄 {file.filename}
         </span>
