@@ -53,6 +53,9 @@ const Create = () => {
 
       const data = await res.json();
 
+      console.log("FULL RESPONSE:", data);
+      alert(JSON.stringify(data));
+
       console.log("API RESPONSE:", data);
 
       if (!res.ok) {
