@@ -195,3 +195,28 @@
 .no-files {
   color: #8b949e;
 }
+
+/* ================= COMMIT SECTION ================= */
+
+.commit-section {
+  margin-top: 20px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.commit-input {
+  flex: 1;
+  min-width: 250px;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid #30363d;
+  background: #0d1117;
+  color: #c9d1d9;
+  outline: none;
+}
+
+.commit-input:focus {
+  border-color: #58a6ff;
+}

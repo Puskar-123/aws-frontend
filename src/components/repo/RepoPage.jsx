@@ -59,6 +59,75 @@ const RepoPage = () => {
         console.error("Preview Error:", err);
       }
     };
+
+  // ==========================
+// DELETE FILE
+// ==========================
+
+const deleteFile = async (filename) => {
+  const ok = window.confirm(`Delete ${filename}?`);
+
+  if (!ok) return;
+
+  try {
+    const res = await fetch(
+      `https://api.codehub.sbs/repo/file/${id}/${encodeURIComponent(filename)}`,
+      {
+        method: "DELETE",
+      }
+    );
+
+    const data = await res.json();
+
+    alert(data.message);
+
+    fetchRepo();
+    fetchHistory();
+
+    if (selectedFile === filename) {
+      setSelectedFile("");
+      setPreview("");
+    }
+
+  } catch (err) {
+    console.error(err);
+  }
+};
+
+// ==========================
+// RENAME FILE
+// ==========================
+
+const renameFile = async (filename) => {
+  const newName = prompt("Enter new filename:", filename);
+
+  if (!newName || newName === filename) return;
+
+  try {
+    const res = await fetch(
+      `https://api.codehub.sbs/repo/file/${id}/${encodeURIComponent(filename)}`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          newName,
+        }),
+      }
+    );
+
+    const data = await res.json();
+
+    alert(data.message);
+
+    fetchRepo();
+    fetchHistory();
+
+  } catch (err) {
+    console.error(err);
+  }
+};
   // ==========================
   // FETCH REPOSITORY
   // ==========================
@@ -123,7 +192,7 @@ const handleFileSelect = (e) => {
   setSelectedFiles(Array.from(e.target.files));
 };
 
-    // ==========================
+  // ==========================
   // ADD FILES
   // ==========================
 
@@ -303,135 +372,141 @@ const handleFileSelect = (e) => {
 
       <div className="repo-container">
 
-        {/* ========================== */}
-        {/* HEADER */}
-        {/* ========================== */}
+      {/* ========================== */}
+      {/* HEADER */}
+      {/* ========================== */}
 
-        <div className="repo-header">
+      <div className="repo-header">
 
-          <h1>{repo.name}</h1>
+        <h1>{repo.name}</h1>
 
-          <input
-            type="file"
-            multiple
-            onChange={handleFileSelect}
-          />
+        <input
+          type="file"
+          multiple
+          onChange={handleFileSelect}
+        />
 
-          <button
-            onClick={handleAddFiles}
-            className="push-btn"
-          >
-            📂 Add Files
-          </button>
-
-        </div>
-
-        {/* ========================== */}
-        {/* COMMIT SECTION */}
-        {/* ========================== */}
-
-        <div
-          style={{
-            marginTop: "20px",
-            display: "flex",
-            gap: "10px",
-            alignItems: "center",
-            flexWrap: "wrap",
-          }}
+        <button
+          onClick={handleAddFiles}
+          className="push-btn"
         >
-          <input
-            type="text"
-            placeholder="Commit message"
-            value={commitMessage}
-            onChange={(e) => setCommitMessage(e.target.value)}
-            style={{
-              flex: 1,
-              minWidth: "250px",
-              padding: "10px",
-              borderRadius: "6px",
-            }}
-          />
+          📂 Add Files
+        </button>
+
+      </div>
+
+{/* ========================== */}
+{/* COMMIT SECTION */}
+{/* ========================== */}
+
+  <div className="commit-section">
+  <input
+    type="text"
+    placeholder="Commit message"
+    value={commitMessage}
+    onChange={(e) => setCommitMessage(e.target.value)}
+    className="commit-input"
+/>
+
+    <button
+      onClick={handleCommit}
+      className="push-btn"
+      disabled={committing}
+    >
+      {committing ? "Committing..." : "📝 Commit"}
+    </button>
+
+    <button
+      onClick={handlePush}
+      className="push-btn"
+    >
+      🚀 Push
+    </button>
+
+    <button
+      onClick={handlePull}
+      className="push-btn"
+    >
+      ⬇ Pull
+    </button>
+
+  </div>
+
+  {/* ========================== */}
+  {/* DESCRIPTION */}
+  {/* ========================== */}
+
+  <p className="repo-description">
+    {repo.description || "No description"}
+  </p>
+
+  {/* ========================== */}
+  {/* VISIBILITY */}
+  {/* ========================== */}
+
+  <p className="repo-visibility">
+    Visibility:{" "}
+    <strong>
+      {repo.visibility === "public"
+        ? "Public"
+        : "Private"}
+    </strong>
+  </p>
+
+  <hr />
+ {/* ========================== */}
+{/* FILES */}
+{/* ========================== */}
+
+<h3>Files</h3>
+
+{repo.content?.length === 0 ? (
+  <p className="no-files">
+    No files yet
+  </p>
+) : (
+  <div className="file-list">
+    {repo.content.map((file, index) => (
+      <div
+        key={index}
+        className="file-item"
+      >
+        <span
+          className="file-name"
+          onClick={() => previewFile(file.filename)}
+        >
+          📄 {file.filename}
+        </span>
+
+        <div className="file-actions">
 
           <button
-            onClick={handleCommit}
-            className="push-btn"
-            disabled={committing}
+            className="rename-btn"
+            onClick={() => renameFile(file.filename)}
           >
-            {committing ? "Committing..." : "📝 Commit"}
+            ✏ Rename
           </button>
 
           <button
-            onClick={handlePush}
-            className="push-btn"
+            className="delete-btn"
+            onClick={() => deleteFile(file.filename)}
           >
-            🚀 Push
+            🗑 Delete
           </button>
 
-          <button
-            onClick={handlePull}
-            className="push-btn"
+          <a
+            href={`https://api.codehub.sbs/repo/file/${id}/${encodeURIComponent(file.filename)}`}
+            download
+            className="download-link"
           >
-            ⬇ Pull
-          </button>
+            ⬇ Download
+          </a>
 
         </div>
-
-        {/* ========================== */}
-        {/* DESCRIPTION */}
-        {/* ========================== */}
-
-        <p className="repo-description">
-          {repo.description || "No description"}
-        </p>
-
-        {/* ========================== */}
-        {/* VISIBILITY */}
-        {/* ========================== */}
-
-        <p className="repo-visibility">
-          Visibility:{" "}
-          <strong>
-            {repo.visibility === "public"
-              ? "Public"
-              : "Private"}
-          </strong>
-        </p>
-
-        <hr />
-    {/* ========================== */}
-    {/* FILES */}
-    {/* ========================== */}
-
-    <h3>Files</h3>
-
-    {repo.content?.length === 0 ? (
-      <p className="no-files">
-        No files yet
-      </p>
-    ) : (
-      <div className="file-list">
-        {repo.content.map((file, index) => (
-          <div
-            key={index}
-            className="file-item"
-            onClick={() => previewFile(file.filename)}
-          >
-            <span>
-              📄 {file.filename}
-            </span>
-
-            <a
-              href={`https://api.codehub.sbs/repo/file/${id}/${encodeURIComponent(file.filename)}`}
-              download
-              className="download-link"
-              onClick={(e) => e.stopPropagation()}
-            >
-              ⬇ Download
-            </a>
-          </div>
-        ))}
       </div>
-    )}
+    ))}
+  </div>
+)}
 
 {/* ========================== */}
 {/* FILE PREVIEW */}
