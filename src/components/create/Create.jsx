@@ -12,7 +12,7 @@ const Create = () => {
   const [description, setDescription] = useState("");
   const [visibility, setVisibility] = useState("public");
 
-  // NEW
+  // README Option
   const [addReadme, setAddReadme] = useState(false);
 
   const handleSubmit = async (e) => {
@@ -22,6 +22,11 @@ const Create = () => {
 
     if (!userId) {
       alert("User not logged in");
+      return;
+    }
+
+    if (!repoName.trim()) {
+      alert("Repository name is required");
       return;
     }
 
@@ -35,13 +40,13 @@ const Create = () => {
           },
 
           body: JSON.stringify({
-            name: repoName,
+            name: repoName.trim(),
             description,
             visibility,
             owner: userId,
             content: [],
             issues: [],
-            addReadme, // NEW
+            addReadme,
           }),
         }
       );
@@ -51,24 +56,26 @@ const Create = () => {
       console.log("API RESPONSE:", data);
 
       if (!res.ok) {
-        alert(data.error || "Failed to create repo");
+        alert(data.error || "Failed to create repository");
         return;
       }
 
       setSuccess("Repository created successfully!");
 
-      setTimeout(() => {
-        navigate(`/repo/${data.repositoryID}`);
-      }, 1000);
-
+      // Reset Form
       setRepoName("");
       setDescription("");
       setVisibility("public");
       setAddReadme(false);
 
+      setTimeout(() => {
+        setSuccess("");
+        navigate(`/repo/${data.repositoryID}`);
+      }, 1000);
+
     } catch (err) {
       console.error(err);
-      alert("Server error");
+      alert("Server Error");
     }
   };
 
@@ -91,26 +98,28 @@ const Create = () => {
           onSubmit={handleSubmit}
         >
 
+          {/* Repository Name */}
+
           <label>Repository name *</label>
 
           <input
             type="text"
             value={repoName}
-            onChange={(e) =>
-              setRepoName(e.target.value)
-            }
+            onChange={(e) => setRepoName(e.target.value)}
             required
           />
+
+          {/* Description */}
 
           <label>Description</label>
 
           <input
             type="text"
             value={description}
-            onChange={(e) =>
-              setDescription(e.target.value)
-            }
+            onChange={(e) => setDescription(e.target.value)}
           />
+
+          {/* Visibility */}
 
           <label>Visibility</label>
 
@@ -122,11 +131,8 @@ const Create = () => {
                 name="visibility"
                 value="public"
                 checked={visibility === "public"}
-                onChange={() =>
-                  setVisibility("public")
-                }
+                onChange={() => setVisibility("public")}
               />
-
               Public
             </label>
 
@@ -136,17 +142,14 @@ const Create = () => {
                 name="visibility"
                 value="private"
                 checked={visibility === "private"}
-                onChange={() =>
-                  setVisibility("private")
-                }
+                onChange={() => setVisibility("private")}
               />
-
               Private
             </label>
 
           </div>
 
-          {/* NEW README OPTION */}
+          {/* Initialize Repository */}
 
           <label>Initialize Repository</label>
 
@@ -167,6 +170,8 @@ const Create = () => {
             </label>
 
           </div>
+
+          {/* Create Button */}
 
           <button
             type="submit"
