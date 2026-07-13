@@ -68,9 +68,13 @@ const Create = () => {
       setVisibility("public");
       setAddReadme(false);
 
+      const repoId = data.repository._id;
+
+      console.log("Created Repository ID:", repoId);
+
       setTimeout(() => {
         setSuccess("");
-        navigate(`/repo/${data.repositoryID}`);
+        navigate(`/repo/${repoId}`);
       }, 1000);
 
     } catch (err) {
