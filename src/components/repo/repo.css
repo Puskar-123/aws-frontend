@@ -89,16 +89,18 @@
   padding-bottom: 10px;
 }
 
-.repo-tabs span {
+.repo-tabs > a {
   cursor: pointer;
   color: #8b949e;
-  padding-bottom: 5px;
+  padding: 0 2px 8px;
+  text-decoration: none;
 }
 
-.repo-tabs .active {
+.repo-tabs > a.active {
   color: white;
   border-bottom: 2px solid #f78166;
 }
+.repo-tabs > a span { display: inline-flex; min-width: 18px; justify-content: center; padding: 1px 5px; border-radius: 999px; color: #c9d1d9; background: #30363d; font-size: 11px; }
 
 /* ================= BOX ================= */
 .repo-box {

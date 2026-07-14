@@ -57,6 +57,7 @@ const RepoPage = () => {
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [commitMessage, setCommitMessage] = useState("");
   const [committing, setCommitting] = useState(false);
+  const [navigationCounts, setNavigationCounts] = useState({ issues: 0, pulls: 0 });
 
   const visibleFiles = useMemo(() => snapshotState.files.filter((file) =>
     !isProtectedDisplayPath(file.path || file.filename)
@@ -97,6 +98,16 @@ const RepoPage = () => {
     Promise.resolve().then(() => fetchRepo(controller.signal));
     return () => controller.abort();
   }, [fetchRepo]);
+
+  useEffect(() => {
+    if (invalidRepositoryId) return undefined;
+    const controller = new AbortController();
+    Promise.all([
+      authenticatedFetch(`${API_BASE}/repo/${id}/issues?status=open&limit=1`, { signal: controller.signal }).then(async (response) => response.ok ? parseResponse(response) : {}),
+      authenticatedFetch(`${API_BASE}/repo/${id}/pulls?status=open&limit=1`, { signal: controller.signal }).then(async (response) => response.ok ? parseResponse(response) : {}),
+    ]).then(([issues, pulls]) => setNavigationCounts({ issues: issues.counts?.open || 0, pulls: pulls.pagination?.total || 0 })).catch(() => {});
+    return () => controller.abort();
+  }, [id, invalidRepositoryId]);
 
   useEffect(() => {
     if (invalidRepositoryId) return undefined;
@@ -344,11 +355,12 @@ const RepoPage = () => {
         <div className="repo-header">
           <h1>{repo.owner?.username && <span>{repo.owner.username} / </span>}{repo.name}</h1>
           <div className="repo-header__actions">
-            <Link className="push-btn repo-pulls-link" to={`/repo/${id}/pulls`}>Pull requests</Link>
             <label className="upload-btn">Upload Project Folder<input ref={folderInputRef} type="file" multiple hidden onChange={handleFileSelect} /></label>
             <button type="button" onClick={handleAddFiles} className="push-btn">Add Files</button>
           </div>
         </div>
+
+        <nav className="repo-tabs" aria-label="Repository sections"><Link className="active" to={`/repo/${id}`}>Code</Link><Link to={`/repo/${id}/issues`}>Issues <span>{navigationCounts.issues}</span></Link><Link to={`/repo/${id}/pulls`}>Pull requests <span>{navigationCounts.pulls}</span></Link></nav>
 
         <p className="repo-description">{repo.description || "No description"}</p>
         <p className="repo-visibility">Visibility: <strong>{repo.visibility === "public" ? "Public" : "Private"}</strong></p>

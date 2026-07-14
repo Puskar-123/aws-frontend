@@ -10,7 +10,7 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const Signup = () => {
   const navigate = useNavigate();
-  const { setCurrentUser } = useAuth();
+  const { login } = useAuth();
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -59,10 +59,9 @@ const Signup = () => {
         return;
       }
 
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("userId", data.userId);
-      setCurrentUser(data.userId);
-      navigate("/");
+      const valid = await login(data);
+      if (!valid) { setRequestError("The session could not be validated."); return; }
+      navigate("/dashboard", { replace: true });
     } catch {
       setRequestError("Unable to connect to the server. Please try again.");
     } finally {

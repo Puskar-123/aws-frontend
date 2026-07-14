@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../authContext";
 import { getResponseError, parseResponse } from "../../utils/api";
 import AuthLayout from "./AuthLayout";
@@ -8,7 +8,8 @@ import "./auth.css";
 
 const Login = () => {
   const navigate = useNavigate();
-  const { setCurrentUser } = useAuth();
+  const location = useLocation();
+  const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState({});
@@ -53,10 +54,10 @@ const Login = () => {
         return;
       }
 
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("userId", data.userId);
-      setCurrentUser(data.userId);
-      navigate("/dashboard");
+      const valid = await login(data);
+      if (!valid) { setRequestError("The session could not be validated."); return; }
+      const requested = location.state?.from;
+      navigate(typeof requested === "string" && requested.startsWith("/") && !requested.startsWith("//") ? requested : "/dashboard", { replace: true });
     } catch {
       setRequestError("Unable to connect to the server. Please try again.");
     } finally {

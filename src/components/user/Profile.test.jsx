@@ -37,8 +37,13 @@ const profileResponse = {
 const response = (body, ok = true, status = ok ? 200 : 500) => ({
   ok,
   status,
+  headers: { get: () => "application/json" },
+  json: vi.fn().mockResolvedValue(body),
   text: vi.fn().mockResolvedValue(JSON.stringify(body)),
 });
+
+const sessionResponse = () => response({ user: profileResponse.user });
+const isSessionRequest = (input) => String(input).endsWith("/user/session");
 
 const Location = () => <output data-testid="location">{useLocation().pathname}</output>;
 const renderProfile = () => render(
@@ -60,12 +65,15 @@ afterEach(() => {
 
 describe("Profile", () => {
   test("shows loading then renders real profile, stats, initials, and contributions", async () => {
-    let resolveFetch;
-    vi.spyOn(globalThis, "fetch").mockReturnValue(new Promise((resolve) => { resolveFetch = resolve; }));
+    let resolveProfile;
+    vi.spyOn(globalThis, "fetch").mockImplementation((input) => {
+      if (isSessionRequest(input)) return Promise.resolve(sessionResponse());
+      return new Promise((resolve) => { resolveProfile = resolve; });
+    });
     renderProfile();
-    expect(screen.getByText("Loading profile...")).toBeTruthy();
+    expect(await screen.findByText("Loading profile...")).toBeTruthy();
 
-    resolveFetch(response(profileResponse));
+    resolveProfile(response(profileResponse));
     expect(await screen.findByRole("heading", { name: "Puskar Porel" })).toBeTruthy();
     expect(screen.getByText("PP")).toBeTruthy();
     expect(screen.getByText("5 contributions in 2026")).toBeTruthy();
@@ -73,21 +81,31 @@ describe("Profile", () => {
   });
 
   test("renders a retryable error state", async () => {
-    const fetchMock = vi.spyOn(globalThis, "fetch")
-      .mockResolvedValueOnce(response({ error: "Profile unavailable" }, false, 500))
-      .mockResolvedValueOnce(response(profileResponse));
+    let profileCalls = 0;
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation((input) => {
+      if (isSessionRequest(input)) return Promise.resolve(sessionResponse());
+      profileCalls += 1;
+      return Promise.resolve(profileCalls === 1
+        ? response({ error: "Profile unavailable" }, false, 500)
+        : response(profileResponse));
+    });
     renderProfile();
     expect(await screen.findByText("Profile unavailable")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Retry" }));
     expect(await screen.findByRole("heading", { name: "Puskar Porel" })).toBeTruthy();
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock).toHaveBeenCalledTimes(3);
   });
 
   test("edit modal cancels safely, validates URLs, and saves allowed profile fields", async () => {
     const updatedUser = { ...profileResponse.user, name: "Updated Name" };
-    const fetchMock = vi.spyOn(globalThis, "fetch")
-      .mockResolvedValueOnce(response(profileResponse))
-      .mockResolvedValueOnce(response({ user: updatedUser }));
+    let profileCalls = 0;
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation((input) => {
+      if (isSessionRequest(input)) return Promise.resolve(sessionResponse());
+      profileCalls += 1;
+      return Promise.resolve(profileCalls === 1
+        ? response(profileResponse)
+        : response({ user: updatedUser }));
+    });
     renderProfile();
     await screen.findByRole("heading", { name: "Puskar Porel" });
 
@@ -100,17 +118,19 @@ describe("Profile", () => {
     fireEvent.change(screen.getByRole("textbox", { name: /Website/ }), { target: { value: "javascript:alert(1)" } });
     fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
     expect(await screen.findByText("Website must use http or https.")).toBeTruthy();
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
 
     fireEvent.change(screen.getByRole("textbox", { name: /Website/ }), { target: { value: "https://example.com" } });
     fireEvent.change(screen.getByLabelText(/Name/), { target: { value: "Updated Name" } });
     fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
     expect(await screen.findByRole("heading", { name: "Updated Name" })).toBeTruthy();
-    expect(fetchMock.mock.calls[1][1].method).toBe("PUT");
+    expect(fetchMock.mock.calls[2][1].method).toBe("PUT");
   });
 
   test("tabs search real repositories, show the stars empty state, navigate safely, and logout", async () => {
-    vi.spyOn(globalThis, "fetch").mockResolvedValue(response(profileResponse));
+    vi.spyOn(globalThis, "fetch").mockImplementation((input) => Promise.resolve(
+      isSessionRequest(input) ? sessionResponse() : response(profileResponse),
+    ));
     renderProfile();
     await screen.findByRole("heading", { name: "Puskar Porel" });
 

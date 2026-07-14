@@ -1,115 +1,39 @@
-import { Routes, Route, useNavigate } from "react-router-dom";
-
-import reactLogo from "./assets/react.svg";
-import viteLogo from "./assets/vite.svg";
-import heroImg from "./assets/hero.png";
-
-import "./App.css";
-
+import React from "react";
+import { Route, Routes } from "react-router-dom";
 import Login from "./components/auth/Login";
+import ProtectedRoute from "./components/auth/ProtectedRoute";
 import Signup from "./components/auth/Signup";
-import Dashboard from "./components/dashboard/Dashboard";
-import Profile from "./components/user/Profile";
-import Create from "./components/create/Create";
-import RepoPage from "./components/repo/RepoPage";
 import ComparePage from "./components/compare/ComparePage";
+import Create from "./components/create/Create";
+import Dashboard from "./components/dashboard/Dashboard";
+import Home from "./components/home/Home";
+import IssueList from "./components/issues/IssueList";
+import IssuePage from "./components/issues/IssuePage";
+import NewIssue from "./components/issues/NewIssue";
 import NewPullRequest from "./components/pulls/NewPullRequest";
 import PullRequestList from "./components/pulls/PullRequestList";
 import PullRequestPage from "./components/pulls/PullRequestPage";
+import RepoPage from "./components/repo/RepoPage";
+import Profile from "./components/user/Profile";
 
-function Home() {
-  const navigate = useNavigate();
+const protectedPage = (page) => <ProtectedRoute>{page}</ProtectedRoute>;
 
-  return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="" />
-          <img src={viteLogo} className="vite" alt="" />
-        </div>
-
-        <div>
-          <h1>CodeHub</h1>
-          <p>Own version control system</p>
-        </div>
-
-        <div style={{ marginTop: "20px" }}>
-          <button onClick={() => navigate("/login")}>Login</button>
-
-          <button
-            style={{ marginLeft: "10px" }}
-            onClick={() => navigate("/signup")}
-          >
-            Signup
-          </button>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <h2>Project</h2>
-          <p>CodeHub using MERN Stack</p>
-
-          <ul>
-            <li>Authentication (JWT)</li>
-            <li>Create repositories</li>
-            <li>Push / Pull simulation</li>
-            <li>User dashboard</li>
-          </ul>
-        </div>
-
-        <div id="social">
-          <h2>Tech Stack</h2>
-
-          <ul>
-            <li>React + Vite</li>
-            <li>Node.js + Express</li>
-            <li>MongoDB</li>
-            <li>JWT Authentication</li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  );
-}
-
-function App() {
-  return (
-    <Routes>
-      {/* Home */}
-      <Route path="/" element={<Home />} />
-
-      {/* Auth */}
-      <Route path="/login" element={<Login />} />
-      <Route path="/signup" element={<Signup />} />
-
-      {/* Main */}
-      <Route path="/dashboard" element={<Dashboard />} />
-      <Route path="/create" element={<Create />} />
-
-      {/* Profile */}
-      <Route path="/profile" element={<Profile />} />
-      <Route path="/profile/:id" element={<Profile />} />
-      {/* 🔥 Optional upgrade */}
-      {/* <Route path="/profile/:id" element={<Profile />} /> */}
-
-      {/* Repo */}
-      <Route path="/repo/:id/compare" element={<ComparePage />} />
-      <Route path="/repo/:id/pulls/new" element={<NewPullRequest />} />
-      <Route path="/repo/:id/pulls/:number" element={<PullRequestPage />} />
-      <Route path="/repo/:id/pulls" element={<PullRequestList />} />
-      <Route path="/repo/:id" element={<RepoPage />} />
-
-      {/* ❌ Removed duplicate/unused routes */}
-      {/* Repo component not needed now */}
-    </Routes>
-  );
-}
+const App = () => <Routes>
+  <Route path="/" element={<Home />} />
+  <Route path="/login" element={<Login />} />
+  <Route path="/signup" element={<Signup />} />
+  <Route path="/dashboard" element={protectedPage(<Dashboard />)} />
+  <Route path="/create" element={protectedPage(<Create />)} />
+  <Route path="/profile" element={protectedPage(<Profile />)} />
+  <Route path="/profile/:id" element={protectedPage(<Profile />)} />
+  <Route path="/repo/:id/compare" element={protectedPage(<ComparePage />)} />
+  <Route path="/repo/:id/pulls/new" element={protectedPage(<NewPullRequest />)} />
+  <Route path="/repo/:id/pulls/:number" element={protectedPage(<PullRequestPage />)} />
+  <Route path="/repo/:id/pulls" element={protectedPage(<PullRequestList />)} />
+  <Route path="/repo/:id/issues/new" element={protectedPage(<NewIssue />)} />
+  <Route path="/repo/:id/issues/:number" element={protectedPage(<IssuePage />)} />
+  <Route path="/repo/:id/issues" element={protectedPage(<IssueList />)} />
+  <Route path="/repo/:id" element={protectedPage(<RepoPage />)} />
+</Routes>;
 
 export default App;

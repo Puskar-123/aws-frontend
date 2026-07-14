@@ -23,7 +23,7 @@ const readResponse = async (response) => {
 const Profile = () => {
   const navigate = useNavigate();
   const { id: routeProfileId } = useParams();
-  const { currentUser, setCurrentUser } = useAuth();
+  const { currentUser, logout } = useAuth();
   const authenticatedUserId = currentUser || localStorage.getItem("userId");
   const profileUserId = routeProfileId || authenticatedUserId;
   const isOwner = Boolean(authenticatedUserId && String(authenticatedUserId) === String(profileUserId));
@@ -96,13 +96,6 @@ const Profile = () => {
     } finally {
       setSaving(false);
     }
-  };
-
-  const logout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("userId");
-    setCurrentUser(null);
-    navigate("/login");
   };
 
   if (!profileUserId || !/^[a-f\d]{24}$/i.test(String(profileUserId))) {
