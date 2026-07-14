@@ -60,7 +60,8 @@
 .dashboard-primary-button,
 .dashboard-secondary-button,
 .dashboard-text-button,
-.dashboard-card-action {
+.dashboard-open-button,
+.dashboard-delete-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -87,7 +88,7 @@
 .dashboard-primary-button:hover { background: #2ea043; }
 
 .dashboard-secondary-button,
-.dashboard-card-action,
+.dashboard-open-button,
 .dashboard-text-button {
   color: var(--dashboard-text);
   background: #21262d;
@@ -95,7 +96,7 @@
 }
 
 .dashboard-secondary-button:hover,
-.dashboard-card-action:hover,
+.dashboard-open-button:hover,
 .dashboard-text-button:hover { background: #30363d; }
 
 .dashboard-page a:focus-visible,
@@ -236,7 +237,36 @@
 .dashboard-repository-card__description { display: -webkit-box; margin: 13px 0; overflow: hidden; color: #c9d1d9; font-size: 13px; line-height: 1.45; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
 .dashboard-repository-card__meta { display: flex; flex-wrap: wrap; gap: 6px 12px; margin-top: auto; color: var(--dashboard-muted); font-size: 11px; }
 .dashboard-repository-card__meta span { display: inline-flex; align-items: center; gap: 4px; }
-.dashboard-card-action { align-self: flex-start; min-height: 30px; margin-top: 14px; padding: 4px 9px; font-size: 11px; }
+.dashboard-repository-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.dashboard-open-button,
+.dashboard-delete-button {
+  min-height: 30px;
+  padding: 4px 9px;
+  font-size: 11px;
+}
+
+.dashboard-delete-button {
+  color: var(--dashboard-red);
+  background: transparent;
+  border-color: rgba(248, 81, 73, 0.55);
+}
+
+.dashboard-delete-button:hover:not(:disabled) {
+  color: #ff7b72;
+  background: rgba(248, 81, 73, 0.12);
+  border-color: var(--dashboard-red);
+}
+
+.dashboard-delete-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
 
 .dashboard-state { display: flex; min-height: 310px; flex-direction: column; align-items: center; justify-content: center; padding: 30px; color: var(--dashboard-muted); text-align: center; border: 1px dashed var(--dashboard-border); border-radius: 7px; }
 .dashboard-state > svg { width: 30px; height: 30px; margin-bottom: 12px; }
@@ -291,4 +321,6 @@
   .dashboard-state { min-height: 270px; padding: 22px 14px; }
   .dashboard-state__actions { width: 100%; flex-direction: column; }
   .dashboard-state__actions > * { width: 100%; }
+  .dashboard-repository-actions { align-items: stretch; flex-direction: column; }
+  .dashboard-repository-actions > button { width: 100%; }
 }

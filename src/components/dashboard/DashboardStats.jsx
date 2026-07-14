@@ -1,19 +1,14 @@
 import React, { useMemo } from "react";
+import { calculateRepositoryStats } from "../../utils/repository";
 
 const DashboardStats = ({ repositories = [], loading = false }) => {
   const stats = useMemo(() => {
-    const publicCount = repositories.filter((repository) => repository.visibility !== "private").length;
+    const counts = calculateRepositoryStats(repositories);
     return [
-      { label: "Repositories", value: repositories.length },
-      { label: "Public", value: publicCount },
-      { label: "Private", value: repositories.length - publicCount },
-      {
-        label: "Commits",
-        value: repositories.reduce(
-          (total, repository) => total + (Array.isArray(repository.commits) ? repository.commits.length : 0),
-          0,
-        ),
-      },
+      { label: "Repositories", value: counts.total },
+      { label: "Public", value: counts.public },
+      { label: "Private", value: counts.private },
+      { label: "Commits", value: counts.commits },
     ];
   }, [repositories]);
 

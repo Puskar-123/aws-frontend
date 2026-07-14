@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "test": "node --test src/utils/buildFileTree.test.js src/utils/fileType.test.js && vitest run src/components/commit/CommitHistory.test.jsx",
+    "test": "node --test src/utils/buildFileTree.test.js src/utils/fileType.test.js src/utils/repository.test.js && vitest run src/components/commit/CommitHistory.test.jsx",
     "preview": "vite preview"
   },
   "dependencies": {

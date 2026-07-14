@@ -1,5 +1,6 @@
 import React from "react";
-import { FiFileText, FiGitCommit, FiLock, FiUnlock } from "react-icons/fi";
+import { FiExternalLink, FiFileText, FiGitCommit, FiLock, FiTrash2, FiUnlock } from "react-icons/fi";
+import { normalizeVisibility } from "../../utils/repository";
 
 const formatUpdatedDate = (value) => {
   if (!value) return "";
@@ -8,8 +9,8 @@ const formatUpdatedDate = (value) => {
   return new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(date);
 };
 
-const RepositoryCard = ({ repository, onOpen }) => {
-  const visibility = repository.visibility === "private" ? "Private" : "Public";
+const RepositoryCard = ({ repository, deleting = false, onOpen, onDelete }) => {
+  const visibility = normalizeVisibility(repository.visibility) === "private" ? "Private" : "Public";
   const fileCount = Array.isArray(repository.content) ? repository.content.length : null;
   const commitCount = Array.isArray(repository.commits) ? repository.commits.length : null;
   const updatedAt = formatUpdatedDate(repository.updatedAt);
@@ -33,9 +34,25 @@ const RepositoryCard = ({ repository, onOpen }) => {
         {commitCount !== null && <span><FiGitCommit aria-hidden="true" />{commitCount} commits</span>}
         {updatedAt && <span>Updated {updatedAt}</span>}
       </div>
-      <button type="button" className="dashboard-card-action" onClick={() => onOpen(repository)}>
-        Open repository
-      </button>
+      <div className="dashboard-repository-actions">
+        <button type="button" className="dashboard-open-button" onClick={() => onOpen(repository)}>
+          <FiExternalLink aria-hidden="true" />
+          Open repository
+        </button>
+        <button
+          type="button"
+          className="dashboard-delete-button"
+          disabled={deleting}
+          aria-label={`Delete ${repository.name || "repository"}`}
+          onClick={(event) => {
+            event.stopPropagation();
+            onDelete(repository);
+          }}
+        >
+          <FiTrash2 aria-hidden="true" />
+          {deleting ? "Deleting..." : "Delete"}
+        </button>
+      </div>
     </article>
   );
 };

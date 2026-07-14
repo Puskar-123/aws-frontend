@@ -2,8 +2,18 @@ import React from "react";
 import { FiBook, FiPlus } from "react-icons/fi";
 import { Link } from "react-router-dom";
 import RepositoryCard from "./RepositoryCard";
+import { getRepositoryId } from "../../utils/repository";
 
-const RepositoryGrid = ({ repositories, loading, error, hasFilters, onOpen, onRetry }) => {
+const RepositoryGrid = ({
+  repositories,
+  loading,
+  error,
+  hasFilters,
+  deletingRepoId,
+  onOpen,
+  onDelete,
+  onRetry,
+}) => {
   if (loading) {
     return (
       <div className="dashboard-repository-grid" role="status" aria-label="Loading repositories">
@@ -43,8 +53,16 @@ const RepositoryGrid = ({ repositories, loading, error, hasFilters, onOpen, onRe
   return (
     <div className="dashboard-repository-grid">
       {repositories.map((repository) => {
-        const repoId = repository._id || repository.id;
-        return <RepositoryCard key={repoId || `missing-${repository.name}`} repository={repository} onOpen={onOpen} />;
+        const repoId = getRepositoryId(repository);
+        return (
+          <RepositoryCard
+            key={repoId || `missing-${repository.name}`}
+            repository={repository}
+            deleting={repoId !== null && String(deletingRepoId) === String(repoId)}
+            onOpen={onOpen}
+            onDelete={onDelete}
+          />
+        );
       })}
     </div>
   );

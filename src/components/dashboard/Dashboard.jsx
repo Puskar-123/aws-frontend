@@ -1,6 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { FiBookOpen, FiSearch } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
+import {
+  filterRepositories,
+  getRepositoryId,
+  normalizeVisibility,
+  removeRepositoryById,
+} from "../../utils/repository";
 import Navbar from "../Navbar";
 import DashboardHeader from "./DashboardHeader";
 import DashboardStats from "./DashboardStats";
@@ -11,19 +17,42 @@ import "./dashboard.css";
 const API_BASE = "https://api.codehub.sbs";
 
 const readRepositories = (data) => {
-  const repositories = data?.repositories || data;
-  return Array.isArray(repositories) ? repositories : [];
+  if (Array.isArray(data)) return data;
+  return Array.isArray(data?.repositories) ? data.repositories : [];
+};
+
+const readResponseSafely = async (response) => {
+  const text = await response.text();
+  if (!text) return {};
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { error: text };
+  }
+};
+
+const deleteErrorMessage = (status, data) => {
+  if (data?.error || data?.message) return data.error || data.message;
+  const messages = {
+    400: "The repository ID is invalid.",
+    401: "Please sign in again before deleting this repository.",
+    403: "You are not allowed to delete this repository.",
+    404: "The repository could not be found.",
+  };
+  return messages[status] || "Unable to delete the repository. Please try again.";
 };
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const userId = localStorage.getItem("userId");
   const [repositories, setRepositories] = useState([]);
-  const [suggestedRepositories, setSuggestedRepositories] = useState([]);
+  const [exploreRepositories, setExploreRepositories] = useState([]);
   const [username, setUsername] = useState("Developer");
   const [searchQuery, setSearchQuery] = useState("");
   const [visibility, setVisibility] = useState("all");
   const [status, setStatus] = useState("loading");
+  const [deletingRepoId, setDeletingRepoId] = useState(null);
+  const deleteInFlightRef = React.useRef(false);
 
   const fetchRepositories = useCallback(async () => {
     if (!userId) {
@@ -65,7 +94,7 @@ const Dashboard = () => {
       }
 
       if (suggestionsResult.status === "fulfilled" && suggestionsResult.value.ok) {
-        setSuggestedRepositories(readRepositories(await suggestionsResult.value.json()));
+        setExploreRepositories(readRepositories(await suggestionsResult.value.json()));
       }
     };
 
@@ -76,38 +105,69 @@ const Dashboard = () => {
     return () => window.clearTimeout(repositoryRequest);
   }, [fetchRepositories, userId]);
 
-  const filteredRepositories = useMemo(() => {
-    const normalizedQuery = searchQuery.trim().toLowerCase();
-    return repositories.filter((repository) => {
-      const matchesQuery = !normalizedQuery
-        || repository.name?.toLowerCase().includes(normalizedQuery)
-        || repository.description?.toLowerCase().includes(normalizedQuery);
-      const matchesVisibility = visibility === "all"
-        || (repository.visibility || "public").toLowerCase() === visibility;
-      return matchesQuery && matchesVisibility;
-    });
-  }, [repositories, searchQuery, visibility]);
+  const filteredRepositories = useMemo(
+    () => filterRepositories(repositories, searchQuery, visibility),
+    [repositories, searchQuery, visibility],
+  );
 
   const repositoryIds = useMemo(
-    () => new Set(repositories.map((repository) => repository._id || repository.id).filter(Boolean)),
+    () => new Set(repositories.map(getRepositoryId).filter(Boolean).map(String)),
     [repositories],
   );
   const publicSuggestions = useMemo(
-    () => suggestedRepositories.filter((repository) => {
-      const repositoryId = repository._id || repository.id;
-      return repositoryId && !repositoryIds.has(repositoryId) && repository.visibility !== "private";
+    () => exploreRepositories.filter((repository) => {
+      const repositoryId = getRepositoryId(repository);
+      return repositoryId
+        && !repositoryIds.has(String(repositoryId))
+        && normalizeVisibility(repository.visibility) === "public";
     }).slice(0, 4),
-    [repositoryIds, suggestedRepositories],
+    [exploreRepositories, repositoryIds],
   );
 
   const openRepository = useCallback((repository) => {
-    const repoId = repository?._id || repository?.id;
+    const repoId = getRepositoryId(repository);
     if (!repoId) {
       console.error("Repository ID missing", repository);
       return;
     }
     navigate(`/repo/${repoId}`);
   }, [navigate]);
+
+  const deleteRepository = useCallback(async (repository) => {
+    const repositoryId = getRepositoryId(repository);
+    if (!repositoryId) {
+      console.error("Repository ID missing", repository);
+      window.alert("This repository cannot be deleted because its ID is missing.");
+      return;
+    }
+    if (deleteInFlightRef.current) return;
+
+    const confirmed = window.confirm(
+      `Delete "${repository.name || "Untitled repository"}"?\n\nThis action cannot be undone.`,
+    );
+    if (!confirmed) return;
+
+    deleteInFlightRef.current = true;
+    setDeletingRepoId(repositoryId);
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`${API_BASE}/repo/delete/${repositoryId}`, {
+        method: "DELETE",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      const data = await readResponseSafely(response);
+      if (!response.ok) throw new Error(deleteErrorMessage(response.status, data));
+
+      setRepositories((current) => removeRepositoryById(current, repositoryId));
+      window.alert(data.message || `Repository "${repository.name}" deleted.`);
+    } catch (error) {
+      console.error("Repository deletion failed:", error);
+      window.alert(error.message || "Unable to delete the repository. Please try again.");
+    } finally {
+      deleteInFlightRef.current = false;
+      setDeletingRepoId(null);
+    }
+  }, []);
 
   return (
     <div className="dashboard-page">
@@ -160,6 +220,8 @@ const Dashboard = () => {
               error={status === "error"}
               hasFilters={Boolean(searchQuery.trim()) || visibility !== "all"}
               onOpen={openRepository}
+              onDelete={deleteRepository}
+              deletingRepoId={deletingRepoId}
               onRetry={fetchRepositories}
             />
           </main>
@@ -174,7 +236,7 @@ const Dashboard = () => {
               {publicSuggestions.length > 0 ? (
                 <ul className="dashboard-suggestion-list">
                   {publicSuggestions.map((repository) => {
-                    const repoId = repository._id || repository.id;
+                    const repoId = getRepositoryId(repository);
                     const owner = repository.owner?.username || repository.owner?.name;
                     return (
                       <li key={repoId}>
