@@ -1,19 +1,22 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import { authenticatedFetch, getAuthToken, getResponseError, parseResponse } from "../../utils/api";
 import CompareCommits from "../compare/CompareCommits";
-import CompareFiles from "../compare/CompareFiles";
 import Navbar from "../Navbar";
 import PullRequestConversation from "./PullRequestConversation";
 import PullRequestHeader from "./PullRequestHeader";
 import PullRequestTabs from "./PullRequestTabs";
+import PullRequestFiles from "./PullRequestFiles";
 import "./pulls.css";
 
 const API_BASE = "https://api.codehub.sbs";
 
 const PullRequestPage = () => {
   const { id, number } = useParams();
-  const [active, setActive] = useState("conversation");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const requestedTab = searchParams.get("tab");
+  const active = ["conversation", "commits", "files"].includes(requestedTab) ? requestedTab : "conversation";
+  const setActive = (tab) => setSearchParams(tab === "conversation" ? {} : { tab });
   const [state, setState] = useState({ loading: true, error: "", data: null });
   const load = useCallback(async (signal) => {
     const token = getAuthToken();
@@ -46,9 +49,9 @@ const PullRequestPage = () => {
     {historicalUnavailable && <div className="pull-warning">Historical comparison unavailable for this legacy pull request.</div>}
     <PullRequestTabs active={active} onChange={setActive} commits={commits.length} files={files.length} unavailable={historicalUnavailable} />
     <div role="tabpanel">
-      {active === "conversation" && <PullRequestConversation repositoryId={id} pullRequest={pullRequest} mergeability={mergeability} permissions={permissions} reviewSummary={reviewSummary} onComment={(comment) => setState((current) => ({ ...current, data: { ...current.data, pullRequest: { ...current.data.pullRequest, comments: [...current.data.pullRequest.comments, comment] } } }))} onReview={() => load()} onMerge={() => action("merge")} onClose={() => action("close")} onReopen={() => action("reopen")} />}
+      {active === "conversation" && <PullRequestConversation repositoryId={id} pullRequest={pullRequest} mergeability={mergeability} permissions={permissions} reviewSummary={reviewSummary} currentHead={comparison?.compare?.head || ""} onComment={(comment) => setState((current) => ({ ...current, data: { ...current.data, pullRequest: { ...current.data.pullRequest, comments: [...current.data.pullRequest.comments, comment] } } }))} onReview={() => load()} onMerge={() => action("merge")} onClose={() => action("close")} onReopen={() => action("reopen")} />}
       {active === "commits" && (historicalUnavailable ? <div className="pull-state">Historical commits are unavailable.</div> : <CompareCommits commits={commits} />)}
-      {active === "files" && (historicalUnavailable ? <div className="pull-state">Historical file changes are unavailable.</div> : <CompareFiles files={files} summary={comparison?.summary || {}} repositoryId={id} base={pullRequest.baseBranch} compare={pullRequest.compareBranch} />)}
+      {active === "files" && (historicalUnavailable ? <div className="pull-state">Historical file changes are unavailable.</div> : <PullRequestFiles repositoryId={id} pullRequest={pullRequest} permissions={permissions} initialFiles={files} initialSummary={comparison?.summary || {}} onReview={() => load()} />)}
     </div>
   </main></div>;
 };

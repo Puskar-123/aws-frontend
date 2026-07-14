@@ -3,7 +3,7 @@ import { authenticatedFetch, getResponseError, parseResponse } from "../../utils
 
 const API_BASE = "https://api.codehub.sbs";
 
-const PullRequestReviewForm = ({ repositoryId, number, canDecide, isAuthor, onCreated }) => {
+const PullRequestReviewForm = ({ repositoryId, number, canDecide, isAuthor, currentHead, onCreated }) => {
   const [decision, setDecision] = useState("commented");
   const [body, setBody] = useState("");
   const [state, setState] = useState({ submitting: false, error: "" });
@@ -12,7 +12,7 @@ const PullRequestReviewForm = ({ repositoryId, number, canDecide, isAuthor, onCr
     if (decision !== "approved" && !body.trim()) { setState({ submitting: false, error: "Review text is required for this decision." }); return; }
     setState({ submitting: true, error: "" });
     try {
-      const response = await authenticatedFetch(`${API_BASE}/repo/${repositoryId}/pulls/${number}/reviews`, { method: "POST", body: JSON.stringify({ decision, body: body.trim() }) });
+      const response = await authenticatedFetch(`${API_BASE}/repo/${repositoryId}/pulls/${number}/reviews`, { method: "POST", body: JSON.stringify({ state: decision, body: body.trim(), reviewedCommit: currentHead }) });
       const data = await parseResponse(response);
       if (!response.ok) throw new Error(getResponseError(data, "Unable to submit review"));
       setBody("");
@@ -27,7 +27,7 @@ const PullRequestReviewForm = ({ repositoryId, number, canDecide, isAuthor, onCr
     <fieldset><legend>Decision</legend>
       <label><input type="radio" name="review-decision" value="commented" checked={decision === "commented"} onChange={(event) => setDecision(event.target.value)} /> Comment</label>
       <label title={!canDecide ? "Only the repository owner can approve" : isAuthor ? "You cannot approve your own pull request" : ""}><input type="radio" name="review-decision" value="approved" checked={decision === "approved"} disabled={!canDecide || isAuthor} onChange={(event) => setDecision(event.target.value)} /> Approve</label>
-      <label title={!canDecide ? "Only the repository owner can request changes" : ""}><input type="radio" name="review-decision" value="changes_requested" checked={decision === "changes_requested"} disabled={!canDecide} onChange={(event) => setDecision(event.target.value)} /> Request changes</label>
+      <label title={!canDecide ? "You do not have review permission" : isAuthor ? "You cannot request changes on your own pull request" : ""}><input type="radio" name="review-decision" value="changes_requested" checked={decision === "changes_requested"} disabled={!canDecide || isAuthor} onChange={(event) => setDecision(event.target.value)} /> Request changes</label>
     </fieldset>
     {state.error && <div className="pull-error" role="alert">{state.error}</div>}
     <button className="pull-primary" disabled={state.submitting}>{state.submitting ? "Submitting..." : "Submit review"}</button>
