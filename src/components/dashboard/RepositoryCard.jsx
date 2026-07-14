@@ -1,5 +1,5 @@
 import React from "react";
-import { FiExternalLink, FiFileText, FiGitCommit, FiLock, FiTrash2, FiUnlock } from "react-icons/fi";
+import { FiExternalLink, FiFileText, FiGitBranch, FiGitCommit, FiLock, FiTrash2, FiUnlock } from "react-icons/fi";
 import { normalizeVisibility } from "../../utils/repository";
 
 const formatUpdatedDate = (value) => {
@@ -21,10 +21,10 @@ const RepositoryCard = ({ repository, deleting = false, onOpen, onDelete }) => {
         <button type="button" className="dashboard-repository-card__name" onClick={() => onOpen(repository)}>
           {repository.name || "Untitled repository"}
         </button>
-        <span className={`dashboard-badge dashboard-badge--${visibility.toLowerCase()}`}>
+        <div className="dashboard-repository-card__badges">{repository.forkedFrom && <span className="dashboard-badge"><FiGitBranch aria-hidden="true" />Fork</span>}<span className={`dashboard-badge dashboard-badge--${visibility.toLowerCase()}`}>
           {visibility === "Private" ? <FiLock aria-hidden="true" /> : <FiUnlock aria-hidden="true" />}
           {visibility}
-        </span>
+        </span></div>
       </div>
       <p className="dashboard-repository-card__description">
         {repository.description || "No description"}

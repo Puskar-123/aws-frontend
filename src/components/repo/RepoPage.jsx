@@ -7,6 +7,7 @@ import CommitHistory from "../commit/CommitHistory";
 import Navbar from "../Navbar";
 import RepositoryBrowser from "../repository/RepositoryBrowser";
 import BranchToolbar from "./BranchToolbar";
+import RepositorySocialActions from "./RepositorySocialActions";
 import { resolveAuthenticatedUserId, resolveRepositoryOwnerId } from "./branchUtils";
 import "./repo.css";
 import "./branch.css";
@@ -358,10 +359,12 @@ const RepoPage = () => {
             <span className="repo-title__name">{repo.name}</span>
           </h1>
           <div className="repo-header__actions">
+            <RepositorySocialActions repository={repo} onForked={(repositoryId) => navigate(`/repo/${repositoryId}`)} />
             <label className="upload-btn">Upload Project Folder<input ref={folderInputRef} type="file" multiple hidden onChange={handleFileSelect} /></label>
             <button type="button" onClick={handleAddFiles} className="push-btn">Add Files</button>
           </div>
         </div>
+        {repo.forkedFrom && <p className="repo-fork-source">forked from <Link to={`/repo/${repo.forkedFrom._id}`}>{repo.forkedFrom.owner?.username ? `${repo.forkedFrom.owner.username} / ` : ""}{repo.forkedFrom.name || "Deleted repository"}</Link></p>}
 
         <nav className="repo-tabs" aria-label="Repository sections"><Link className="active" to={`/repo/${id}`}>Code</Link><Link to={`/repo/${id}/issues`}>Issues <span>{navigationCounts.issues}</span></Link><Link to={`/repo/${id}/pulls`}>Pull requests <span>{navigationCounts.pulls}</span></Link></nav>
 

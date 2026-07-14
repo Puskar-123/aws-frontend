@@ -217,6 +217,7 @@
 }
 .dashboard-repository-card:hover { background: var(--dashboard-panel-hover); border-color: #484f58; }
 .dashboard-repository-card__topline { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.dashboard-repository-card__badges { display: flex; flex: 0 0 auto; flex-wrap: wrap; justify-content: flex-end; gap: 5px; }
 .dashboard-repository-card__name {
   min-width: 0;
   padding: 0;

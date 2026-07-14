@@ -148,4 +148,11 @@ describe("Profile", () => {
     await waitFor(() => expect(localStorage.getItem("userId")).toBeNull());
     expect(screen.getByTestId("location").textContent).toBe("/login");
   });
+
+  test("Stars tab renders real owner, star, and fork metadata", async () => {
+    const starred = { ...profileResponse, starredRepositories: [{ _id: "starred-1", name: "Library", owner: { username: "ananya" }, description: "Shared tools", visibility: "public", starCount: 12, forkCount: 3, updatedAt: "2026-07-14T10:00:00.000Z" }] };
+    vi.spyOn(globalThis, "fetch").mockImplementation((input) => Promise.resolve(isSessionRequest(input) ? sessionResponse() : response(starred)));
+    renderProfile(); await screen.findByRole("heading", { name: "Puskar Porel" }); fireEvent.click(screen.getByRole("button", { name: /Stars/ }));
+    expect(screen.getByRole("button", { name: "ananya / Library" })).toBeTruthy(); expect(screen.getByText("12 stars")).toBeTruthy(); expect(screen.getByText("3 forks")).toBeTruthy();
+  });
 });
