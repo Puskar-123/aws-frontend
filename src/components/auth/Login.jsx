@@ -6,6 +6,12 @@ import AuthLayout from "./AuthLayout";
 import PasswordInput from "./PasswordInput";
 import "./auth.css";
 
+export const safeReturnPath = (value) => (
+  typeof value === "string" && value.startsWith("/") && !value.startsWith("//")
+    ? value
+    : "/dashboard"
+);
+
 const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -56,8 +62,7 @@ const Login = () => {
 
       const valid = await login(data);
       if (!valid) { setRequestError("The session could not be validated."); return; }
-      const requested = location.state?.from;
-      navigate(typeof requested === "string" && requested.startsWith("/") && !requested.startsWith("//") ? requested : "/dashboard", { replace: true });
+      navigate(safeReturnPath(location.state?.from), { replace: true });
     } catch {
       setRequestError("Unable to connect to the server. Please try again.");
     } finally {

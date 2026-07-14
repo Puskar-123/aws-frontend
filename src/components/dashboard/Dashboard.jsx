@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { FiBookOpen, FiSearch } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
+import { authenticatedFetch, parseResponse } from "../../utils/api";
 import {
   filterRepositories,
   getRepositoryId,
@@ -19,16 +20,6 @@ const API_BASE = "https://api.codehub.sbs";
 const readRepositories = (data) => {
   if (Array.isArray(data)) return data;
   return Array.isArray(data?.repositories) ? data.repositories : [];
-};
-
-const readResponseSafely = async (response) => {
-  const text = await response.text();
-  if (!text) return {};
-  try {
-    return JSON.parse(text);
-  } catch {
-    return { error: text };
-  }
 };
 
 const deleteErrorMessage = (status, data) => {
@@ -62,14 +53,14 @@ const Dashboard = () => {
 
     setStatus("loading");
     try {
-      const response = await fetch(`${API_BASE}/repo/user/${userId}`);
+      const response = await authenticatedFetch(`${API_BASE}/repo/user/${userId}`);
       if (response.status === 404) {
         setRepositories([]);
         setStatus("ready");
         return;
       }
       if (!response.ok) throw new Error("Failed to fetch repositories");
-      setRepositories(readRepositories(await response.json()));
+      setRepositories(readRepositories(await parseResponse(response)));
       setStatus("ready");
     } catch (error) {
       console.error("Error fetching repositories:", error);
@@ -84,18 +75,18 @@ const Dashboard = () => {
     if (!userId) return () => window.clearTimeout(repositoryRequest);
     const loadSupportingData = async () => {
       const [profileResult, suggestionsResult] = await Promise.allSettled([
-        fetch(`${API_BASE}/user/profile/${userId}`),
-        fetch(`${API_BASE}/repo/all`),
+        authenticatedFetch(`${API_BASE}/user/profile/${userId}`),
+        authenticatedFetch(`${API_BASE}/repo/all`),
       ]);
 
       if (profileResult.status === "fulfilled" && profileResult.value.ok) {
-        const profile = await profileResult.value.json();
+        const profile = await parseResponse(profileResult.value);
         const profileUsername = profile?.user?.username || profile?.username;
         if (profileUsername) setUsername(profileUsername);
       }
 
       if (suggestionsResult.status === "fulfilled" && suggestionsResult.value.ok) {
-        setExploreRepositories(readRepositories(await suggestionsResult.value.json()));
+        setExploreRepositories(readRepositories(await parseResponse(suggestionsResult.value)));
       }
     };
 
@@ -151,12 +142,10 @@ const Dashboard = () => {
     deleteInFlightRef.current = true;
     setDeletingRepoId(repositoryId);
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(`${API_BASE}/repo/delete/${repositoryId}`, {
+      const response = await authenticatedFetch(`${API_BASE}/repo/delete/${repositoryId}`, {
         method: "DELETE",
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
-      const data = await readResponseSafely(response);
+      const data = await parseResponse(response);
       if (!response.ok) throw new Error(deleteErrorMessage(response.status, data));
 
       setRepositories((current) => removeRepositoryById(current, repositoryId));
