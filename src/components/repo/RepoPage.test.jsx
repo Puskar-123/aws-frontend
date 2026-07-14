@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import React from "react";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { MemoryRouter, Route, Routes } from "react-router-dom";
+import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import RepoPage from "./RepoPage";
 
@@ -16,9 +16,11 @@ const jsonResponse = (body, status = 200) => ({
   text: vi.fn().mockResolvedValue(JSON.stringify(body)),
 });
 
+const LocationState = () => <output data-testid="location-search">{useLocation().search}</output>;
+
 const renderPage = (entry = `/repo/${repositoryId}`) => render(
   <MemoryRouter initialEntries={[entry]}>
-    <Routes><Route path="/repo/:id" element={<RepoPage />} /></Routes>
+    <Routes><Route path="/repo/:id" element={<><RepoPage /><LocationState /></>} /></Routes>
   </MemoryRouter>,
 );
 
@@ -74,5 +76,39 @@ describe("RepoPage branch integration", () => {
     expect(await screen.findByText("This branch has no files")).toBeTruthy();
     expect(await screen.findByText("No commits on this branch yet")).toBeTruthy();
     expect(screen.getByRole("button", { name: /empty/i })).toBeTruthy();
+  });
+
+  test("ownerId fallback creates, selects, and loads a slash-named branch without navigation", async () => {
+    const calls = [];
+    vi.spyOn(globalThis, "fetch").mockImplementation((url, options = {}) => {
+      const value = String(url);
+      calls.push({ url: value, method: options.method || "GET" });
+      if (value.endsWith(`/repo/${repositoryId}`)) return Promise.resolve(jsonResponse({ _id: repositoryId, name: "project", ownerId, visibility: "public" }));
+      if (value.endsWith(`/repo/${repositoryId}/branches`) && options.method === "POST") {
+        return Promise.resolve(jsonResponse({ branch: { name: "feature/test", head: "m1", isDefault: false, commitCount: 1 } }, 201));
+      }
+      if (value.endsWith(`/repo/${repositoryId}/branches`)) return Promise.resolve(jsonResponse({ defaultBranch: "main", branches: [{ name: "main", isDefault: true, commitCount: 1 }] }));
+      if (value.includes("/branches/main/snapshot")) return Promise.resolve(jsonResponse({ files: [{ filename: "README.md", path: "README.md" }] }));
+      if (value.includes("/branches/main/history")) return Promise.resolve(jsonResponse({ commits: [{ hash: "m1", message: "Initial", author: { name: "Dev" } }] }));
+      if (value.includes("/branches/feature%2Ftest/snapshot")) return Promise.resolve(jsonResponse({ files: [{ filename: "feature.js", path: "src/feature.js" }] }));
+      if (value.includes("/branches/feature%2Ftest/history")) return Promise.resolve(jsonResponse({ commits: [{ hash: "m1", message: "Initial", author: { name: "Dev" } }] }));
+      return Promise.resolve(jsonResponse({ error: `Unexpected URL ${value}` }, 500));
+    });
+
+    renderPage();
+    expect((await screen.findAllByText("README.md")).length).toBeGreaterThan(0);
+    fireEvent.click(screen.getByRole("button", { name: /main/i }));
+    fireEvent.click(screen.getByRole("button", { name: /new branch/i }));
+    expect(screen.getByLabelText("Source branch").value).toBe("main");
+    fireEvent.change(screen.getByLabelText("Branch name"), { target: { value: "feature/test" } });
+    fireEvent.click(screen.getByRole("button", { name: /^create branch$/i }));
+
+    expect((await screen.findAllByText("feature.js")).length).toBeGreaterThan(0);
+    expect(screen.getByTestId("location-search").textContent).toContain("branch=feature%2Ftest");
+    expect(screen.getByText("2")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Compare" }).disabled).toBe(false);
+    expect(calls.filter((call) => call.method === "POST" && call.url.endsWith(`/repo/${repositoryId}/branches`))).toHaveLength(1);
+    expect(calls.filter((call) => call.url.includes("/branches/feature%2Ftest/snapshot"))).toHaveLength(1);
+    expect(calls.filter((call) => call.url.includes("/branches/feature%2Ftest/history"))).toHaveLength(1);
   });
 });

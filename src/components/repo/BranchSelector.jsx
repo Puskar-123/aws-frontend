@@ -114,8 +114,8 @@ const BranchSelector = ({
                 className="branch-create-action"
                 onClick={() => { setOpen(false); onCreate(); }}
               >
-                <span aria-hidden="true">+</span>
-                New branch
+                <span className="branch-create-icon" aria-hidden="true">+</span>
+                <span>New branch</span>
               </button>
             </div>
           )}

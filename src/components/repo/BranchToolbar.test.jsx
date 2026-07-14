@@ -3,7 +3,7 @@ import React from "react";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import BranchToolbar from "./BranchToolbar";
-import { normalizeId } from "./branchUtils";
+import { normalizeId, resolveAuthenticatedUserId, resolveRepositoryOwnerId } from "./branchUtils";
 
 const branches = [
   { name: "main", isDefault: true, commitCount: 3 },
@@ -34,6 +34,12 @@ describe("BranchToolbar", () => {
     expect(normalizeId({ id: "owner-id" })).toBe("owner-id");
     expect(normalizeId({ _id: { $oid: "owner-id" } })).toBe("owner-id");
     expect(normalizeId({ username: "developer" })).toBe("");
+    expect(resolveAuthenticatedUserId({ user: { _id: "owner-id" } }, "fallback-id")).toBe("owner-id");
+    expect(resolveAuthenticatedUserId(null, "owner-id")).toBe("owner-id");
+    expect(resolveRepositoryOwnerId({ owner: { _id: "owner-id" } })).toBe("owner-id");
+    expect(resolveRepositoryOwnerId({ ownerId: "owner-id" })).toBe("owner-id");
+    expect(resolveRepositoryOwnerId({ userId: "owner-id" })).toBe("owner-id");
+    expect(resolveRepositoryOwnerId({})).toBe("");
   });
 
   test("shows the active branch, counts, default badge, and protected delete actions", () => {
@@ -73,6 +79,31 @@ describe("BranchToolbar", () => {
     expect(screen.getByRole("button", { name: /new branch/i }).className).toBe("branch-create-action");
     rerender(<BranchToolbar {...props({ canManageBranches: false })} />);
     expect(screen.queryByRole("button", { name: /new branch/i })).toBeNull();
+  });
+
+  test("keeps the create footer separate from a long scrollable branch list", () => {
+    const manyBranches = Array.from({ length: 40 }, (_, index) => ({
+      name: index === 0 ? "main" : `feature/${index}`,
+      isDefault: index === 0,
+    }));
+    render(<BranchToolbar {...props({ branches: manyBranches })} />);
+    fireEvent.click(screen.getByRole("button", { name: /main/i }));
+    const action = screen.getByRole("button", { name: /new branch/i });
+    expect(action.closest(".branch-create-section")).toBeTruthy();
+    expect(action.closest(".repo-branch-list")).toBeNull();
+  });
+
+  test("shows duplicate and API authorization failures inline", async () => {
+    const onCreate = vi.fn().mockRejectedValue(new Error("You do not have access to this repository"));
+    render(<BranchToolbar {...props({ onCreate })} />);
+    fireEvent.click(screen.getByRole("button", { name: /main/i }));
+    fireEvent.click(screen.getByRole("button", { name: /new branch/i }));
+    fireEvent.change(screen.getByLabelText("Branch name"), { target: { value: "main" } });
+    fireEvent.click(screen.getByRole("button", { name: /^create branch$/i }));
+    expect(screen.getByRole("alert").textContent).toContain("already exists");
+    fireEvent.change(screen.getByLabelText("Branch name"), { target: { value: "feature/denied" } });
+    fireEvent.click(screen.getByRole("button", { name: /^create branch$/i }));
+    expect(await screen.findByText("You do not have access to this repository")).toBeTruthy();
   });
 
   test("requires confirmation before deleting a non-selected branch", async () => {

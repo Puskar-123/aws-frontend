@@ -6,9 +6,21 @@ export const normalizeId = (value) => {
   if (typeof value === "number" || typeof value === "bigint") return String(value);
   if (typeof value !== "object") return "";
 
-  const nestedId = value._id ?? value.id ?? value.$oid;
+  const nestedId = value._id ?? value.id ?? value.userId ?? value.ownerId ?? value.$oid;
   return nestedId && nestedId !== value ? normalizeId(nestedId) : "";
 };
+
+export const resolveAuthenticatedUserId = (authUser, storedUserId) => normalizeId(
+  authUser?.user?._id
+  ?? authUser?.user?.id
+  ?? authUser?.user
+  ?? authUser
+) || normalizeId(storedUserId);
+
+export const resolveRepositoryOwnerId = (repository) => normalizeId(repository?.owner)
+  || normalizeId(repository?.ownerId)
+  || normalizeId(repository?.userId)
+  || normalizeId(repository?.createdBy);
 
 export const validateBranchName = (value) => {
   const name = value.trim();

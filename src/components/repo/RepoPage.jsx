@@ -1,12 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useAuth } from "../../authContext";
 import { getResponseError, parseResponse } from "../../utils/api";
 import { encodeRepoPath, normalizeRepoPath } from "../../utils/repoPath";
 import CommitHistory from "../commit/CommitHistory";
 import Navbar from "../Navbar";
 import RepositoryBrowser from "../repository/RepositoryBrowser";
 import BranchToolbar from "./BranchToolbar";
-import { normalizeId } from "./branchUtils";
+import { resolveAuthenticatedUserId, resolveRepositoryOwnerId } from "./branchUtils";
 import "./repo.css";
 import "./branch.css";
 
@@ -33,6 +34,7 @@ const isProtectedDisplayPath = (filePath) => {
 
 const RepoPage = () => {
   const { id } = useParams();
+  const authUser = useAuth()?.currentUser;
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const initialBranch = useRef(searchParams.get("branch") || "");
@@ -59,8 +61,8 @@ const RepoPage = () => {
   const visibleFiles = useMemo(() => snapshotState.files.filter((file) =>
     !isProtectedDisplayPath(file.path || file.filename)
   ), [snapshotState.files]);
-  const loggedInUserId = normalizeId(localStorage.getItem("userId"));
-  const repositoryOwnerId = normalizeId(repo?.owner || repo?.ownerId || repo?.userId);
+  const loggedInUserId = resolveAuthenticatedUserId(authUser, localStorage.getItem("userId"));
+  const repositoryOwnerId = resolveRepositoryOwnerId(repo);
   const canManageBranches = Boolean(loggedInUserId)
     && Boolean(repositoryOwnerId)
     && loggedInUserId === repositoryOwnerId;
@@ -185,10 +187,18 @@ const RepoPage = () => {
       body: JSON.stringify({ name, sourceBranch }),
     });
     const data = await requestData(response, "Unable to create branch");
-    const branch = data.branch;
-    setBranches((current) => [...current, branch]);
-    setBranchMessage(`Created branch ${branch.name}.`);
-    setSelectedBranch(branch.name);
+    const returnedBranch = data.branch;
+    const branchName = typeof returnedBranch === "string" ? returnedBranch : returnedBranch?.name;
+    if (!branchName) throw new Error("The server did not return the created branch.");
+    const branch = typeof returnedBranch === "string"
+      ? { name: branchName, head: null, isDefault: false, commitCount: 0 }
+      : { ...returnedBranch, name: branchName };
+    setBranches((current) => current.some((item) => item.name === branchName)
+      ? current
+      : [...current, branch]);
+    setBranchMessage(`Created branch ${branchName}.`);
+    setSelectedBranch(branchName);
+    return branch;
   };
 
   const deleteBranch = async (branch) => {
