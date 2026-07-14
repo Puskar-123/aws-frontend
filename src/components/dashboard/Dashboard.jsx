@@ -90,7 +90,8 @@ const Dashboard = () => {
 
       if (profileResult.status === "fulfilled" && profileResult.value.ok) {
         const profile = await profileResult.value.json();
-        if (profile?.username) setUsername(profile.username);
+        const profileUsername = profile?.user?.username || profile?.username;
+        if (profileUsername) setUsername(profileUsername);
       }
 
       if (suggestionsResult.status === "fulfilled" && suggestionsResult.value.ok) {

@@ -51,6 +51,10 @@ const ProjectRoutes = () => {
       path: "/profile",
       element: <Profile />
     },
+    {
+      path: "/profile/:id",
+      element: <Profile />
+    },
     { 
       path: "/create", 
       element: <Create /> 
