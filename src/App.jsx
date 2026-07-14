@@ -12,6 +12,7 @@ import Dashboard from "./components/dashboard/Dashboard";
 import Profile from "./components/user/Profile";
 import Create from "./components/create/Create";
 import RepoPage from "./components/repo/RepoPage";
+import ComparePage from "./components/compare/ComparePage";
 
 function Home() {
   const navigate = useNavigate();
@@ -96,6 +97,7 @@ function App() {
       {/* <Route path="/profile/:id" element={<Profile />} /> */}
 
       {/* Repo */}
+      <Route path="/repo/:id/compare" element={<ComparePage />} />
       <Route path="/repo/:id" element={<RepoPage />} />
 
       {/* ❌ Removed duplicate/unused routes */}
