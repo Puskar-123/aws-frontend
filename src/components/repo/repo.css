@@ -17,15 +17,34 @@
   gap: 20px;
 }
 
-.repo-header h1 {
+.repo-title {
+  min-width: 0;
+  margin: 0;
   display: flex;
-  align-items: center;
-  gap: 10px;
+  align-items: baseline;
+  flex-wrap: wrap;
+  column-gap: 10px;
+  color: #f0f6fc;
+  font-size: clamp(34px, 4vw, 44px);
+  line-height: 1.12;
+  letter-spacing: -0.025em;
 }
 
-.repo-header h1 span {
+.repo-title__owner {
   color: #8b949e;
+  font-weight: 500;
+}
+
+.repo-title__separator {
+  color: #6e7681;
   font-weight: 400;
+}
+
+.repo-title__name {
+  min-width: 0;
+  color: #f0f6fc;
+  font-weight: 650;
+  overflow-wrap: anywhere;
 }
 
 .repo-header__actions {
@@ -250,6 +269,10 @@
     width: 100%;
     justify-content: flex-start;
   }
+
+  .repo-title {
+    font-size: clamp(30px, 6vw, 38px);
+  }
 }
 
 @media (max-width: 480px) {
@@ -257,10 +280,10 @@
     width: min(100% - 24px, 1060px);
   }
 
-  .repo-header h1 {
-    margin: 0;
-    font-size: 24px;
-    overflow-wrap: anywhere;
+  .repo-title {
+    column-gap: 7px;
+    font-size: 27px;
+    line-height: 1.18;
   }
 
   .repo-header__actions .upload-btn,

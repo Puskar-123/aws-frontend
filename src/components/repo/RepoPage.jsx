@@ -353,7 +353,10 @@ const RepoPage = () => {
       <Navbar />
       <main className="repo-container">
         <div className="repo-header">
-          <h1>{repo.owner?.username && <span>{repo.owner.username} / </span>}{repo.name}</h1>
+          <h1 className="repo-title">
+            {repo.owner?.username && <><span className="repo-title__owner">{repo.owner.username}</span><span className="repo-title__separator" aria-hidden="true">/</span></>}
+            <span className="repo-title__name">{repo.name}</span>
+          </h1>
           <div className="repo-header__actions">
             <label className="upload-btn">Upload Project Folder<input ref={folderInputRef} type="file" multiple hidden onChange={handleFileSelect} /></label>
             <button type="button" onClick={handleAddFiles} className="push-btn">Add Files</button>
