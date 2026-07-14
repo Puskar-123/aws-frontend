@@ -42,6 +42,8 @@ const RepositoryBrowser = ({
   apiBase = API_BASE,
   onRename,
   onDelete,
+  onEdit,
+  requestedPath = "",
 }) => {
   const scopeKey = `${repositoryId}:${branch || "default"}`;
   const tree = useMemo(() => buildFileTree(files), [files]);
@@ -60,6 +62,12 @@ const RepositoryBrowser = ({
   const selectedPath = selection.repositoryId === scopeKey && availablePaths.has(selection.path)
     ? selection.path
     : automaticPath;
+  useEffect(() => {
+    if (requestedPath && availablePaths.has(requestedPath)) {
+      setSelection({ repositoryId: scopeKey, path: requestedPath });
+      setExpandedState({ repositoryId: scopeKey, paths: new Set(parentPaths(requestedPath)) });
+    }
+  }, [availablePaths, requestedPath, scopeKey]);
   const selectedNode = fileNodes.find((node) => node.path === selectedPath) || null;
   const defaultExpandedPaths = useMemo(() => {
     const defaults = new Set(parentPaths(automaticPath));
@@ -218,6 +226,7 @@ const RepositoryBrowser = ({
           downloading={downloadState.path === selectedPath && downloadState.status === "loading"}
           downloadError={downloadState.path === selectedPath ? downloadState.error : ""}
           onDownload={downloadFile}
+          onEdit={onEdit}
           onRename={onRename ? renameFile : undefined}
           onDelete={onDelete ? deleteFile : undefined}
           onRetry={() => setRetryCount((count) => count + 1)}

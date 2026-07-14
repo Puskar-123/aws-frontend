@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import "./navbar.css";
+import NotificationBell from "./notifications/NotificationBell";
 
 const Navbar = () => {
   return (
@@ -15,6 +16,7 @@ const Navbar = () => {
         </div>
       </Link>
       <div>
+        <NotificationBell />
         <Link to="/create">
           <p>Create a Repository</p>
         </Link>

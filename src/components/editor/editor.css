@@ -1,0 +1,25 @@
+.file-editor-page { min-height: 100vh; color: #c9d1d9; background: #0d1117; }
+.file-editor-container { width: min(1280px, calc(100% - 48px)); margin: 0 auto; padding: 28px 0 48px; }
+.file-editor-heading h1 { margin: 0; font-size: clamp(22px, 3vw, 32px); font-weight: 600; }
+.file-editor-heading a { color: #f0f6fc; text-decoration: none; }
+.file-editor-heading p { margin: 8px 0 20px; color: #8b949e; overflow-wrap: anywhere; }
+.file-editor-toolbar { position: sticky; top: 0; z-index: 3; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px; background: #161b22; border: 1px solid #30363d; border-radius: 8px 8px 0 0; }
+.file-editor-toolbar__actions { display: flex; gap: 8px; }
+.file-editor-status { color: #8b949e; font-size: 14px; }
+.file-editor-button { min-height: 36px; padding: 7px 14px; color: #f0f6fc; background: #21262d; border: 1px solid #30363d; border-radius: 6px; cursor: pointer; }
+.file-editor-button--primary { background: #238636; border-color: #2ea043; }
+.file-editor-button--danger { background: #da3633; border-color: #f85149; }
+.file-editor-button:disabled { cursor: not-allowed; opacity: .65; }
+.file-editor-button:focus-visible, .file-editor-form textarea:focus-visible, .file-editor-form input:focus-visible { outline: 2px solid #58a6ff; outline-offset: 2px; }
+.file-editor-form { display: grid; gap: 8px; padding: 16px; border: 1px solid #30363d; border-top: 0; border-radius: 0 0 8px 8px; }
+.file-editor-form label { color: #f0f6fc; font-weight: 600; }
+.file-editor-form textarea { width: 100%; min-height: 58vh; resize: vertical; padding: 16px; color: #f0f6fc; background: #0d1117; border: 1px solid #30363d; border-radius: 6px; font: 14px/1.55 ui-monospace, SFMono-Regular, Consolas, monospace; tab-size: 2; white-space: pre; overflow: auto; }
+.file-editor-form input { width: 100%; min-height: 40px; padding: 8px 10px; color: #f0f6fc; background: #0d1117; border: 1px solid #30363d; border-radius: 6px; }
+.file-editor-form p { margin: 0 0 8px; color: #8b949e; font-size: 13px; }
+.file-editor-message { padding: 16px; border: 1px solid #30363d; }
+.file-editor-message--error { color: #ffb3ad; background: #2d1618; }
+.file-editor-dialog-backdrop { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; padding: 20px; background: rgb(1 4 9 / 75%); }
+.file-editor-dialog { width: min(440px, 100%); padding: 20px; background: #161b22; border: 1px solid #30363d; border-radius: 8px; box-shadow: 0 16px 48px #010409; }
+.file-editor-dialog h2 { margin-top: 0; color: #f0f6fc; }
+.file-editor-dialog > div { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+@media (max-width: 640px) { .file-editor-container { width: calc(100% - 24px); padding-top: 18px; } .file-editor-toolbar { align-items: stretch; flex-direction: column; } .file-editor-toolbar__actions { width: 100%; } .file-editor-toolbar__actions button { flex: 1; } .file-editor-form { padding: 10px; } .file-editor-form textarea { min-height: 55vh; padding: 12px; } }

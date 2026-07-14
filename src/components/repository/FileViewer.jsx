@@ -3,6 +3,7 @@ import {
   FiCopy,
   FiDownload,
   FiEdit2,
+  FiEdit3,
   FiFile,
   FiRefreshCw,
   FiTrash2,
@@ -11,6 +12,7 @@ import {
   formatFileSize,
   getFileCategory,
   getReadableFileType,
+  isBrowserEditableFile,
 } from "../../utils/fileType";
 import Breadcrumb from "./Breadcrumb";
 import ImagePreview from "./ImagePreview";
@@ -29,6 +31,7 @@ const FileViewer = ({
   downloading,
   downloadError,
   onDownload,
+  onEdit,
   onRename,
   onDelete,
   onRetry,
@@ -54,7 +57,13 @@ const FileViewer = ({
     && content.length > 0;
   const copyStatus = copyState.path === path ? copyState.status : "idle";
   const showSource = sourceState.path === path && sourceState.showSource;
-  const fileSize = formatFileSize(file.size ?? file.fileSize);
+  const effectiveSize = file.size ?? file.fileSize ?? preview.data?.size;
+  const fileSize = formatFileSize(effectiveSize);
+  const canEdit = Boolean(onEdit)
+    && isBrowserEditableFile(path, effectiveSize)
+    && (category === "text" || category === "markdown")
+    && preview.status === "ready"
+    && preview.data?.previewSupported !== false;
 
   const copyContent = async () => {
     if (!canCopy) return;
@@ -153,6 +162,12 @@ const FileViewer = ({
             >
               <FiCopy aria-hidden="true" />
               {copyStatus === "copied" ? "Copied" : copyStatus === "error" ? "Copy failed" : "Copy"}
+            </button>
+          )}
+          {canEdit && (
+            <button type="button" className="repo-browser-button" onClick={() => onEdit(path)}>
+              <FiEdit3 aria-hidden="true" />
+              Edit
             </button>
           )}
           {onRename && (

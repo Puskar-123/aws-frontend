@@ -44,6 +44,8 @@ const response = (body, ok = true, status = ok ? 200 : 500) => ({
 
 const sessionResponse = () => response({ user: profileResponse.user });
 const isSessionRequest = (input) => String(input).endsWith("/user/session");
+const isNotificationRequest = (input) => String(input).includes("/notifications");
+const notificationResponse = () => response({ notifications: [], unreadCount: 0, pagination: { page: 1, pages: 1 } });
 
 const Location = () => <output data-testid="location">{useLocation().pathname}</output>;
 const renderProfile = () => render(
@@ -68,6 +70,7 @@ describe("Profile", () => {
     let resolveProfile;
     vi.spyOn(globalThis, "fetch").mockImplementation((input) => {
       if (isSessionRequest(input)) return Promise.resolve(sessionResponse());
+      if (isNotificationRequest(input)) return Promise.resolve(notificationResponse());
       return new Promise((resolve) => { resolveProfile = resolve; });
     });
     renderProfile();
@@ -84,6 +87,7 @@ describe("Profile", () => {
     let profileCalls = 0;
     const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation((input) => {
       if (isSessionRequest(input)) return Promise.resolve(sessionResponse());
+      if (isNotificationRequest(input)) return Promise.resolve(notificationResponse());
       profileCalls += 1;
       return Promise.resolve(profileCalls === 1
         ? response({ error: "Profile unavailable" }, false, 500)
@@ -93,7 +97,7 @@ describe("Profile", () => {
     expect(await screen.findByText("Profile unavailable")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Retry" }));
     expect(await screen.findByRole("heading", { name: "Puskar Porel" })).toBeTruthy();
-    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(profileCalls).toBe(2);
   });
 
   test("edit modal cancels safely, validates URLs, and saves allowed profile fields", async () => {
@@ -101,6 +105,7 @@ describe("Profile", () => {
     let profileCalls = 0;
     const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation((input) => {
       if (isSessionRequest(input)) return Promise.resolve(sessionResponse());
+      if (isNotificationRequest(input)) return Promise.resolve(notificationResponse());
       profileCalls += 1;
       return Promise.resolve(profileCalls === 1
         ? response(profileResponse)
@@ -118,18 +123,18 @@ describe("Profile", () => {
     fireEvent.change(screen.getByRole("textbox", { name: /Website/ }), { target: { value: "javascript:alert(1)" } });
     fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
     expect(await screen.findByText("Website must use http or https.")).toBeTruthy();
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(profileCalls).toBe(1);
 
     fireEvent.change(screen.getByRole("textbox", { name: /Website/ }), { target: { value: "https://example.com" } });
     fireEvent.change(screen.getByLabelText(/Name/), { target: { value: "Updated Name" } });
     fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
     expect(await screen.findByRole("heading", { name: "Updated Name" })).toBeTruthy();
-    expect(fetchMock.mock.calls[2][1].method).toBe("PUT");
+    expect(fetchMock.mock.calls.find(([, options]) => options?.method === "PUT")?.[1].method).toBe("PUT");
   });
 
   test("tabs search real repositories, show the stars empty state, navigate safely, and logout", async () => {
     vi.spyOn(globalThis, "fetch").mockImplementation((input) => Promise.resolve(
-      isSessionRequest(input) ? sessionResponse() : response(profileResponse),
+      isSessionRequest(input) ? sessionResponse() : (isNotificationRequest(input) ? notificationResponse() : response(profileResponse)),
     ));
     renderProfile();
     await screen.findByRole("heading", { name: "Puskar Porel" });
@@ -151,7 +156,7 @@ describe("Profile", () => {
 
   test("Stars tab renders real owner, star, and fork metadata", async () => {
     const starred = { ...profileResponse, starredRepositories: [{ _id: "starred-1", name: "Library", owner: { username: "ananya" }, description: "Shared tools", visibility: "public", starCount: 12, forkCount: 3, updatedAt: "2026-07-14T10:00:00.000Z" }] };
-    vi.spyOn(globalThis, "fetch").mockImplementation((input) => Promise.resolve(isSessionRequest(input) ? sessionResponse() : response(starred)));
+    vi.spyOn(globalThis, "fetch").mockImplementation((input) => Promise.resolve(isSessionRequest(input) ? sessionResponse() : (isNotificationRequest(input) ? notificationResponse() : response(starred))));
     renderProfile(); await screen.findByRole("heading", { name: "Puskar Porel" }); fireEvent.click(screen.getByRole("button", { name: /Stars/ }));
     expect(screen.getByRole("button", { name: "ananya / Library" })).toBeTruthy(); expect(screen.getByText("12 stars")).toBeTruthy(); expect(screen.getByText("3 forks")).toBeTruthy();
   });

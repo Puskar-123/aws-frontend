@@ -1,8 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useAuth } from "../../authContext";
 import { authenticatedFetch, getAuthToken, getResponseError, parseResponse } from "../../utils/api";
 import { encodeRepoPath, normalizeRepoPath } from "../../utils/repoPath";
+import { isBrowserEditableFile } from "../../utils/fileType";
 import CommitHistory from "../commit/CommitHistory";
 import Navbar from "../Navbar";
 import RepositoryBrowser from "../repository/RepositoryBrowser";
@@ -37,6 +38,7 @@ const RepoPage = () => {
   const { id } = useParams();
   const authUser = useAuth()?.currentUser;
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const initialBranch = useRef(searchParams.get("branch") || "");
   const invalidRepositoryId = !id || id === "undefined";
@@ -59,6 +61,12 @@ const RepoPage = () => {
   const [commitMessage, setCommitMessage] = useState("");
   const [committing, setCommitting] = useState(false);
   const [navigationCounts, setNavigationCounts] = useState({ issues: 0, pulls: 0 });
+
+  useEffect(() => {
+    if (!location.state?.message) return;
+    setBranchMessage(location.state.message);
+    navigate(`${location.pathname}${location.search}`, { replace: true, state: null });
+  }, [location.pathname, location.search, location.state, navigate]);
 
   const visibleFiles = useMemo(() => snapshotState.files.filter((file) =>
     !isProtectedDisplayPath(file.path || file.filename)
@@ -405,6 +413,12 @@ const RepoPage = () => {
           emptyMessage="This branch has no files"
           onRename={onDefaultBranch ? renameFile : undefined}
           onDelete={onDefaultBranch ? deleteFile : undefined}
+          requestedPath={searchParams.get("path") || ""}
+          onEdit={canManageBranches ? (filePath) => {
+            const file = visibleFiles.find((item) => item.path === filePath);
+            if (!isBrowserEditableFile(filePath, file?.size)) return;
+            navigate(`/repo/${id}/edit?branch=${encodeURIComponent(selectedBranch || defaultBranch)}&path=${encodeURIComponent(filePath)}`);
+          } : undefined}
         />
 
         {historyState.loading && <div className="repo-history-state" role="status">Loading commit history...</div>}

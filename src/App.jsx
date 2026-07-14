@@ -15,6 +15,8 @@ import PullRequestList from "./components/pulls/PullRequestList";
 import PullRequestPage from "./components/pulls/PullRequestPage";
 import RepoPage from "./components/repo/RepoPage";
 import Profile from "./components/user/Profile";
+import FileEditorPage from "./components/editor/FileEditorPage";
+import NotificationsPage from "./components/notifications/NotificationsPage";
 
 const protectedPage = (page) => <ProtectedRoute>{page}</ProtectedRoute>;
 
@@ -26,6 +28,8 @@ const App = () => <Routes>
   <Route path="/create" element={protectedPage(<Create />)} />
   <Route path="/profile" element={protectedPage(<Profile />)} />
   <Route path="/profile/:id" element={protectedPage(<Profile />)} />
+  <Route path="/notifications" element={protectedPage(<NotificationsPage />)} />
+  <Route path="/repo/:id/edit" element={protectedPage(<FileEditorPage />)} />
   <Route path="/repo/:id/compare" element={protectedPage(<ComparePage />)} />
   <Route path="/repo/:id/pulls/new" element={protectedPage(<NewPullRequest />)} />
   <Route path="/repo/:id/pulls/:number" element={protectedPage(<PullRequestPage />)} />

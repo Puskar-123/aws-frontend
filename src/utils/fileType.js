@@ -9,6 +9,13 @@ const BINARY_EXTENSIONS = new Set([
   "pdf", "zip", "gz", "tar", "rar", "7z", "exe", "dll", "woff", "woff2",
   "ttf", "otf", "mp4", "webm", "mov", "mp3", "wav", "ogg",
 ]);
+export const MAX_BROWSER_EDIT_BYTES = 512 * 1024;
+const EDITABLE_EXTENSIONS = new Set([
+  "txt", "md", "json", "js", "jsx", "ts", "tsx", "css", "scss", "html", "xml",
+  "yml", "yaml", "properties", "ini", "py", "java", "c", "cpp", "h", "hpp",
+  "go", "rs", "php", "rb", "sh", "sql", "env.example",
+]);
+const EDITABLE_NAMES = new Set([".gitignore", ".env.example"]);
 
 const LANGUAGE_BY_EXTENSION = {
   js: "javascript",
@@ -68,6 +75,23 @@ export const getFileCategory = (filePath, contentType = "") => {
 
 export const getPrismLanguage = (filePath = "") =>
   LANGUAGE_BY_EXTENSION[getFileExtension(filePath)] || "text";
+
+export const isProtectedFilePath = (filePath = "") => {
+  const basename = String(filePath).replace(/\\/g, "/").split("/").at(-1).toLowerCase();
+  return basename === ".env"
+    || (basename.startsWith(".env.") && basename !== ".env.example")
+    || basename.endsWith(".pem")
+    || basename.endsWith(".key")
+    || basename === "service-account.json"
+    || basename.includes("credentials");
+};
+
+export const isBrowserEditableFile = (filePath = "", size) => {
+  const basename = String(filePath).replace(/\\/g, "/").split("/").at(-1).toLowerCase();
+  return !isProtectedFilePath(filePath)
+    && (EDITABLE_NAMES.has(basename) || EDITABLE_EXTENSIONS.has(getFileExtension(filePath)))
+    && (!Number.isFinite(Number(size)) || Number(size) <= MAX_BROWSER_EDIT_BYTES);
+};
 
 export const formatFileSize = (size) => {
   const numericSize = Number(size);
