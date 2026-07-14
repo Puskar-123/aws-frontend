@@ -387,7 +387,7 @@ const RepoPage = () => {
         </div>
         {repo.forkedFrom && <p className="repo-fork-source">forked from <Link to={`/repo/${repo.forkedFrom._id}`}>{repo.forkedFrom.owner?.username ? `${repo.forkedFrom.owner.username} / ` : ""}{repo.forkedFrom.name || "Deleted repository"}</Link></p>}
 
-        <nav className="repo-tabs" aria-label="Repository sections"><Link className="active" to={`/repo/${id}`}>Code</Link><Link to={`/repo/${id}/issues`}>Issues <span>{navigationCounts.issues}</span></Link><Link to={`/repo/${id}/pulls`}>Pull requests <span>{navigationCounts.pulls}</span></Link>{canManageCollaborators && <Link to={`/repo/${id}/settings/collaborators`}>Collaborators</Link>}{canManageBranchProtection && <Link to={`/repo/${id}/settings/branches`}>Branch protection</Link>}</nav>
+        <nav className="repo-tabs" aria-label="Repository sections"><Link className="active" to={`/repo/${id}`}>Code</Link><Link to={`/repo/${id}/issues`}>Issues <span>{navigationCounts.issues}</span></Link><Link to={`/repo/${id}/pulls`}>Pull requests <span>{navigationCounts.pulls}</span></Link><Link to={`/repo/${id}/insights`}>Insights</Link>{canManageCollaborators && <Link to={`/repo/${id}/settings/collaborators`}>Collaborators</Link>}{canManageBranchProtection && <Link to={`/repo/${id}/settings/branches`}>Branch protection</Link>}</nav>
 
         <p className="repo-description">{repo.description || "No description"}</p>
         <p className="repo-visibility">Visibility: <strong>{repo.visibility === "public" ? "Public" : "Private"}</strong></p>

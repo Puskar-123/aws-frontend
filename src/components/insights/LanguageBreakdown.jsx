@@ -1,0 +1,3 @@
+import React from "react";
+const LanguageBreakdown = ({ data }) => <section className="insights-panel"><h2>Languages</h2>{!data?.languages?.length ? <p className="insights-empty">Language statistics will appear when committed files include reliable size metadata.</p> : <ul className="language-list">{data.languages.map((language) => <li key={language.name}><div><strong>{language.name}</strong><span>{language.percentage}% · {language.bytes.toLocaleString()} bytes</span></div><progress value={language.percentage} max="100" aria-label={`${language.name} ${language.percentage} percent`} /></li>)}</ul>}</section>;
+export default LanguageBreakdown;
