@@ -128,6 +128,11 @@ describe("RepoPage branch integration", () => {
 
     renderPage();
     await screen.findByText("This branch has no files");
+    expect(screen.queryByText("Upload Project Folder")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Add Files" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Commit" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Push" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Pull" })).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: /main/i }));
     fireEvent.click(screen.getByRole("button", { name: /new branch/i }));
     fireEvent.change(screen.getByLabelText("Branch name"), { target: { value: "feature/denied" } });

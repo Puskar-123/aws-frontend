@@ -9,7 +9,7 @@ const formatUpdatedDate = (value) => {
   return new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(date);
 };
 
-const RepositoryCard = ({ repository, deleting = false, onOpen, onDelete }) => {
+const RepositoryCard = ({ repository, deleting = false, onOpen, onDelete, allowDelete = true }) => {
   const visibility = normalizeVisibility(repository.visibility) === "private" ? "Private" : "Public";
   const fileCount = Array.isArray(repository.content) ? repository.content.length : null;
   const commitCount = Array.isArray(repository.commits) ? repository.commits.length : null;
@@ -19,9 +19,9 @@ const RepositoryCard = ({ repository, deleting = false, onOpen, onDelete }) => {
     <article className="dashboard-repository-card">
       <div className="dashboard-repository-card__topline">
         <button type="button" className="dashboard-repository-card__name" onClick={() => onOpen(repository)}>
-          {repository.name || "Untitled repository"}
+          {repository.currentUserRole && repository.owner?.username ? `${repository.owner.username} / ` : ""}{repository.name || "Untitled repository"}
         </button>
-        <div className="dashboard-repository-card__badges">{repository.forkedFrom && <span className="dashboard-badge"><FiGitBranch aria-hidden="true" />Fork</span>}<span className={`dashboard-badge dashboard-badge--${visibility.toLowerCase()}`}>
+        <div className="dashboard-repository-card__badges">{repository.currentUserRole && <span className="dashboard-badge">Role: {repository.currentUserRole[0].toUpperCase() + repository.currentUserRole.slice(1)}</span>}{repository.forkedFrom && <span className="dashboard-badge"><FiGitBranch aria-hidden="true" />Fork</span>}<span className={`dashboard-badge dashboard-badge--${visibility.toLowerCase()}`}>
           {visibility === "Private" ? <FiLock aria-hidden="true" /> : <FiUnlock aria-hidden="true" />}
           {visibility}
         </span></div>
@@ -39,7 +39,7 @@ const RepositoryCard = ({ repository, deleting = false, onOpen, onDelete }) => {
           <FiExternalLink aria-hidden="true" />
           Open repository
         </button>
-        <button
+        {allowDelete && <button
           type="button"
           className="dashboard-delete-button"
           disabled={deleting}
@@ -51,7 +51,7 @@ const RepositoryCard = ({ repository, deleting = false, onOpen, onDelete }) => {
         >
           <FiTrash2 aria-hidden="true" />
           {deleting ? "Deleting..." : "Delete"}
-        </button>
+        </button>}
       </div>
     </article>
   );

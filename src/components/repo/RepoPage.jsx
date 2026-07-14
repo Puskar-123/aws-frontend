@@ -73,9 +73,14 @@ const RepoPage = () => {
   ), [snapshotState.files]);
   const loggedInUserId = resolveAuthenticatedUserId(authUser, localStorage.getItem("userId"));
   const repositoryOwnerId = resolveRepositoryOwnerId(repo);
-  const canManageBranches = Boolean(loggedInUserId)
+  const isRepositoryOwner = Boolean(loggedInUserId)
     && Boolean(repositoryOwnerId)
     && loggedInUserId === repositoryOwnerId;
+  const permissions = repo?.permissions || {};
+  const canWriteContent = permissions.canEditFiles ?? isRepositoryOwner;
+  const canUploadFiles = permissions.canUploadFiles ?? isRepositoryOwner;
+  const canManageBranches = permissions.canDeleteBranch ?? isRepositoryOwner;
+  const canManageCollaborators = permissions.canManageCollaborators ?? isRepositoryOwner;
   const isAuthenticated = Boolean(
     authUser
     || localStorage.getItem("token")
@@ -368,13 +373,12 @@ const RepoPage = () => {
           </h1>
           <div className="repo-header__actions">
             <RepositorySocialActions repository={repo} onForked={(repositoryId) => navigate(`/repo/${repositoryId}`)} />
-            <label className="upload-btn">Upload Project Folder<input ref={folderInputRef} type="file" multiple hidden onChange={handleFileSelect} /></label>
-            <button type="button" onClick={handleAddFiles} className="push-btn">Add Files</button>
+            {canUploadFiles && <><label className="upload-btn">Upload Project Folder<input ref={folderInputRef} type="file" multiple hidden onChange={handleFileSelect} /></label><button type="button" onClick={handleAddFiles} className="push-btn">Add Files</button></>}
           </div>
         </div>
         {repo.forkedFrom && <p className="repo-fork-source">forked from <Link to={`/repo/${repo.forkedFrom._id}`}>{repo.forkedFrom.owner?.username ? `${repo.forkedFrom.owner.username} / ` : ""}{repo.forkedFrom.name || "Deleted repository"}</Link></p>}
 
-        <nav className="repo-tabs" aria-label="Repository sections"><Link className="active" to={`/repo/${id}`}>Code</Link><Link to={`/repo/${id}/issues`}>Issues <span>{navigationCounts.issues}</span></Link><Link to={`/repo/${id}/pulls`}>Pull requests <span>{navigationCounts.pulls}</span></Link></nav>
+        <nav className="repo-tabs" aria-label="Repository sections"><Link className="active" to={`/repo/${id}`}>Code</Link><Link to={`/repo/${id}/issues`}>Issues <span>{navigationCounts.issues}</span></Link><Link to={`/repo/${id}/pulls`}>Pull requests <span>{navigationCounts.pulls}</span></Link>{canManageCollaborators && <Link to={`/repo/${id}/settings/collaborators`}>Settings</Link>}</nav>
 
         <p className="repo-description">{repo.description || "No description"}</p>
         <p className="repo-visibility">Visibility: <strong>{repo.visibility === "public" ? "Public" : "Private"}</strong></p>
@@ -396,12 +400,12 @@ const RepoPage = () => {
           onCompare={openCompare}
         />
 
-        <div className="commit-section">
+        {canWriteContent && <div className="commit-section">
           <input type="text" placeholder={`Commit message for ${selectedBranch || defaultBranch}`} value={commitMessage} onChange={(event) => setCommitMessage(event.target.value)} className="commit-input" />
           <button type="button" onClick={handleCommit} className="push-btn" disabled={committing}>{committing ? "Committing..." : "Commit"}</button>
           <button type="button" onClick={() => runRepositoryAction("push", "Push successful!")} className="push-btn">Push</button>
           <button type="button" onClick={() => runRepositoryAction("pull", "Pull successful!")} className="push-btn">Pull</button>
-        </div>
+        </div>}
 
         {snapshotState.error && <div className="repo-branch-section-error" role="alert">Files for {selectedBranch} could not be loaded: {snapshotState.error}</div>}
         <RepositoryBrowser
@@ -411,10 +415,10 @@ const RepoPage = () => {
           branch={selectedBranch}
           loading={snapshotState.loading}
           emptyMessage="This branch has no files"
-          onRename={onDefaultBranch ? renameFile : undefined}
-          onDelete={onDefaultBranch ? deleteFile : undefined}
+          onRename={onDefaultBranch && (permissions.canRenameFiles ?? isRepositoryOwner) ? renameFile : undefined}
+          onDelete={onDefaultBranch && (permissions.canDeleteFiles ?? isRepositoryOwner) ? deleteFile : undefined}
           requestedPath={searchParams.get("path") || ""}
-          onEdit={canManageBranches ? (filePath) => {
+          onEdit={canWriteContent ? (filePath) => {
             const file = visibleFiles.find((item) => item.path === filePath);
             if (!isBrowserEditableFile(filePath, file?.size)) return;
             navigate(`/repo/${id}/edit?branch=${encodeURIComponent(selectedBranch || defaultBranch)}&path=${encodeURIComponent(filePath)}`);

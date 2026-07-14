@@ -80,6 +80,9 @@ nav p:hover {
   text-decoration: underline;
 }
 
+.codehub-navbar { gap: 20px; }
+.codehub-navbar__links { flex: 0 0 auto; }
+
 @media (max-width: 480px) {
   nav {
     padding: 10px 14px;
@@ -96,6 +99,12 @@ nav p:hover {
   nav p {
     font-size: 13px;
   }
+}
+
+@media (max-width: 760px) {
+  .codehub-navbar { gap: 10px; }
+  .codehub-navbar__links { gap: 12px; }
+  .codehub-navbar__links > a:first-of-type { display: none; }
 }
 
 @media (max-width: 375px) {

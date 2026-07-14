@@ -17,6 +17,11 @@ import RepoPage from "./components/repo/RepoPage";
 import Profile from "./components/user/Profile";
 import FileEditorPage from "./components/editor/FileEditorPage";
 import NotificationsPage from "./components/notifications/NotificationsPage";
+import ExplorePage from "./components/explore/ExplorePage";
+import SearchResultsPage from "./components/search/SearchResultsPage";
+import PublicProfilePage from "./components/search/PublicProfilePage";
+import CollaboratorSettingsPage from "./components/collaborators/CollaboratorSettingsPage";
+import InvitationsPage from "./components/collaborators/InvitationsPage";
 
 const protectedPage = (page) => <ProtectedRoute>{page}</ProtectedRoute>;
 
@@ -29,7 +34,12 @@ const App = () => <Routes>
   <Route path="/profile" element={protectedPage(<Profile />)} />
   <Route path="/profile/:id" element={protectedPage(<Profile />)} />
   <Route path="/notifications" element={protectedPage(<NotificationsPage />)} />
+  <Route path="/invitations" element={protectedPage(<InvitationsPage />)} />
+  <Route path="/explore" element={protectedPage(<ExplorePage />)} />
+  <Route path="/search" element={protectedPage(<SearchResultsPage />)} />
+  <Route path="/users/:username" element={protectedPage(<PublicProfilePage />)} />
   <Route path="/repo/:id/edit" element={protectedPage(<FileEditorPage />)} />
+  <Route path="/repo/:id/settings/collaborators" element={protectedPage(<CollaboratorSettingsPage />)} />
   <Route path="/repo/:id/compare" element={protectedPage(<ComparePage />)} />
   <Route path="/repo/:id/pulls/new" element={protectedPage(<NewPullRequest />)} />
   <Route path="/repo/:id/pulls/:number" element={protectedPage(<PullRequestPage />)} />

@@ -2,10 +2,13 @@ import React from "react";
 import { Link } from "react-router-dom";
 import "./navbar.css";
 import NotificationBell from "./notifications/NotificationBell";
+import { useAuth } from "../authContext";
+import GlobalSearch from "./search/GlobalSearch";
 
 const Navbar = () => {
+  const { isAuthenticated } = useAuth() || {};
   return (
-    <nav>
+    <nav className="codehub-navbar">
       <Link to="/">
         <div>
           <img
@@ -15,14 +18,17 @@ const Navbar = () => {
           <h3>CodeHub</h3>
         </div>
       </Link>
-      <div>
+      {isAuthenticated && <GlobalSearch />}
+      <div className="codehub-navbar__links">
+        {isAuthenticated && <Link to="/explore"><p>Explore</p></Link>}
+        {isAuthenticated && <Link to="/invitations"><p>Invitations</p></Link>}
         <NotificationBell />
-        <Link to="/create">
+        {isAuthenticated && <Link to="/create">
           <p>Create a Repository</p>
-        </Link>
-        <Link to="/profile">
+        </Link>}
+        {isAuthenticated && <Link to="/profile">
           <p>Profile</p>
-        </Link>
+        </Link>}
       </div>
     </nav>
   );

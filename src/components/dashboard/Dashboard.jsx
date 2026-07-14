@@ -37,6 +37,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const userId = localStorage.getItem("userId");
   const [repositories, setRepositories] = useState([]);
+  const [sharedRepositories, setSharedRepositories] = useState([]);
   const [exploreRepositories, setExploreRepositories] = useState([]);
   const [username, setUsername] = useState("Developer");
   const [searchQuery, setSearchQuery] = useState("");
@@ -60,11 +61,14 @@ const Dashboard = () => {
         return;
       }
       if (!response.ok) throw new Error("Failed to fetch repositories");
-      setRepositories(readRepositories(await parseResponse(response)));
+      const data = await parseResponse(response);
+      setRepositories(Array.isArray(data?.myRepositories) ? data.myRepositories : readRepositories(data));
+      setSharedRepositories(Array.isArray(data?.sharedRepositories) ? data.sharedRepositories : []);
       setStatus("ready");
     } catch (error) {
       console.error("Error fetching repositories:", error);
       setRepositories([]);
+      setSharedRepositories([]);
       setStatus("error");
     }
   }, [userId]);
@@ -76,7 +80,7 @@ const Dashboard = () => {
     const loadSupportingData = async () => {
       const [profileResult, suggestionsResult] = await Promise.allSettled([
         authenticatedFetch(`${API_BASE}/user/profile/${userId}`),
-        authenticatedFetch(`${API_BASE}/repo/all`),
+        authenticatedFetch(`${API_BASE}/repo/explore?sort=recent&page=1&limit=10`),
       ]);
 
       if (profileResult.status === "fulfilled" && profileResult.value.ok) {
@@ -214,6 +218,13 @@ const Dashboard = () => {
               deletingRepoId={deletingRepoId}
               onRetry={fetchRepositories}
             />
+
+            <section className="dashboard-shared" aria-labelledby="shared-repositories-heading">
+              <div className="dashboard-section-header">
+                <div><h2 id="shared-repositories-heading">Shared with me</h2><p>Repositories where you are an accepted collaborator.</p></div>
+              </div>
+              {status !== "loading" && sharedRepositories.length === 0 ? <p className="dashboard-shared-empty">No repositories have been shared with you.</p> : <RepositoryGrid repositories={sharedRepositories} loading={status === "loading"} error={false} hasFilters={false} onOpen={openRepository} onDelete={() => {}} deletingRepoId={null} onRetry={fetchRepositories} allowDelete={false} />}
+            </section>
           </main>
 
           <aside className="dashboard-sidebar" aria-label="Dashboard resources">
@@ -244,6 +255,7 @@ const Dashboard = () => {
                   Discover public projects from the CodeHub community as they become available.
                 </p>
               )}
+              <button type="button" className="dashboard-explore-all" onClick={() => navigate("/explore")}>View all repositories →</button>
             </section>
           </aside>
         </div>

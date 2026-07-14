@@ -13,6 +13,7 @@ const RepositoryGrid = ({
   onOpen,
   onDelete,
   onRetry,
+  allowDelete = true,
 }) => {
   if (loading) {
     return (
@@ -61,6 +62,7 @@ const RepositoryGrid = ({
             deleting={repoId !== null && String(deletingRepoId) === String(repoId)}
             onOpen={onOpen}
             onDelete={onDelete}
+            allowDelete={allowDelete}
           />
         );
       })}
