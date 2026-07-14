@@ -1,140 +1,203 @@
-import React, { useState, useEffect } from "react";
-import "./dashboard.css";
-import Navbar from "../Navbar";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { FiBookOpen, FiSearch } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
+import Navbar from "../Navbar";
+import DashboardHeader from "./DashboardHeader";
+import DashboardStats from "./DashboardStats";
+import GettingStarted from "./GettingStarted";
+import RepositoryGrid from "./RepositoryGrid";
+import "./dashboard.css";
+
+const API_BASE = "https://api.codehub.sbs";
+
+const readRepositories = (data) => {
+  const repositories = data?.repositories || data;
+  return Array.isArray(repositories) ? repositories : [];
+};
 
 const Dashboard = () => {
-  const navigate = useNavigate(); // ✅ FIXED (inside component)
-
-  const [repositories, setRepositories] = useState([]);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [suggestedRepositories, setSuggestedRepositories] = useState([]);
-  const [searchResults, setSearchResults] = useState([]);
-
+  const navigate = useNavigate();
   const userId = localStorage.getItem("userId");
+  const [repositories, setRepositories] = useState([]);
+  const [suggestedRepositories, setSuggestedRepositories] = useState([]);
+  const [username, setUsername] = useState("Developer");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [visibility, setVisibility] = useState("all");
+  const [status, setStatus] = useState("loading");
 
-  // 🔥 Fetch user's repositories
-  const fetchRepositories = async () => {
+  const fetchRepositories = useCallback(async () => {
+    if (!userId) {
+      setStatus("error");
+      return;
+    }
+
+    setStatus("loading");
     try {
-      const response = await fetch(`https://api.codehub.sbs/repo/user/${userId}`);
-
+      const response = await fetch(`${API_BASE}/repo/user/${userId}`);
+      if (response.status === 404) {
+        setRepositories([]);
+        setStatus("ready");
+        return;
+      }
       if (!response.ok) throw new Error("Failed to fetch repositories");
-
-      const data = await response.json();
-
-      setRepositories(data.repositories || data || []);
+      setRepositories(readRepositories(await response.json()));
+      setStatus("ready");
     } catch (error) {
       console.error("Error fetching repositories:", error);
       setRepositories([]);
+      setStatus("error");
     }
-  };
+  }, [userId]);
 
-  // 🔥 Fetch suggested repositories
-  const fetchSuggestedRepositories = async () => {
-    try {
-      const response = await fetch(`https://api.codehub.sbs/repo/all`);
-
-      if (!response.ok) throw new Error("Failed to fetch suggested repositories");
-
-      const data = await response.json();
-
-      setSuggestedRepositories(data || []);
-    } catch (error) {
-      console.error("Error fetching suggested repositories:", error);
-      setSuggestedRepositories([]);
-    }
-  };
-
-  // 🔥 On load
   useEffect(() => {
-    if (!userId) return;
+    const repositoryRequest = window.setTimeout(fetchRepositories, 0);
 
-    fetchRepositories();
-    fetchSuggestedRepositories();
-  }, []);
+    if (!userId) return () => window.clearTimeout(repositoryRequest);
+    const loadSupportingData = async () => {
+      const [profileResult, suggestionsResult] = await Promise.allSettled([
+        fetch(`${API_BASE}/user/profile/${userId}`),
+        fetch(`${API_BASE}/repo/all`),
+      ]);
 
-  // 🔥 Search filter
-  useEffect(() => {
-    if (!searchQuery) {
-      setSearchResults(repositories);
-    } else {
-      const filtered = repositories.filter((repo) =>
-        repo.name?.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-      setSearchResults(filtered);
+      if (profileResult.status === "fulfilled" && profileResult.value.ok) {
+        const profile = await profileResult.value.json();
+        if (profile?.username) setUsername(profile.username);
+      }
+
+      if (suggestionsResult.status === "fulfilled" && suggestionsResult.value.ok) {
+        setSuggestedRepositories(readRepositories(await suggestionsResult.value.json()));
+      }
+    };
+
+    loadSupportingData().catch((error) => {
+      console.error("Error loading dashboard supporting data:", error);
+    });
+
+    return () => window.clearTimeout(repositoryRequest);
+  }, [fetchRepositories, userId]);
+
+  const filteredRepositories = useMemo(() => {
+    const normalizedQuery = searchQuery.trim().toLowerCase();
+    return repositories.filter((repository) => {
+      const matchesQuery = !normalizedQuery
+        || repository.name?.toLowerCase().includes(normalizedQuery)
+        || repository.description?.toLowerCase().includes(normalizedQuery);
+      const matchesVisibility = visibility === "all"
+        || (repository.visibility || "public").toLowerCase() === visibility;
+      return matchesQuery && matchesVisibility;
+    });
+  }, [repositories, searchQuery, visibility]);
+
+  const repositoryIds = useMemo(
+    () => new Set(repositories.map((repository) => repository._id || repository.id).filter(Boolean)),
+    [repositories],
+  );
+  const publicSuggestions = useMemo(
+    () => suggestedRepositories.filter((repository) => {
+      const repositoryId = repository._id || repository.id;
+      return repositoryId && !repositoryIds.has(repositoryId) && repository.visibility !== "private";
+    }).slice(0, 4),
+    [repositoryIds, suggestedRepositories],
+  );
+
+  const openRepository = useCallback((repository) => {
+    const repoId = repository?._id || repository?.id;
+    if (!repoId) {
+      console.error("Repository ID missing", repository);
+      return;
     }
-  }, [searchQuery, repositories]);
+    navigate(`/repo/${repoId}`);
+  }, [navigate]);
 
   return (
-    <>
+    <div className="dashboard-page">
       <Navbar />
+      <div className="dashboard-shell">
+        <DashboardHeader username={username} />
+        <DashboardStats repositories={repositories} loading={status === "loading"} />
 
-      <section id="dashboard">
-        
-        {/* LEFT SIDE */}
-        <aside>
-          <h3>Suggested Repositories</h3>
-
-          {suggestedRepositories.length === 0 ? (
-            <p>No repositories found</p>
-          ) : (
-            suggestedRepositories.map((repo) => (
-              <div
-                key={repo._id}
-                className="repo-item"
-                onClick={() => navigate(`/repo/${repo._id}`)} // ✅ clickable
-              >
-                <h4>{repo.name}</h4>
-                <p>{repo.description}</p>
+        <div className="dashboard-layout">
+          <main className="dashboard-repositories" aria-labelledby="repositories-heading">
+            <div className="dashboard-section-header">
+              <div>
+                <h2 id="repositories-heading">Your repositories</h2>
+                <p>Browse and manage your CodeHub projects.</p>
               </div>
-            ))
-          )}
-        </aside>
+              <button className="dashboard-text-button" type="button" onClick={() => navigate("/create")}>
+                New
+              </button>
+            </div>
 
-        {/* CENTER */}
-        <main>
-          <h2>Your Repositories</h2>
+            <div className="dashboard-repository-tools">
+              <label className="dashboard-search">
+                <span className="dashboard-visually-hidden">Search your repositories</span>
+                <FiSearch aria-hidden="true" />
+                <input
+                  type="search"
+                  placeholder="Search your repositories..."
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                />
+              </label>
+              <div className="dashboard-filters" aria-label="Filter repositories by visibility">
+                {["all", "public", "private"].map((filter) => (
+                  <button
+                    key={filter}
+                    type="button"
+                    className={visibility === filter ? "is-active" : ""}
+                    aria-pressed={visibility === filter}
+                    onClick={() => setVisibility(filter)}
+                  >
+                    {filter[0].toUpperCase() + filter.slice(1)}
+                  </button>
+                ))}
+              </div>
+            </div>
 
-          <div id="search">
-            <input
-              type="text"
-              placeholder="Search repositories..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+            <RepositoryGrid
+              repositories={filteredRepositories}
+              loading={status === "loading"}
+              error={status === "error"}
+              hasFilters={Boolean(searchQuery.trim()) || visibility !== "all"}
+              onOpen={openRepository}
+              onRetry={fetchRepositories}
             />
-          </div>
+          </main>
 
-          {searchResults.length === 0 ? (
-            <p>No repositories found</p>
-          ) : (
-            searchResults.map((repo) => (
-              <div
-                key={repo._id}
-                className="repo-item"
-                onClick={() => navigate(`/repo/${repo._id}`)} // ✅ clickable
-              >
-                <h4>{repo.name}</h4>
-                <p>{repo.description}</p>
+          <aside className="dashboard-sidebar" aria-label="Dashboard resources">
+            <GettingStarted />
+            <section className="dashboard-panel dashboard-explore" aria-labelledby="explore-heading">
+              <div className="dashboard-panel__heading">
+                <FiBookOpen aria-hidden="true" />
+                <h2 id="explore-heading">Explore repositories</h2>
               </div>
-            ))
-          )}
-        </main>
-
-        {/* RIGHT SIDE */}
-        <aside>
-          <h3>Upcoming Events</h3>
-
-          <ul>
-            <li><p>XXXXXXX</p></li>
-            <li><p>XXXXXXX</p></li>
-            <li><p>XXXXXXX</p></li>
-          </ul>
-        </aside>
-
-      </section>
-    </>
+              {publicSuggestions.length > 0 ? (
+                <ul className="dashboard-suggestion-list">
+                  {publicSuggestions.map((repository) => {
+                    const repoId = repository._id || repository.id;
+                    const owner = repository.owner?.username || repository.owner?.name;
+                    return (
+                      <li key={repoId}>
+                        <button type="button" onClick={() => openRepository(repository)}>
+                          <span>{owner ? `${owner} / ` : ""}<strong>{repository.name}</strong></span>
+                          <small>{repository.description || "No description"}</small>
+                          <em>Public</em>
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : (
+                <p className="dashboard-panel__muted">
+                  Discover public projects from the CodeHub community as they become available.
+                </p>
+              )}
+            </section>
+          </aside>
+        </div>
+      </div>
+    </div>
   );
 };
 
 export default Dashboard;
-
