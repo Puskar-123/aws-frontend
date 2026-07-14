@@ -9,6 +9,7 @@ import Navbar from "../Navbar";
 import RepositoryBrowser from "../repository/RepositoryBrowser";
 import BranchToolbar from "./BranchToolbar";
 import RepositorySocialActions from "./RepositorySocialActions";
+import RepositoryCodeMenu from "./RepositoryCodeMenu";
 import { resolveAuthenticatedUserId, resolveRepositoryOwnerId } from "./branchUtils";
 import "./repo.css";
 import "./branch.css";
@@ -365,6 +366,8 @@ const RepoPage = () => {
   if (repoState.error || !repo) return <><Navbar /><main className="repo-page-state error" role="alert">{repoState.error || "Repository not found"}</main></>;
 
   const selectedMetadata = branches.find((branch) => branch.name === selectedBranch);
+  const defaultProtection = branches.find((branch) => branch.name === defaultBranch)?.protection
+    || (selectedBranch === defaultBranch ? selectedProtection : { protected: false });
   const branchCommitCount = historyState.loading
     ? (selectedMetadata?.commitCount || 0)
     : historyState.commits.length;
@@ -382,6 +385,7 @@ const RepoPage = () => {
           {selectedProtection?.protected && <span className="repo-protected-badge">{selectedBranch} Protected</span>}
           <div className="repo-header__actions">
             <RepositorySocialActions repository={repo} onForked={(repositoryId) => navigate(`/repo/${repositoryId}`)} />
+            <RepositoryCodeMenu repository={repo} defaultBranch={defaultBranch} protection={defaultProtection} role={repo.currentUserRole} />
             {canUploadFiles && <><label className="upload-btn">Upload Project Folder<input ref={folderInputRef} type="file" multiple hidden onChange={handleFileSelect} /></label><button type="button" onClick={handleAddFiles} className="push-btn">Add Files</button></>}
           </div>
         </div>

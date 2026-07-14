@@ -24,6 +24,7 @@ import CollaboratorSettingsPage from "./components/collaborators/CollaboratorSet
 import InvitationsPage from "./components/collaborators/InvitationsPage";
 import BranchProtectionSettingsPage from "./components/branches/BranchProtectionSettingsPage";
 import InsightsPage from "./components/insights/InsightsPage";
+import CliDocsPage from "./components/docs/CliDocsPage";
 
 const protectedPage = (page) => <ProtectedRoute>{page}</ProtectedRoute>;
 
@@ -31,6 +32,7 @@ const App = () => <Routes>
   <Route path="/" element={<Home />} />
   <Route path="/login" element={<Login />} />
   <Route path="/signup" element={<Signup />} />
+  <Route path="/docs/cli" element={<CliDocsPage />} />
   <Route path="/dashboard" element={protectedPage(<Dashboard />)} />
   <Route path="/create" element={protectedPage(<Create />)} />
   <Route path="/profile" element={protectedPage(<Profile />)} />
