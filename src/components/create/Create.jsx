@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { FiBookOpen, FiGlobe, FiInfo, FiLock } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
-import { getResponseError, parseResponse } from "../../utils/api";
+import { authenticatedFetch, getResponseError, parseResponse } from "../../utils/api";
 import Navbar from "../Navbar";
 import "./create.css";
 
@@ -17,6 +17,7 @@ const Create = () => {
   const [nameError, setNameError] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const createInFlight = useRef(false);
 
   useEffect(() => {
     const userId = localStorage.getItem("userId");
@@ -25,9 +26,7 @@ const Create = () => {
 
     const loadOwner = async () => {
       try {
-        const token = localStorage.getItem("token");
-        const response = await fetch(`${API_BASE}/user/profile/${userId}`, {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        const response = await authenticatedFetch(`${API_BASE}/user/profile/${userId}`, {
           signal: controller.signal,
         });
         const data = await parseResponse(response);
@@ -49,7 +48,7 @@ const Create = () => {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    if (loading) return;
+    if (createInFlight.current) return;
     setError("");
     setNameError("");
 
@@ -64,16 +63,19 @@ const Create = () => {
       setNameError("Repository name is required.");
       return;
     }
+    if (!["public", "private"].includes(visibility)) {
+      setError("Choose a valid repository visibility.");
+      return;
+    }
 
+    createInFlight.current = true;
     setLoading(true);
     try {
-      const response = await fetch(`${API_BASE}/repo/create`, {
+      const response = await authenticatedFetch(`${API_BASE}/repo/create`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          owner: userId,
           name: trimmedName,
-          description,
+          description: description.trim(),
           visibility,
           addReadme: Boolean(addReadme),
         }),
@@ -85,17 +87,19 @@ const Create = () => {
         return;
       }
 
-      const repositoryId = data.repository?._id || data.repository?.id;
+      const repositoryId = data.repository?._id || data.repository?.id
+        || data.repo?._id || data.repo?.id || data._id || data.id;
       if (!repositoryId) {
         console.error("Repository ID missing from create response", data);
         setError("Repository was created, but its ID was not returned.");
         return;
       }
 
-      navigate(`/repo/${repositoryId}`);
+      navigate(`/repo/${repositoryId}?branch=main`);
     } catch {
       setError("Unable to connect to the server. Please try again.");
     } finally {
+      createInFlight.current = false;
       setLoading(false);
     }
   };
