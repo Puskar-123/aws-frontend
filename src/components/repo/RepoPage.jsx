@@ -6,6 +6,7 @@ import CommitHistory from "../commit/CommitHistory";
 import Navbar from "../Navbar";
 import RepositoryBrowser from "../repository/RepositoryBrowser";
 import BranchToolbar from "./BranchToolbar";
+import { normalizeId } from "./branchUtils";
 import "./repo.css";
 import "./branch.css";
 
@@ -58,9 +59,11 @@ const RepoPage = () => {
   const visibleFiles = useMemo(() => snapshotState.files.filter((file) =>
     !isProtectedDisplayPath(file.path || file.filename)
   ), [snapshotState.files]);
-  const currentUserId = localStorage.getItem("userId");
-  const ownerId = repo?.owner?._id || repo?.owner?.id || repo?.ownerId || repo?.owner;
-  const canManageBranches = Boolean(currentUserId && ownerId && String(currentUserId) === String(ownerId));
+  const loggedInUserId = normalizeId(localStorage.getItem("userId"));
+  const repositoryOwnerId = normalizeId(repo?.owner || repo?.ownerId || repo?.userId);
+  const canManageBranches = Boolean(loggedInUserId)
+    && Boolean(repositoryOwnerId)
+    && loggedInUserId === repositoryOwnerId;
 
   useEffect(() => {
     if (folderInputRef.current) {

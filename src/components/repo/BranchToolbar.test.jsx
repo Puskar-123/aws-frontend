@@ -3,6 +3,7 @@ import React from "react";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import BranchToolbar from "./BranchToolbar";
+import { normalizeId } from "./branchUtils";
 
 const branches = [
   { name: "main", isDefault: true, commitCount: 3 },
@@ -27,6 +28,14 @@ const props = (overrides = {}) => ({
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });
 
 describe("BranchToolbar", () => {
+  test("normalizes supported repository owner ID shapes without comparing objects", () => {
+    expect(normalizeId(" owner-id ")).toBe("owner-id");
+    expect(normalizeId({ _id: "owner-id" })).toBe("owner-id");
+    expect(normalizeId({ id: "owner-id" })).toBe("owner-id");
+    expect(normalizeId({ _id: { $oid: "owner-id" } })).toBe("owner-id");
+    expect(normalizeId({ username: "developer" })).toBe("");
+  });
+
   test("shows the active branch, counts, default badge, and protected delete actions", () => {
     render(<BranchToolbar {...props()} />);
     expect(screen.getByRole("button", { name: /main/i })).toBeTruthy();
