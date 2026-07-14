@@ -6,12 +6,12 @@ const CompareBranchSelectors = ({ branches, base, compare, onBase, onCompare, on
   <section className="compare-selectors" aria-label="Branches to compare">
     <div className="compare-selector-field">
       <span className="compare-selector-label">base</span>
-      <BranchSelector branches={branches} selectedBranch={base} defaultBranch={branches.find((branch) => branch.isDefault)?.name} loading={false} error="" canManageBranches={false} onSelect={onBase} />
+      <BranchSelector branches={branches} selectedBranch={base} defaultBranch={branches.find((branch) => branch.isDefault)?.name} loading={false} error="" canManageBranches={false} isAuthenticated={false} onSelect={onBase} />
     </div>
     <FiArrowLeft className="compare-direction" aria-label="Compare into base" />
     <div className="compare-selector-field">
       <span className="compare-selector-label">compare</span>
-      <BranchSelector branches={branches} selectedBranch={compare} defaultBranch={branches.find((branch) => branch.isDefault)?.name} loading={false} error="" canManageBranches={false} onSelect={onCompare} />
+      <BranchSelector branches={branches} selectedBranch={compare} defaultBranch={branches.find((branch) => branch.isDefault)?.name} loading={false} error="" canManageBranches={false} isAuthenticated={false} onSelect={onCompare} />
     </div>
     <button type="button" className="compare-swap" onClick={onSwap} disabled={!base || !compare}>
       <FiRepeat aria-hidden="true" /> Swap

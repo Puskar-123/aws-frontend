@@ -18,6 +18,7 @@ const props = (overrides = {}) => ({
   loading: false,
   error: "",
   canManageBranches: true,
+  isAuthenticated: true,
   message: "",
   onSelect: vi.fn(),
   onCreate: vi.fn().mockResolvedValue(undefined),
@@ -73,11 +74,13 @@ describe("BranchToolbar", () => {
     await waitFor(() => expect(onCreate).toHaveBeenCalledWith({ name: "feature/profile", sourceBranch: "main" }));
   });
 
-  test("shows the create action only to branch managers", () => {
+  test("shows the create action to authenticated users regardless of owner controls", () => {
     const { rerender } = render(<BranchToolbar {...props()} />);
     fireEvent.click(screen.getByRole("button", { name: /main/i }));
     expect(screen.getByRole("button", { name: /new branch/i }).className).toBe("branch-create-action");
     rerender(<BranchToolbar {...props({ canManageBranches: false })} />);
+    expect(screen.getByRole("button", { name: /new branch/i })).toBeTruthy();
+    rerender(<BranchToolbar {...props({ canManageBranches: false, isAuthenticated: false })} />);
     expect(screen.queryByRole("button", { name: /new branch/i })).toBeNull();
   });
 
@@ -94,7 +97,7 @@ describe("BranchToolbar", () => {
   });
 
   test("shows duplicate and API authorization failures inline", async () => {
-    const onCreate = vi.fn().mockRejectedValue(new Error("You do not have access to this repository"));
+    const onCreate = vi.fn().mockRejectedValue(new Error("You do not have permission to create branches in this repository."));
     render(<BranchToolbar {...props({ onCreate })} />);
     fireEvent.click(screen.getByRole("button", { name: /main/i }));
     fireEvent.click(screen.getByRole("button", { name: /new branch/i }));
@@ -103,7 +106,7 @@ describe("BranchToolbar", () => {
     expect(screen.getByRole("alert").textContent).toContain("already exists");
     fireEvent.change(screen.getByLabelText("Branch name"), { target: { value: "feature/denied" } });
     fireEvent.click(screen.getByRole("button", { name: /^create branch$/i }));
-    expect(await screen.findByText("You do not have access to this repository")).toBeTruthy();
+    expect(await screen.findByText("You do not have permission to create branches in this repository.")).toBeTruthy();
   });
 
   test("requires confirmation before deleting a non-selected branch", async () => {

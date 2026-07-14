@@ -18,6 +18,7 @@ const BranchToolbar = (props) => {
           loading={props.loading}
           error={props.error}
           canManageBranches={props.canManageBranches}
+          isAuthenticated={props.isAuthenticated}
           onSelect={props.onSelect}
           onCreate={() => setCreating(true)}
           onDelete={setDeleting}

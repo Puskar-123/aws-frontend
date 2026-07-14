@@ -8,6 +8,7 @@ const BranchSelector = ({
   loading,
   error,
   canManageBranches,
+  isAuthenticated,
   onSelect,
   onCreate,
   onDelete,
@@ -107,7 +108,7 @@ const BranchSelector = ({
               );
             })}
           </div>
-          {canManageBranches && (
+          {isAuthenticated && (
             <div className="branch-create-section">
               <button
                 type="button"

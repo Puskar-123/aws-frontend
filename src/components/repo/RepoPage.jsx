@@ -66,6 +66,11 @@ const RepoPage = () => {
   const canManageBranches = Boolean(loggedInUserId)
     && Boolean(repositoryOwnerId)
     && loggedInUserId === repositoryOwnerId;
+  const isAuthenticated = Boolean(
+    authUser
+    || localStorage.getItem("token")
+    || localStorage.getItem("userId")
+  );
 
   useEffect(() => {
     if (folderInputRef.current) {
@@ -186,7 +191,13 @@ const RepoPage = () => {
       headers: { "Content-Type": "application/json", ...authHeaders() },
       body: JSON.stringify({ name, sourceBranch }),
     });
-    const data = await requestData(response, "Unable to create branch");
+    const data = await parseResponse(response);
+    if (!response.ok) {
+      if (response.status === 403) {
+        throw new Error("You do not have permission to create branches in this repository.");
+      }
+      throw new Error(getResponseError(data, `Unable to create branch (${response.status})`));
+    }
     const returnedBranch = data.branch;
     const branchName = typeof returnedBranch === "string" ? returnedBranch : returnedBranch?.name;
     if (!branchName) throw new Error("The server did not return the created branch.");
@@ -345,6 +356,7 @@ const RepoPage = () => {
           loading={branchListState.loading}
           error={branchListState.error}
           canManageBranches={canManageBranches}
+          isAuthenticated={isAuthenticated}
           message={branchMessage}
           onSelect={(branch) => { setBranchMessage(""); setSelectedBranch(branch); }}
           onCreate={createBranch}

@@ -104,11 +104,31 @@ describe("RepoPage branch integration", () => {
     fireEvent.click(screen.getByRole("button", { name: /^create branch$/i }));
 
     expect((await screen.findAllByText("feature.js")).length).toBeGreaterThan(0);
-    expect(screen.getByTestId("location-search").textContent).toContain("branch=feature%2Ftest");
+    await waitFor(() => expect(screen.getByTestId("location-search").textContent).toContain("branch=feature%2Ftest"));
     expect(screen.getByText("2")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Compare" }).disabled).toBe(false);
     expect(calls.filter((call) => call.method === "POST" && call.url.endsWith(`/repo/${repositoryId}/branches`))).toHaveLength(1);
     expect(calls.filter((call) => call.url.includes("/branches/feature%2Ftest/snapshot"))).toHaveLength(1);
     expect(calls.filter((call) => call.url.includes("/branches/feature%2Ftest/history"))).toHaveLength(1);
+  });
+
+  test("authenticated non-owner sees create action and receives the friendly 403 message", async () => {
+    vi.spyOn(globalThis, "fetch").mockImplementation((url, options = {}) => {
+      const value = String(url);
+      if (value.endsWith(`/repo/${repositoryId}`)) return Promise.resolve(jsonResponse({ _id: repositoryId, name: "project", ownerId: "507f1f77bcf86cd799439099", visibility: "public" }));
+      if (value.endsWith(`/repo/${repositoryId}/branches`) && options.method === "POST") return Promise.resolve(jsonResponse({ error: "Forbidden" }, 403));
+      if (value.endsWith(`/repo/${repositoryId}/branches`)) return Promise.resolve(jsonResponse({ defaultBranch: "main", branches: [{ name: "main", isDefault: true, commitCount: 0 }] }));
+      if (value.includes("/branches/main/snapshot")) return Promise.resolve(jsonResponse({ files: [] }));
+      if (value.includes("/branches/main/history")) return Promise.resolve(jsonResponse({ commits: [] }));
+      return Promise.resolve(jsonResponse({}, 200));
+    });
+
+    renderPage();
+    await screen.findByText("This branch has no files");
+    fireEvent.click(screen.getByRole("button", { name: /main/i }));
+    fireEvent.click(screen.getByRole("button", { name: /new branch/i }));
+    fireEvent.change(screen.getByLabelText("Branch name"), { target: { value: "feature/denied" } });
+    fireEvent.click(screen.getByRole("button", { name: /^create branch$/i }));
+    expect(await screen.findByText("You do not have permission to create branches in this repository.")).toBeTruthy();
   });
 });
