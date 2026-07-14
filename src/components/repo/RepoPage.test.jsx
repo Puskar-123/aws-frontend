@@ -82,7 +82,7 @@ describe("RepoPage branch integration", () => {
     const calls = [];
     vi.spyOn(globalThis, "fetch").mockImplementation((url, options = {}) => {
       const value = String(url);
-      calls.push({ url: value, method: options.method || "GET" });
+      calls.push({ url: value, method: options.method || "GET", headers: options.headers });
       if (value.endsWith(`/repo/${repositoryId}`)) return Promise.resolve(jsonResponse({ _id: repositoryId, name: "project", ownerId, visibility: "public" }));
       if (value.endsWith(`/repo/${repositoryId}/branches`) && options.method === "POST") {
         return Promise.resolve(jsonResponse({ branch: { name: "feature/test", head: "m1", isDefault: false, commitCount: 1 } }, 201));
@@ -107,7 +107,10 @@ describe("RepoPage branch integration", () => {
     await waitFor(() => expect(screen.getByTestId("location-search").textContent).toContain("branch=feature%2Ftest"));
     expect(screen.getByText("2")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Compare" }).disabled).toBe(false);
-    expect(calls.filter((call) => call.method === "POST" && call.url.endsWith(`/repo/${repositoryId}/branches`))).toHaveLength(1);
+    const createCall = calls.find((call) => call.method === "POST" && call.url.endsWith(`/repo/${repositoryId}/branches`));
+    expect(createCall).toBeTruthy();
+    expect(createCall.headers.get("Authorization")).toBe("Bearer test-token");
+    expect(createCall.headers.get("Content-Type")).toBe("application/json");
     expect(calls.filter((call) => call.url.includes("/branches/feature%2Ftest/snapshot"))).toHaveLength(1);
     expect(calls.filter((call) => call.url.includes("/branches/feature%2Ftest/history"))).toHaveLength(1);
   });
@@ -130,5 +133,31 @@ describe("RepoPage branch integration", () => {
     fireEvent.change(screen.getByLabelText("Branch name"), { target: { value: "feature/denied" } });
     fireEvent.click(screen.getByRole("button", { name: /^create branch$/i }));
     expect(await screen.findByText("You do not have permission to create branches in this repository.")).toBeTruthy();
+  });
+
+  test("does not submit branch creation without a JWT", async () => {
+    localStorage.removeItem("token");
+    let createRequests = 0;
+    vi.spyOn(globalThis, "fetch").mockImplementation((url, options = {}) => {
+      const value = String(url);
+      if (value.endsWith(`/repo/${repositoryId}`)) return Promise.resolve(jsonResponse({ _id: repositoryId, name: "project", ownerId, visibility: "public" }));
+      if (value.endsWith(`/repo/${repositoryId}/branches`) && options.method === "POST") {
+        createRequests += 1;
+        return Promise.resolve(jsonResponse({}, 201));
+      }
+      if (value.endsWith(`/repo/${repositoryId}/branches`)) return Promise.resolve(jsonResponse({ defaultBranch: "main", branches: [{ name: "main", isDefault: true }] }));
+      if (value.includes("/branches/main/snapshot")) return Promise.resolve(jsonResponse({ files: [] }));
+      if (value.includes("/branches/main/history")) return Promise.resolve(jsonResponse({ commits: [] }));
+      return Promise.resolve(jsonResponse({}, 200));
+    });
+
+    renderPage();
+    await screen.findByText("This branch has no files");
+    fireEvent.click(screen.getByRole("button", { name: /main/i }));
+    fireEvent.click(screen.getByRole("button", { name: /new branch/i }));
+    fireEvent.change(screen.getByLabelText("Branch name"), { target: { value: "feature/no-token" } });
+    fireEvent.click(screen.getByRole("button", { name: /^create branch$/i }));
+    expect(await screen.findByText("Your session has expired. Please sign in again.")).toBeTruthy();
+    expect(createRequests).toBe(0);
   });
 });

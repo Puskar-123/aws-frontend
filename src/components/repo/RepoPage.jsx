@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useAuth } from "../../authContext";
-import { getResponseError, parseResponse } from "../../utils/api";
+import { authenticatedFetch, getAuthToken, getResponseError, parseResponse } from "../../utils/api";
 import { encodeRepoPath, normalizeRepoPath } from "../../utils/repoPath";
 import CommitHistory from "../commit/CommitHistory";
 import Navbar from "../Navbar";
@@ -14,7 +14,7 @@ import "./branch.css";
 const API_BASE = "https://api.codehub.sbs";
 
 const authHeaders = () => {
-  const token = localStorage.getItem("token");
+  const token = getAuthToken();
   return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
@@ -186,13 +186,18 @@ const RepoPage = () => {
   }, [id, selectedBranch]);
 
   const createBranch = async ({ name, sourceBranch }) => {
-    const response = await fetch(`${API_BASE}/repo/${id}/branches`, {
+    if (!getAuthToken()) {
+      throw new Error("Your session has expired. Please sign in again.");
+    }
+    const response = await authenticatedFetch(`${API_BASE}/repo/${id}/branches`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", ...authHeaders() },
       body: JSON.stringify({ name, sourceBranch }),
     });
     const data = await parseResponse(response);
     if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error("Your session has expired. Please sign in again.");
+      }
       if (response.status === 403) {
         throw new Error("You do not have permission to create branches in this repository.");
       }
