@@ -40,7 +40,7 @@ const PullRequestPage = () => {
   const commits = comparison?.commits || [];
   const files = comparison?.files || [];
   return <div className="pull-page"><Navbar /><main className="pull-container">
-    <PullRequestHeader repositoryId={id} pullRequest={pullRequest} />
+    <PullRequestHeader repositoryId={id} pullRequest={pullRequest} protection={mergeability?.branchProtection} />
     {state.error && <div className="pull-error" role="alert">{state.error}</div>}
     {comparison && comparison.ancestryAvailable === false && <div className="pull-warning">Commit ancestry unavailable for this legacy history</div>}
     {historicalUnavailable && <div className="pull-warning">Historical comparison unavailable for this legacy pull request.</div>}

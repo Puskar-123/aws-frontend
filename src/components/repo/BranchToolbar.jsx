@@ -36,6 +36,12 @@ const BranchToolbar = (props) => {
         >Compare</button>
       </div>
       {props.message && <div className="repo-branch-message" role="status">{props.message}</div>}
+      {props.protection?.protected && <div className={`repo-protection-message${props.protection.canBypass ? " is-bypass" : ""}`} role="status">
+        <span>{props.protection.canBypass
+          ? `${props.selectedBranch} is protected. You are allowed to bypass these rules for direct changes.`
+          : `Direct changes are blocked on protected branch ${props.selectedBranch}. Create a new branch and open a pull request.`}</span>
+        {!props.protection.canBypass && <button type="button" onClick={() => setCreating(true)}>Create new branch</button>}
+      </div>}
       {creating && <CreateBranchModal branches={props.branches} selectedBranch={props.selectedBranch} onClose={() => setCreating(false)} onCreate={async (values) => { await props.onCreate(values); setCreating(false); }} />}
       {deleting && <DeleteBranchDialog branch={deleting} onClose={() => setDeleting(null)} onDelete={async (branch) => { await props.onDelete(branch); setDeleting(null); }} />}
     </>

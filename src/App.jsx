@@ -22,6 +22,7 @@ import SearchResultsPage from "./components/search/SearchResultsPage";
 import PublicProfilePage from "./components/search/PublicProfilePage";
 import CollaboratorSettingsPage from "./components/collaborators/CollaboratorSettingsPage";
 import InvitationsPage from "./components/collaborators/InvitationsPage";
+import BranchProtectionSettingsPage from "./components/branches/BranchProtectionSettingsPage";
 
 const protectedPage = (page) => <ProtectedRoute>{page}</ProtectedRoute>;
 
@@ -40,6 +41,7 @@ const App = () => <Routes>
   <Route path="/users/:username" element={protectedPage(<PublicProfilePage />)} />
   <Route path="/repo/:id/edit" element={protectedPage(<FileEditorPage />)} />
   <Route path="/repo/:id/settings/collaborators" element={protectedPage(<CollaboratorSettingsPage />)} />
+  <Route path="/repo/:id/settings/branches" element={protectedPage(<BranchProtectionSettingsPage />)} />
   <Route path="/repo/:id/compare" element={protectedPage(<ComparePage />)} />
   <Route path="/repo/:id/pulls/new" element={protectedPage(<NewPullRequest />)} />
   <Route path="/repo/:id/pulls/:number" element={protectedPage(<PullRequestPage />)} />

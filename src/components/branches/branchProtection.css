@@ -1,0 +1,31 @@
+.branch-protection-page { min-height: 100vh; color: #f0f6fc; background: #0d1117; }
+.branch-protection-shell { width: min(900px, calc(100% - 32px)); margin: 0 auto; padding: 32px 0 64px; }
+.branch-protection-breadcrumb { justify-content: flex-start; gap: 8px; padding: 0; color: #8b949e; font-size: 13px; background: transparent; border: 0; }
+.branch-protection-breadcrumb a { color: #58a6ff; }
+.branch-protection-shell header { margin: 24px 0; }
+.branch-protection-shell header p { margin: 0 0 5px; color: #58a6ff; font-size: 12px; font-weight: 700; text-transform: uppercase; }
+.branch-protection-shell h1 { margin: 0 0 7px; font-size: clamp(27px, 4vw, 38px); }
+.branch-protection-shell header span, .branch-protection-empty { color: #8b949e; }
+.branch-protection-panel { margin-top: 18px; padding: 20px; background: #161b22; border: 1px solid #30363d; border-radius: 8px; }
+.branch-protection-panel h2 { margin: 0 0 18px; font-size: 18px; }
+.branch-protection-panel form { display: grid; grid-template-columns: minmax(180px, 1fr) 180px; gap: 16px; }
+.branch-protection-panel form > label { display: grid; gap: 6px; color: #c9d1d9; font-size: 13px; font-weight: 600; }
+.branch-protection-panel select, .branch-protection-panel input[type="number"] { min-height: 40px; padding: 7px 10px; color: #f0f6fc; background: #0d1117; border: 1px solid #30363d; border-radius: 6px; }
+.branch-protection-panel fieldset { display: grid; grid-column: 1 / -1; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 0; padding: 16px; border: 1px solid #30363d; border-radius: 6px; }
+.branch-protection-panel legend { padding: 0 6px; color: #f0f6fc; font-weight: 600; }
+.branch-protection-check { display: flex; align-items: flex-start; gap: 9px; color: #c9d1d9; font-size: 13px; }
+.branch-protection-check input { width: 16px; height: 16px; accent-color: #238636; }
+.branch-protection-actions, .branch-protection-row-actions { display: flex; grid-column: 1 / -1; justify-content: flex-end; gap: 9px; }
+.branch-protection-actions button, .branch-protection-row-actions button, .branch-protection-error button { min-height: 36px; padding: 6px 12px; color: #fff; font-weight: 600; background: #238636; border: 1px solid rgba(240,246,252,.1); border-radius: 6px; cursor: pointer; }
+.branch-protection-actions .secondary, .branch-protection-row-actions button { color: #c9d1d9; background: #21262d; border-color: #484f58; }
+.branch-protection-row-actions .danger { color: #ff7b72; background: transparent; border-color: #f85149; }
+.branch-protection-notice, .branch-protection-error { padding: 11px 13px; color: #c9d1d9; background: #161b22; border: 1px solid #30363d; border-radius: 6px; }
+.branch-protection-error { color: #ff7b72; }
+.branch-protection-list { margin: 0; padding: 0; list-style: none; }
+.branch-protection-list li { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 15px 0; }
+.branch-protection-list li + li { border-top: 1px solid #30363d; }
+.branch-protection-list h3 { margin: 0 0 7px; }
+.branch-protection-list p { margin: 4px 0 0; color: #8b949e; font-size: 12px; }
+.protected-badge { display: inline-flex; padding: 2px 7px; color: #f2cc60 !important; font-size: 10px; font-weight: 700; border: 1px solid #9e6a03; border-radius: 999px; vertical-align: middle; }
+.branch-protection-page button:focus-visible, .branch-protection-page input:focus-visible, .branch-protection-page select:focus-visible, .branch-protection-page a:focus-visible { outline: 2px solid #58a6ff; outline-offset: 2px; }
+@media (max-width: 600px) { .branch-protection-shell { width: min(100% - 20px, 900px); padding-top: 20px; } .branch-protection-panel { padding: 15px; } .branch-protection-panel form { grid-template-columns: 1fr; } .branch-protection-panel fieldset { grid-column: auto; grid-template-columns: 1fr; } .branch-protection-actions { grid-column: auto; flex-direction: column-reverse; } .branch-protection-actions button { width: 100%; } .branch-protection-list li { align-items: stretch; flex-direction: column; } .branch-protection-row-actions { justify-content: stretch; } .branch-protection-row-actions button { flex: 1; } }

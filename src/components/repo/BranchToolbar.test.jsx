@@ -136,4 +136,15 @@ describe("BranchToolbar", () => {
     expect(compareButton.disabled).toBe(true);
     expect(compareButton.title).toBe("Create another branch to compare changes");
   });
+
+  test("labels protected branches and explains direct-write and bypass states", () => {
+    const protectedBranches = [{ ...branches[0], protection: { protected: true, canBypass: false } }, branches[1]];
+    const { rerender } = render(<BranchToolbar {...props({ branches: protectedBranches, protection: { protected: true, canBypass: false } })} />);
+    expect(screen.getByRole("status").textContent).toContain("Direct changes are blocked");
+    fireEvent.click(screen.getByRole("button", { name: /main/i }));
+    expect(screen.getAllByText("Protected").length).toBeGreaterThan(0);
+    expect(screen.queryByRole("button", { name: /delete branch main/i })).toBeNull();
+    rerender(<BranchToolbar {...props({ branches: protectedBranches, protection: { protected: true, canBypass: true } })} />);
+    expect(screen.getByRole("status").textContent).toContain("allowed to bypass");
+  });
 });

@@ -21,6 +21,7 @@
 .pull-status { display: inline-flex; height: fit-content; padding: 3px 8px; border-radius: 999px; color: #fff; background: #238636; font-size: 11px; font-weight: 700; text-transform: capitalize; }
 .pull-status--closed { background: #da3633; }
 .pull-status--merged { background: #8957e5; }
+.pull-protected-badge { display: inline-flex; margin-left: 5px; padding: 2px 7px; color: #f2cc60; font-size: 10px; font-weight: 700; border: 1px solid #9e6a03; border-radius: 999px; }
 .pull-state { padding: 42px 20px; border: 1px solid #30363d; border-radius: 8px; color: #8b949e; background: #161b22; text-align: center; }
 .pull-state--error, .pull-error { color: #ff7b72; border-color: rgba(248,81,73,.4); }
 .pull-container--form { max-width: 780px; }

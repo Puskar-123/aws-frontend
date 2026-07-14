@@ -71,6 +71,7 @@ const BranchSelector = ({
       >
         <FiGitBranch aria-hidden="true" />
         <span title={selectedBranch}>{selectedBranch || "Loading branches..."}</span>
+        {branches.find((branch) => branch.name === selectedBranch)?.protection?.protected && <span className="repo-protected-badge">Protected</span>}
         <FiChevronDown aria-hidden="true" />
       </button>
 
@@ -91,12 +92,13 @@ const BranchSelector = ({
             {filteredBranches.map((branch) => {
               const selected = branch.name === selectedBranch;
               const isDefault = branch.name === defaultBranch || branch.isDefault;
-              const canDelete = canManageBranches && !selected && !isDefault;
+              const canDelete = canManageBranches && !selected && !isDefault && !branch.protection?.blockDeletion;
               return (
                 <div className="repo-branch-row" key={branch.name}>
                   <button type="button" role="option" aria-selected={selected} title={branch.name} onClick={() => selectBranch(branch.name)}>
                     <FiCheck className={selected ? "is-visible" : ""} aria-hidden="true" />
                     <span>{branch.name}</span>
+                    {branch.protection?.protected && <small className="repo-protected-label">Protected</small>}
                     {isDefault && <small>Default</small>}
                   </button>
                   {canDelete && (

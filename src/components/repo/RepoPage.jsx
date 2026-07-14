@@ -77,10 +77,17 @@ const RepoPage = () => {
     && Boolean(repositoryOwnerId)
     && loggedInUserId === repositoryOwnerId;
   const permissions = repo?.permissions || {};
-  const canWriteContent = permissions.canEditFiles ?? isRepositoryOwner;
-  const canUploadFiles = permissions.canUploadFiles ?? isRepositoryOwner;
+  const selectedProtection = branches.find((branch) => branch.name === selectedBranch)?.protection
+    || (repo?.currentBranch === selectedBranch ? repo.branchProtection : { protected: false, canBypass: false });
+  const branchDirectBlocked = Boolean(selectedProtection?.protected
+    && (selectedProtection.blockDirectCommits || selectedProtection.requirePullRequest)
+    && !selectedProtection.canBypass);
+  const baseWritePermission = permissions.canWriteUnprotectedBranches ?? permissions.canEditFiles ?? isRepositoryOwner;
+  const canWriteContent = Boolean(baseWritePermission && !branchDirectBlocked);
+  const canUploadFiles = Boolean((permissions.canWriteUnprotectedBranches ?? permissions.canUploadFiles ?? isRepositoryOwner) && !branchDirectBlocked);
   const canManageBranches = permissions.canDeleteBranch ?? isRepositoryOwner;
   const canManageCollaborators = permissions.canManageCollaborators ?? isRepositoryOwner;
+  const canManageBranchProtection = permissions.canManageBranchProtection ?? isRepositoryOwner;
   const isAuthenticated = Boolean(
     authUser
     || localStorage.getItem("token")
@@ -309,6 +316,7 @@ const RepoPage = () => {
       formData.append("files", file);
       formData.append("paths", file.webkitRelativePath || file.name);
     });
+    formData.append("branch", selectedBranch || defaultBranch);
     try {
       const response = await fetch(`${API_BASE}/repo/add/${id}`, { method: "POST", body: formData, headers: authHeaders() });
       const data = await requestData(response, "Failed to add files");
@@ -371,6 +379,7 @@ const RepoPage = () => {
             {repo.owner?.username && <><span className="repo-title__owner">{repo.owner.username}</span><span className="repo-title__separator" aria-hidden="true">/</span></>}
             <span className="repo-title__name">{repo.name}</span>
           </h1>
+          {selectedProtection?.protected && <span className="repo-protected-badge">{selectedBranch} Protected</span>}
           <div className="repo-header__actions">
             <RepositorySocialActions repository={repo} onForked={(repositoryId) => navigate(`/repo/${repositoryId}`)} />
             {canUploadFiles && <><label className="upload-btn">Upload Project Folder<input ref={folderInputRef} type="file" multiple hidden onChange={handleFileSelect} /></label><button type="button" onClick={handleAddFiles} className="push-btn">Add Files</button></>}
@@ -378,7 +387,7 @@ const RepoPage = () => {
         </div>
         {repo.forkedFrom && <p className="repo-fork-source">forked from <Link to={`/repo/${repo.forkedFrom._id}`}>{repo.forkedFrom.owner?.username ? `${repo.forkedFrom.owner.username} / ` : ""}{repo.forkedFrom.name || "Deleted repository"}</Link></p>}
 
-        <nav className="repo-tabs" aria-label="Repository sections"><Link className="active" to={`/repo/${id}`}>Code</Link><Link to={`/repo/${id}/issues`}>Issues <span>{navigationCounts.issues}</span></Link><Link to={`/repo/${id}/pulls`}>Pull requests <span>{navigationCounts.pulls}</span></Link>{canManageCollaborators && <Link to={`/repo/${id}/settings/collaborators`}>Settings</Link>}</nav>
+        <nav className="repo-tabs" aria-label="Repository sections"><Link className="active" to={`/repo/${id}`}>Code</Link><Link to={`/repo/${id}/issues`}>Issues <span>{navigationCounts.issues}</span></Link><Link to={`/repo/${id}/pulls`}>Pull requests <span>{navigationCounts.pulls}</span></Link>{canManageCollaborators && <Link to={`/repo/${id}/settings/collaborators`}>Collaborators</Link>}{canManageBranchProtection && <Link to={`/repo/${id}/settings/branches`}>Branch protection</Link>}</nav>
 
         <p className="repo-description">{repo.description || "No description"}</p>
         <p className="repo-visibility">Visibility: <strong>{repo.visibility === "public" ? "Public" : "Private"}</strong></p>
@@ -394,6 +403,7 @@ const RepoPage = () => {
           canManageBranches={canManageBranches}
           isAuthenticated={isAuthenticated}
           message={branchMessage}
+          protection={selectedProtection}
           onSelect={(branch) => { setBranchMessage(""); setSelectedBranch(branch); }}
           onCreate={createBranch}
           onDelete={deleteBranch}
@@ -415,8 +425,8 @@ const RepoPage = () => {
           branch={selectedBranch}
           loading={snapshotState.loading}
           emptyMessage="This branch has no files"
-          onRename={onDefaultBranch && (permissions.canRenameFiles ?? isRepositoryOwner) ? renameFile : undefined}
-          onDelete={onDefaultBranch && (permissions.canDeleteFiles ?? isRepositoryOwner) ? deleteFile : undefined}
+          onRename={onDefaultBranch && canWriteContent && (permissions.canRenameFiles ?? isRepositoryOwner) ? renameFile : undefined}
+          onDelete={onDefaultBranch && canWriteContent && (permissions.canDeleteFiles ?? isRepositoryOwner) ? deleteFile : undefined}
           requestedPath={searchParams.get("path") || ""}
           onEdit={canWriteContent ? (filePath) => {
             const file = visibleFiles.find((item) => item.path === filePath);
