@@ -40,11 +40,14 @@ describe("pull request pages", () => {
     expect(await screen.findByText("Able to merge")).toBeTruthy();
     expect(screen.getByLabelText("Base branch").value).toBe("main");
     expect(screen.getByLabelText("Compare branch").value).toBe("feature/test");
+    expect(screen.getByText("Target branch receiving changes")).toBeTruthy();
+    expect(screen.getByText("Source branch providing changes")).toBeTruthy();
     expect(screen.getByLabelText("Title").value).toBe("Add feature");
     fireEvent.click(screen.getByRole("button", { name: /^create pull request$/i }));
     await waitFor(() => expect(screen.getByTestId("location").textContent).toBe(`/repo/${id}/pulls/1`));
     const create = calls.find((call) => call.options.method === "POST");
     expect(create.options.headers.get("Authorization")).toBe("Bearer test-token");
+    expect(JSON.parse(create.options.body)).toMatchObject({ baseBranch: "main", compareBranch: "feature/test" });
   });
 
   test("PR list filters statuses and searches titles", async () => {
@@ -73,6 +76,7 @@ describe("pull request pages", () => {
     vi.spyOn(window, "confirm").mockReturnValue(true);
     render(<MemoryRouter initialEntries={[`/repo/${id}/pulls/1`]}><Routes><Route path="/repo/:id/pulls/:number" element={<PullRequestPage />} /></Routes></MemoryRouter>);
     expect(await screen.findByRole("heading", { name: "Description" })).toBeTruthy();
+    expect(screen.getByText(/wants to merge/).textContent).toContain("feature into main");
     fireEvent.change(screen.getByLabelText("Add a comment"), { target: { value: "Looks good" } });
     fireEvent.click(screen.getByRole("button", { name: "Comment" }));
     expect(await screen.findByText("Looks good")).toBeTruthy();

@@ -29,6 +29,7 @@
 .pull-form input, .pull-form textarea, .pull-form select, .pull-comment-form textarea { width: 100%; box-sizing: border-box; padding: 9px 10px; border: 1px solid #30363d; border-radius: 6px; color: #f0f6fc; background: #0d1117; font: inherit; }
 .pull-branches { display: grid; grid-template-columns: 1fr auto 1fr; align-items: end; gap: 12px; }
 .pull-branches label { display: grid; gap: 6px; color: #8b949e; font-size: 12px; font-weight: 600; text-transform: uppercase; }
+.pull-branch-help { color: #8b949e; font-size: 11px; font-weight: 400; text-transform: none; }
 .pull-branches > span { padding-bottom: 10px; color: #8b949e; }
 .pull-summary, .pull-error, .pull-warning { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; padding: 11px 12px; border: 1px solid #30363d; border-radius: 6px; color: #8b949e; background: #0d1117; font-size: 13px; }
 .pull-summary.is-ready strong { color: #3fb950; }
