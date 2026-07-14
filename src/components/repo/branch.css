@@ -9,7 +9,7 @@
 .repo-branch-dropdown__header span { color: #8b949e; }
 .repo-branch-search { display: block; padding: 0 10px 9px; }
 .repo-branch-search input { width: 100%; height: 34px; box-sizing: border-box; padding: 0 9px; border: 1px solid #30363d; border-radius: 6px; color: #f0f6fc; background: #0d1117; font: inherit; font-size: 13px; }
-.repo-branch-list { max-height: 300px; overflow-y: auto; border-top: 1px solid #30363d; border-bottom: 1px solid #30363d; }
+.repo-branch-list { max-height: 300px; overflow-y: auto; border-top: 1px solid #30363d; }
 .repo-branch-row { display: flex; min-width: 0; border-bottom: 1px solid #21262d; }
 .repo-branch-row:last-child { border-bottom: 0; }
 .repo-branch-row > button:first-child { display: grid; flex: 1; min-width: 0; grid-template-columns: 16px minmax(0, 1fr) auto; align-items: center; gap: 8px; padding: 9px 10px; border: 0; color: #c9d1d9; background: transparent; font: inherit; font-size: 13px; text-align: left; cursor: pointer; }
@@ -21,8 +21,9 @@
 .repo-branch-delete { width: 38px; border: 0; color: #8b949e; background: transparent; cursor: pointer; }
 .repo-branch-delete svg { visibility: visible; color: inherit; }
 .repo-branch-delete:hover { color: #ff7b72; background: rgba(248,81,73,.08); }
-.repo-branch-new { display: flex; width: 100%; align-items: center; gap: 7px; padding: 10px 12px; border: 0; color: #58a6ff; background: transparent; font: inherit; font-size: 13px; cursor: pointer; }
-.repo-branch-new:hover { background: #21262d; }
+.branch-create-section { border-top: 1px solid #30363d; padding: 8px; }
+.branch-create-action { display: flex; width: 100%; align-items: center; gap: 8px; padding: 8px 10px; border: 0; border-radius: 6px; color: #f0f6fc; background: transparent; font: inherit; font-size: 13px; text-align: left; cursor: pointer; }
+.branch-create-action:hover, .branch-create-action:focus-visible { background: #21262d; }
 .repo-branch-state { padding: 18px 12px; color: #8b949e; font-size: 13px; text-align: center; }
 .repo-branch-state--error { color: #ff7b72; }
 .repo-branch-metrics { display: flex; align-items: center; gap: 18px; color: #8b949e; font-size: 13px; }

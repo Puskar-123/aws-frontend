@@ -59,7 +59,7 @@ const RepoPage = () => {
     !isProtectedDisplayPath(file.path || file.filename)
   ), [snapshotState.files]);
   const currentUserId = localStorage.getItem("userId");
-  const ownerId = repo?.owner?._id || repo?.owner;
+  const ownerId = repo?.owner?._id || repo?.owner?.id || repo?.ownerId || repo?.owner;
   const canManageBranches = Boolean(currentUserId && ownerId && String(currentUserId) === String(ownerId));
 
   useEffect(() => {
@@ -331,7 +331,7 @@ const RepoPage = () => {
           commitCount={branchCommitCount}
           loading={branchListState.loading}
           error={branchListState.error}
-          canManage={canManageBranches}
+          canManageBranches={canManageBranches}
           message={branchMessage}
           onSelect={(branch) => { setBranchMessage(""); setSelectedBranch(branch); }}
           onCreate={createBranch}

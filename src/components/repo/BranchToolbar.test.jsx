@@ -16,7 +16,7 @@ const props = (overrides = {}) => ({
   commitCount: 3,
   loading: false,
   error: "",
-  canManage: true,
+  canManageBranches: true,
   message: "",
   onSelect: vi.fn(),
   onCreate: vi.fn().mockResolvedValue(undefined),
@@ -56,6 +56,14 @@ describe("BranchToolbar", () => {
     fireEvent.change(screen.getByLabelText("Branch name"), { target: { value: "feature/profile" } });
     fireEvent.click(screen.getByRole("button", { name: /^create branch$/i }));
     await waitFor(() => expect(onCreate).toHaveBeenCalledWith({ name: "feature/profile", sourceBranch: "main" }));
+  });
+
+  test("shows the create action only to branch managers", () => {
+    const { rerender } = render(<BranchToolbar {...props()} />);
+    fireEvent.click(screen.getByRole("button", { name: /main/i }));
+    expect(screen.getByRole("button", { name: /new branch/i }).className).toBe("branch-create-action");
+    rerender(<BranchToolbar {...props({ canManageBranches: false })} />);
+    expect(screen.queryByRole("button", { name: /new branch/i })).toBeNull();
   });
 
   test("requires confirmation before deleting a non-selected branch", async () => {

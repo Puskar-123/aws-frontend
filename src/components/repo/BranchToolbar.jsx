@@ -11,7 +11,17 @@ const BranchToolbar = (props) => {
   return (
     <>
       <div className="repo-branch-toolbar">
-        <BranchSelector {...props} onCreate={() => setCreating(true)} onDelete={setDeleting} />
+        <BranchSelector
+          branches={props.branches}
+          selectedBranch={props.selectedBranch}
+          defaultBranch={props.defaultBranch}
+          loading={props.loading}
+          error={props.error}
+          canManageBranches={props.canManageBranches}
+          onSelect={props.onSelect}
+          onCreate={() => setCreating(true)}
+          onDelete={setDeleting}
+        />
         <div className="repo-branch-metrics">
           <span className="repo-branch-count"><FiGitBranch aria-hidden="true" /><strong>{props.branches.length}</strong> {props.branches.length === 1 ? "branch" : "branches"}</span>
           <span className="repo-commit-count"><FiGitCommit aria-hidden="true" /><strong>{props.commitCount}</strong> {props.commitCount === 1 ? "commit" : "commits"}</span>

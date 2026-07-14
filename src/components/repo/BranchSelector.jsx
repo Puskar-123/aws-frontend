@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { FiCheck, FiChevronDown, FiGitBranch, FiPlus, FiTrash2 } from "react-icons/fi";
+import { FiCheck, FiChevronDown, FiGitBranch, FiTrash2 } from "react-icons/fi";
 
 const BranchSelector = ({
   branches,
@@ -7,7 +7,7 @@ const BranchSelector = ({
   defaultBranch,
   loading,
   error,
-  canManage,
+  canManageBranches,
   onSelect,
   onCreate,
   onDelete,
@@ -90,7 +90,7 @@ const BranchSelector = ({
             {filteredBranches.map((branch) => {
               const selected = branch.name === selectedBranch;
               const isDefault = branch.name === defaultBranch || branch.isDefault;
-              const canDelete = canManage && !selected && !isDefault;
+              const canDelete = canManageBranches && !selected && !isDefault;
               return (
                 <div className="repo-branch-row" key={branch.name}>
                   <button type="button" role="option" aria-selected={selected} title={branch.name} onClick={() => selectBranch(branch.name)}>
@@ -107,10 +107,17 @@ const BranchSelector = ({
               );
             })}
           </div>
-          {canManage && (
-            <button type="button" className="repo-branch-new" onClick={() => { setOpen(false); onCreate(); }}>
-              <FiPlus aria-hidden="true" /> New branch
-            </button>
+          {canManageBranches && (
+            <div className="branch-create-section">
+              <button
+                type="button"
+                className="branch-create-action"
+                onClick={() => { setOpen(false); onCreate(); }}
+              >
+                <span aria-hidden="true">+</span>
+                New branch
+              </button>
+            </div>
           )}
         </div>
       )}
