@@ -79,3 +79,35 @@ nav p:hover {
   color: white;
   text-decoration: underline;
 }
+
+@media (max-width: 480px) {
+  nav {
+    padding: 10px 14px;
+  }
+
+  nav > div {
+    gap: 14px;
+  }
+
+  nav h3 {
+    font-size: 16px;
+  }
+
+  nav p {
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 375px) {
+  nav > a > div {
+    gap: 7px;
+  }
+
+  nav > div {
+    gap: 10px;
+  }
+
+  nav h3 {
+    display: none;
+  }
+}

@@ -40,6 +40,10 @@ const ProjectRoutes = () => {
       element: <Dashboard />
     },
     {
+      path: "/dashboard",
+      element: <Dashboard />
+    },
+    {
       path: "/login",
       element: <Login />
     },

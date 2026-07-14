@@ -1,11 +1,12 @@
 import React, { useState } from "react";
 import { FiBriefcase, FiCalendar, FiLink, FiMapPin } from "react-icons/fi";
-import { formatProfileDate, getProfileInitials } from "./profileUtils";
+import { formatJoinedDate } from "../../utils/date";
+import { getProfileInitials } from "./profileUtils";
 
 const ProfileHeader = ({ user, stats, isOwner, onEdit, onLogout }) => {
   const [failedAvatarUrl, setFailedAvatarUrl] = useState("");
   const initials = getProfileInitials(user.name, user.username);
-  const joined = formatProfileDate(user.createdAt);
+  const joined = formatJoinedDate(user.createdAt);
 
   return (
     <aside className="profile-sidebar" aria-labelledby="profile-name">
@@ -23,7 +24,7 @@ const ProfileHeader = ({ user, stats, isOwner, onEdit, onLogout }) => {
         {user.website && (
           <li><FiLink aria-hidden="true" /><a href={user.website} target="_blank" rel="noopener noreferrer">{user.website.replace(/^https?:\/\//, "").replace(/\/$/, "")}</a></li>
         )}
-        {joined && <li><FiCalendar aria-hidden="true" />Joined {joined}</li>}
+        <li><FiCalendar aria-hidden="true" /><span>{joined}</span></li>
       </ul>
       <div className="profile-follow-counts">
         <span><strong>{user.followersCount || 0}</strong> followers</span>

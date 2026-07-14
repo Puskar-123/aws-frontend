@@ -1,126 +1,112 @@
-import React, { useState, useEffect } from "react";
-import axios from "axios";
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../authContext";
+import { getResponseError, parseResponse } from "../../utils/api";
+import AuthLayout from "./AuthLayout";
+import PasswordInput from "./PasswordInput";
 import "./auth.css";
-import { Button } from "@primer/react";
-import { PageHeader } from "@primer/react";
-import logo from "../../assets/github-mark-white.svg";
-import { Link } from "react-router-dom";
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const Signup = () => {
-  const [email, setEmail] = useState("");
+  const navigate = useNavigate();
+  const { setCurrentUser } = useAuth();
   const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [errors, setErrors] = useState({});
+  const [requestError, setRequestError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const { setCurrentUser } = useAuth();
+  const updateField = (field, value) => {
+    if (field === "username") setUsername(value);
+    if (field === "email") setEmail(value);
+    if (field === "password") setPassword(value);
+    setErrors((current) => ({ ...current, [field]: "" }));
+    setRequestError("");
+  };
 
-  const handleSignup = async (e) => {
-    e.preventDefault();
+  const validate = () => {
+    const nextErrors = {};
+    if (!username.trim()) nextErrors.username = "Username is required.";
+    if (!email.trim()) nextErrors.email = "Email address is required.";
+    else if (!EMAIL_PATTERN.test(email.trim())) nextErrors.email = "Enter a valid email address.";
+    if (!password) nextErrors.password = "Password is required.";
+    setErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  };
+
+  const handleSignup = async (event) => {
+    event.preventDefault();
+    if (loading || !validate()) return;
+    setRequestError("");
+    setLoading(true);
 
     try {
-      setLoading(true);
-      const res = await axios.post("https://api.codehub.sbs/signup", {
-        email: email,
-        password: password,
-        username: username,
+      const response = await fetch("https://api.codehub.sbs/user/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: username.trim(), email: email.trim(), password }),
       });
-      localStorage.setItem("token", res.data.token);
-      localStorage.setItem("userId", res.data.userId);
+      const data = await parseResponse(response);
 
-      setCurrentUser(res.data.userId);
-      setLoading(false);
+      if (!response.ok) {
+        setRequestError(getResponseError(data, "Unable to create your account. Please try again."));
+        return;
+      }
+      if (!data.token || !data.userId) {
+        setRequestError("The server returned an incomplete signup response.");
+        return;
+      }
 
-      window.location.href = "/";
-    } catch (err) {
-      console.error(err);
-      alert("Signup Failed!");
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("userId", data.userId);
+      setCurrentUser(data.userId);
+      navigate("/");
+    } catch {
+      setRequestError("Unable to connect to the server. Please try again.");
+    } finally {
       setLoading(false);
     }
   };
 
+  const passwordHint = password
+    ? `${password.length < 8 ? "Keep going" : "Good start"} — ${password.length} character${password.length === 1 ? "" : "s"}.`
+    : "Use a password you do not use on another site.";
+
   return (
-    <div className="login-wrapper">
-      <div className="login-logo-container">
-        <img className="logo-login" src={logo} alt="Logo" />
-      </div>
+    <AuthLayout
+      title="Create your account"
+      subtitle="Start building and sharing projects"
+      footer={<p>Already have an account? <Link to="/login">Sign in</Link></p>}
+    >
+      <form onSubmit={handleSignup} noValidate>
+        {requestError && <div className="auth-error auth-error--form" role="alert">{requestError}</div>}
 
-      <div className="login-box-wrapper">
-        <div className="login-heading">
-          <Button
-            variant="primary"
-            className="login-btn"
-            disabled={loading}
-            onClick={handleSignup}
-          >
-            {loading ? "Loading..." : "Signup"}
-          </Button>
-          {/* <Box sx={{ padding: 1 }}>
-            <PageHeader>
-              <PageHeader.TitleArea variant="large">
-                <PageHeader.Title>Sign Up</PageHeader.Title>
-              </PageHeader.TitleArea>
-            </PageHeader>
-          </Box> */}
+        <div className="auth-field">
+          <label className="auth-label" htmlFor="signup-username">Username</label>
+          <input id="signup-username" name="username" className="auth-input" type="text" value={username} onChange={(event) => updateField("username", event.target.value)} autoComplete="username" aria-invalid={Boolean(errors.username) || undefined} aria-describedby={errors.username ? "signup-username-error" : undefined} />
+          {errors.username && <p id="signup-username-error" className="auth-error">{errors.username}</p>}
         </div>
 
-        <div className="login-box">
-          <div>
-            <label className="label">Username</label>
-            <input
-              autoComplete="off"
-              name="Username"
-              id="Username"
-              className="input"
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-            />
-          </div>
-
-          <div>
-            <label className="label">Email address</label>
-            <input
-              autoComplete="off"
-              name="Email"
-              id="Email"
-              className="input"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-          </div>
-
-          <div className="div">
-            <label className="label">Password</label>
-            <input
-              autoComplete="off"
-              name="Password"
-              id="Password"
-              className="input"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </div>
-
-          <Button
-            variant="primary"
-            className="login-btn"
-            disabled={loading}
-            onClick={handleSignup}
-          >
-            {loading ? "Loading..." : "Signup"}
-          </Button>
+        <div className="auth-field">
+          <label className="auth-label" htmlFor="signup-email">Email address</label>
+          <input id="signup-email" name="email" className="auth-input" type="email" value={email} onChange={(event) => updateField("email", event.target.value)} autoComplete="email" aria-invalid={Boolean(errors.email) || undefined} aria-describedby={errors.email ? "signup-email-error" : undefined} />
+          {errors.email && <p id="signup-email-error" className="auth-error">{errors.email}</p>}
         </div>
 
-        <div className="pass-box">
-          <p>
-            Already have an account? <Link to="/auth">Login</Link>
-          </p>
+        <div className="auth-field">
+          <label className="auth-label" htmlFor="signup-password">Password</label>
+          <PasswordInput id="signup-password" value={password} onChange={(event) => updateField("password", event.target.value)} autoComplete="new-password" invalid={Boolean(errors.password)} describedBy={errors.password ? "signup-password-error signup-password-helper" : "signup-password-helper"} />
+          {errors.password && <p id="signup-password-error" className="auth-error">{errors.password}</p>}
+          <p id="signup-password-helper" className="auth-helper">{passwordHint}</p>
         </div>
-      </div>
-    </div>
+
+        <button type="submit" className="auth-submit" disabled={loading} aria-busy={loading}>
+          {loading ? "Creating account..." : "Create account"}
+        </button>
+      </form>
+    </AuthLayout>
   );
 };
 

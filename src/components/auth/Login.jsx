@@ -1,117 +1,115 @@
 import React, { useState } from "react";
-import axios from "axios";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../authContext";
-import { useNavigate, Link } from "react-router-dom";
-
+import { getResponseError, parseResponse } from "../../utils/api";
+import AuthLayout from "./AuthLayout";
+import PasswordInput from "./PasswordInput";
 import "./auth.css";
-import logo from "../../assets/github-mark-white.svg";
 
 const Login = () => {
   const navigate = useNavigate();
   const { setCurrentUser } = useAuth();
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [errors, setErrors] = useState({});
+  const [requestError, setRequestError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
+  const updateField = (field, value) => {
+    if (field === "email") setEmail(value);
+    if (field === "password") setPassword(value);
+    setErrors((current) => ({ ...current, [field]: "" }));
+    setRequestError("");
+  };
+
+  const validate = () => {
+    const nextErrors = {};
+    if (!email.trim()) nextErrors.email = "Email address is required.";
+    if (!password) nextErrors.password = "Password is required.";
+    setErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  };
+
+  const handleLogin = async (event) => {
+    event.preventDefault();
+    if (loading || !validate()) return;
+    setRequestError("");
+    setLoading(true);
 
     try {
-      setLoading(true);
+      const response = await fetch("https://api.codehub.sbs/user/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim(), password }),
+      });
+      const data = await parseResponse(response);
 
-      const res = await axios.post(
-        "https://api.codehub.sbs/user/login",
-        {
-          email,
-          password,
-        }
-      );
-
-      localStorage.setItem("token", res.data.token);
-      localStorage.setItem("userId", res.data.userId);
-
-      setCurrentUser(res.data.userId);
-
-      navigate("/dashboard");
-    } catch (error) {
-      console.error(error);
-
-      if (error.response) {
-        alert(error.response.data.error || "Login Failed");
-      } else {
-        alert("Server not reachable");
+      if (!response.ok) {
+        setRequestError(getResponseError(data, "Unable to sign in. Check your credentials and try again."));
+        return;
       }
+      if (!data.token || !data.userId) {
+        setRequestError("The server returned an incomplete sign-in response.");
+        return;
+      }
+
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("userId", data.userId);
+      setCurrentUser(data.userId);
+      navigate("/dashboard");
+    } catch {
+      setRequestError("Unable to connect to the server. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="login-wrapper">
-      <div className="login-logo-container">
-        <img
-          className="logo-login"
-          src={logo}
-          alt="CodeHub"
-        />
-      </div>
+    <AuthLayout
+      title="Welcome back"
+      subtitle="Sign in to continue to CodeHub"
+      footer={<p>New to CodeHub? <Link to="/signup">Create an account</Link></p>}
+    >
+      <form onSubmit={handleLogin} noValidate>
+        {requestError && <div className="auth-error auth-error--form" role="alert">{requestError}</div>}
 
-      <div className="login-box-wrapper">
-        <h1 className="auth-title">Sign In</h1>
-
-        <div className="login-box">
-          <div>
-            <label className="label">
-              Email Address
-            </label>
-
-            <input
-              className="input"
-              type="email"
-              value={email}
-              onChange={(e) =>
-                setEmail(e.target.value)
-              }
-            />
-          </div>
-
-          <div>
-            <label className="label">
-              Password
-            </label>
-
-            <input
-              className="input"
-              type="password"
-              value={password}
-              onChange={(e) =>
-                setPassword(e.target.value)
-              }
-            />
-          </div>
-
-          <button
-            className="login-btn"
-            disabled={loading}
-            onClick={handleLogin}
-          >
-            {loading ? "Loading..." : "Login"}
-          </button>
+        <div className="auth-field">
+          <label className="auth-label" htmlFor="login-email">Email address</label>
+          <input
+            id="login-email"
+            name="email"
+            className="auth-input"
+            type="email"
+            value={email}
+            onChange={(event) => updateField("email", event.target.value)}
+            autoComplete="email"
+            aria-invalid={Boolean(errors.email) || undefined}
+            aria-describedby={errors.email ? "login-email-error" : undefined}
+          />
+          {errors.email && <p id="login-email-error" className="auth-error">{errors.email}</p>}
         </div>
 
-        <div className="pass-box">
-          <p>
-            New to CodeHub?{" "}
-            <Link to="/signup">
-              Create an account
-            </Link>
-          </p>
+        <div className="auth-field">
+          <div className="auth-label-row">
+            <label className="auth-label" htmlFor="login-password">Password</label>
+          </div>
+          <PasswordInput
+            id="login-password"
+            value={password}
+            onChange={(event) => updateField("password", event.target.value)}
+            autoComplete="current-password"
+            invalid={Boolean(errors.password)}
+            describedBy={errors.password ? "login-password-error" : undefined}
+          />
+          {errors.password && <p id="login-password-error" className="auth-error">{errors.password}</p>}
         </div>
-      </div>
-    </div>
+
+        <button type="submit" className="auth-submit" disabled={loading} aria-busy={loading}>
+          {loading ? "Signing in..." : "Sign in"}
+        </button>
+      </form>
+    </AuthLayout>
   );
 };
 
 export default Login;
-
