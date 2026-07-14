@@ -40,16 +40,39 @@
 .pull-tabs button[aria-selected="true"] { border-bottom-color: #f78166; color: #f0f6fc; }
 .pull-conversation { display: grid; grid-template-columns: minmax(0,1fr) 330px; gap: 22px; margin-top: 20px; }
 .pull-timeline { display: grid; gap: 14px; }
-.pull-description, .pull-comment, .pull-comment-form, .merge-panel { padding: 16px; border: 1px solid #30363d; border-radius: 8px; background: #161b22; }
-.pull-description h2, .merge-panel h2 { margin: 0 0 8px; color: #f0f6fc; font-size: 16px; }
-.pull-description p, .pull-comment p, .merge-panel p { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
-.pull-comment header { margin: -16px -16px 12px; padding: 10px 16px; border-bottom: 1px solid #30363d; background: #21262d; }
+.pull-description, .pull-comment, .pull-review, .pull-comment-form, .pull-review-form, .merge-panel, .review-summary { padding: 16px; border: 1px solid #30363d; border-radius: 8px; background: #161b22; }
+.pull-description h2, .pull-review-form h2, .merge-panel h2, .review-summary h2 { margin: 0 0 8px; color: #f0f6fc; font-size: 16px; }
+.pull-description p, .pull-comment p, .pull-review p, .merge-panel p, .review-summary p { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.pull-comment header, .pull-review header { display: flex; align-items: center; gap: 9px; margin: -16px -16px 12px; padding: 10px 16px; border-bottom: 1px solid #30363d; background: #21262d; }
+.pull-comment header time, .pull-review header time { margin-left: auto; color: #8b949e; font-size: 12px; }
 .pull-comment-form { display: grid; gap: 10px; }
 .pull-comment-form .pull-primary { justify-self: end; }
+.pull-identity { display: inline-flex; align-items: center; gap: 7px; vertical-align: middle; }
+.pull-avatar { width: 24px; height: 24px; flex: 0 0 24px; border-radius: 50%; object-fit: cover; }
+.pull-avatar--fallback { display: inline-flex; align-items: center; justify-content: center; color: #f0f6fc; background: #484f58; font-size: 9px; font-weight: 700; }
+.pull-review-form { display: grid; gap: 11px; }
+.pull-review-form > label { color: #f0f6fc; font-size: 13px; font-weight: 600; }
+.pull-review-form textarea { width: 100%; box-sizing: border-box; padding: 9px 10px; border: 1px solid #30363d; border-radius: 6px; color: #f0f6fc; background: #0d1117; font: inherit; }
+.pull-review-form fieldset { display: flex; flex-wrap: wrap; gap: 14px; margin: 0; padding: 10px 0 0; border: 0; border-top: 1px solid #30363d; }
+.pull-review-form legend { padding: 0 0 6px; color: #f0f6fc; font-size: 13px; font-weight: 600; }
+.pull-review-form fieldset label { color: #c9d1d9; font-size: 13px; }
+.pull-review-form .pull-primary { justify-self: end; }
+.review-badge { display: inline-flex; align-items: center; padding: 2px 7px; border: 1px solid #30363d; border-radius: 999px; color: #8b949e; font-size: 11px; font-weight: 600; white-space: nowrap; }
+.review-badge--approved { border-color: rgba(46,160,67,.7); color: #3fb950; }
+.review-badge--changes_requested { border-color: rgba(248,81,73,.65); color: #ff7b72; }
+.review-badge.is-stale { border-color: #484f58; color: #8b949e; }
+.review-summary { display: grid; gap: 10px; margin-bottom: 12px; }
+.review-summary > p { color: #8b949e; font-size: 12px; }
+.review-summary-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-top: 9px; border-top: 1px solid #30363d; }
+.merge-details { display: grid; gap: 8px; margin: 14px 0 0; }
+.merge-details div { display: flex; justify-content: space-between; gap: 10px; }
+.merge-details dt { color: #8b949e; }
+.merge-details dd { margin: 0; color: #f0f6fc; text-align: right; }
 .merge-panel { border-color: rgba(46,160,67,.55); }
 .merge-panel--blocked { border-color: rgba(187,128,9,.7); }
 .merge-panel--done { border-color: rgba(137,87,229,.7); }
-.pull-list-controls button:focus-visible, .pull-primary:focus-visible, .pull-secondary:focus-visible, .pull-tabs button:focus-visible, .pull-form input:focus-visible, .pull-form textarea:focus-visible, .pull-form select:focus-visible, .pull-comment-form textarea:focus-visible { outline: 2px solid #58a6ff; outline-offset: 2px; }
+.pull-list-controls button:focus-visible, .pull-primary:focus-visible, .pull-secondary:focus-visible, .pull-tabs button:focus-visible, .pull-form input:focus-visible, .pull-form textarea:focus-visible, .pull-form select:focus-visible, .pull-comment-form textarea:focus-visible, .pull-review-form textarea:focus-visible, .pull-review-form input:focus-visible { outline: 2px solid #58a6ff; outline-offset: 2px; }
 
 @media (max-width: 768px) { .pull-container { width: min(100% - 28px,1080px); } .pull-conversation { grid-template-columns: 1fr; } .pull-conversation aside { order: -1; } }
-@media (max-width: 480px) { .pull-container { width: min(100% - 24px,1080px); padding-top: 24px; } .pull-list-header { align-items: stretch; flex-direction: column; } .pull-list-header .pull-primary { width: 100%; box-sizing: border-box; } .pull-list-controls { flex-wrap: wrap; } .pull-list-controls label { width: 100%; margin-left: 0; } .pull-list-controls input { width: 100%; box-sizing: border-box; } .pull-list-item { grid-template-columns: 1fr; } .pull-status { width: fit-content; } .pull-branches { grid-template-columns: 1fr; } .pull-branches > span { display: none; } .pull-detail-header > div { align-items: flex-start; flex-direction: column; } .pull-comment-form .pull-primary, .merge-panel .pull-primary { width: 100%; } }
+@media (max-width: 480px) { .pull-container { width: min(100% - 24px,1080px); padding-top: 24px; } .pull-list-header { align-items: stretch; flex-direction: column; } .pull-list-header .pull-primary { width: 100%; box-sizing: border-box; } .pull-list-controls { flex-wrap: wrap; } .pull-list-controls label { width: 100%; margin-left: 0; } .pull-list-controls input { width: 100%; box-sizing: border-box; } .pull-list-item { grid-template-columns: 1fr; } .pull-status { width: fit-content; } .pull-branches { grid-template-columns: 1fr; } .pull-branches > span { display: none; } .pull-detail-header > div { align-items: flex-start; flex-direction: column; } .pull-comment header, .pull-review header { align-items: flex-start; flex-wrap: wrap; } .pull-comment header time, .pull-review header time { width: 100%; margin-left: 31px; } .pull-comment-form .pull-primary, .pull-review-form .pull-primary, .merge-panel .pull-primary { width: 100%; } }
+@media (max-width: 480px) { .pull-review-form fieldset { flex-direction: column; } }

@@ -36,16 +36,19 @@ const PullRequestPage = () => {
 
   if (state.loading) return <div className="pull-page"><Navbar /><main className="pull-container"><div className="pull-state" role="status">Loading pull request...</div></main></div>;
   if (state.error && !state.data) return <div className="pull-page"><Navbar /><main className="pull-container"><div className="pull-state pull-state--error" role="alert">{state.error}</div></main></div>;
-  const { pullRequest, comparison, mergeability, permissions } = state.data;
+  const { pullRequest, comparison, mergeability, permissions, reviewSummary, historicalUnavailable } = state.data;
+  const commits = comparison?.commits || [];
+  const files = comparison?.files || [];
   return <div className="pull-page"><Navbar /><main className="pull-container">
     <PullRequestHeader repositoryId={id} pullRequest={pullRequest} />
     {state.error && <div className="pull-error" role="alert">{state.error}</div>}
-    {!comparison.ancestryAvailable && <div className="pull-warning">Commit ancestry unavailable for this legacy history</div>}
-    <PullRequestTabs active={active} onChange={setActive} commits={comparison.commits.length} files={comparison.files.length} />
+    {comparison && comparison.ancestryAvailable === false && <div className="pull-warning">Commit ancestry unavailable for this legacy history</div>}
+    {historicalUnavailable && <div className="pull-warning">Historical comparison unavailable for this legacy pull request.</div>}
+    <PullRequestTabs active={active} onChange={setActive} commits={commits.length} files={files.length} unavailable={historicalUnavailable} />
     <div role="tabpanel">
-      {active === "conversation" && <PullRequestConversation repositoryId={id} pullRequest={pullRequest} mergeability={mergeability} permissions={permissions} onComment={(comment) => setState((current) => ({ ...current, data: { ...current.data, pullRequest: { ...current.data.pullRequest, comments: [...current.data.pullRequest.comments, comment] } } }))} onMerge={() => action("merge")} onClose={() => action("close")} onReopen={() => action("reopen")} />}
-      {active === "commits" && <CompareCommits commits={comparison.commits} />}
-      {active === "files" && <CompareFiles files={comparison.files} summary={comparison.summary} repositoryId={id} base={pullRequest.baseBranch} compare={pullRequest.compareBranch} />}
+      {active === "conversation" && <PullRequestConversation repositoryId={id} pullRequest={pullRequest} mergeability={mergeability} permissions={permissions} reviewSummary={reviewSummary} onComment={(comment) => setState((current) => ({ ...current, data: { ...current.data, pullRequest: { ...current.data.pullRequest, comments: [...current.data.pullRequest.comments, comment] } } }))} onReview={() => load()} onMerge={() => action("merge")} onClose={() => action("close")} onReopen={() => action("reopen")} />}
+      {active === "commits" && (historicalUnavailable ? <div className="pull-state">Historical commits are unavailable.</div> : <CompareCommits commits={commits} />)}
+      {active === "files" && (historicalUnavailable ? <div className="pull-state">Historical file changes are unavailable.</div> : <CompareFiles files={files} summary={comparison?.summary || {}} repositoryId={id} base={pullRequest.baseBranch} compare={pullRequest.compareBranch} />)}
     </div>
   </main></div>;
 };
