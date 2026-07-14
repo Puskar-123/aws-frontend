@@ -8,9 +8,10 @@ const FileTree = ({
   focusRequest,
   onToggle,
   onSelect,
+  emptyMessage = "No files in this repository",
 }) => {
   if (!nodes.length) {
-    return <div className="repo-tree__empty">No files in this repository</div>;
+    return <div className="repo-tree__empty">{emptyMessage}</div>;
   }
 
   return (

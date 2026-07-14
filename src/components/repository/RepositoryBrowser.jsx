@@ -36,11 +36,14 @@ const RepositoryBrowser = ({
   repositoryId,
   repositoryName,
   files = [],
+  branch = "",
   loading = false,
+  emptyMessage = "No files in this repository",
   apiBase = API_BASE,
   onRename,
   onDelete,
 }) => {
+  const scopeKey = `${repositoryId}:${branch || "default"}`;
   const tree = useMemo(() => buildFileTree(files), [files]);
   const fileNodes = useMemo(() => flattenTreeFiles(tree), [tree]);
   const availablePaths = useMemo(() => new Set(fileNodes.map((node) => node.path)), [fileNodes]);
@@ -54,7 +57,7 @@ const RepositoryBrowser = ({
   const previewRequestId = useRef(0);
   const downloadInFlight = useRef(false);
 
-  const selectedPath = selection.repositoryId === repositoryId && availablePaths.has(selection.path)
+  const selectedPath = selection.repositoryId === scopeKey && availablePaths.has(selection.path)
     ? selection.path
     : automaticPath;
   const selectedNode = fileNodes.find((node) => node.path === selectedPath) || null;
@@ -66,7 +69,7 @@ const RepositoryBrowser = ({
     }
     return defaults;
   }, [automaticPath, fileNodes, tree]);
-  const expandedPaths = expandedState.repositoryId === repositoryId
+  const expandedPaths = expandedState.repositoryId === scopeKey
     ? expandedState.paths
     : defaultExpandedPaths;
   const initialCategory = selectedNode
@@ -81,7 +84,7 @@ const RepositoryBrowser = ({
     const loadPreview = async () => {
       try {
         const response = await fetch(
-          `${apiBase}/repo/preview/${repositoryId}/${encodeRepoPath(selectedNode.path)}`,
+          `${apiBase}/repo/preview/${repositoryId}/${encodeRepoPath(selectedNode.path)}${branch ? `?branch=${encodeURIComponent(branch)}` : ""}`,
           { headers: getAuthHeaders(), signal: controller.signal },
         );
         if (!response.ok) {
@@ -100,7 +103,7 @@ const RepositoryBrowser = ({
 
     loadPreview();
     return () => controller.abort();
-  }, [apiBase, initialCategory, repositoryId, retryCount, selectedNode]);
+  }, [apiBase, branch, initialCategory, repositoryId, retryCount, selectedNode]);
 
   const currentPreview = selectedNode && previewState.path === selectedNode.path
     ? previewState
@@ -108,38 +111,38 @@ const RepositoryBrowser = ({
 
   const expandParents = useCallback((filePath) => {
     setExpandedState((current) => {
-      const base = current.repositoryId === repositoryId ? current.paths : defaultExpandedPaths;
+      const base = current.repositoryId === scopeKey ? current.paths : defaultExpandedPaths;
       const next = new Set(base);
       parentPaths(filePath).forEach((folderPath) => next.add(folderPath));
-      return { repositoryId, paths: next };
+      return { repositoryId: scopeKey, paths: next };
     });
-  }, [defaultExpandedPaths, repositoryId]);
+  }, [defaultExpandedPaths, scopeKey]);
 
   const selectFile = useCallback((filePath) => {
-    setSelection({ repositoryId, path: filePath });
+    setSelection({ repositoryId: scopeKey, path: filePath });
     expandParents(filePath);
-  }, [expandParents, repositoryId]);
+  }, [expandParents, scopeKey]);
 
   const toggleFolder = useCallback((folderPath) => {
     setExpandedState((current) => {
-      const base = current.repositoryId === repositoryId ? current.paths : defaultExpandedPaths;
+      const base = current.repositoryId === scopeKey ? current.paths : defaultExpandedPaths;
       const next = new Set(base);
       if (next.has(folderPath)) next.delete(folderPath);
       else next.add(folderPath);
-      return { repositoryId, paths: next };
+      return { repositoryId: scopeKey, paths: next };
     });
-  }, [defaultExpandedPaths, repositoryId]);
+  }, [defaultExpandedPaths, scopeKey]);
 
   const focusFolder = useCallback((folderPath) => {
     setExpandedState((current) => {
-      const base = current.repositoryId === repositoryId ? current.paths : defaultExpandedPaths;
+      const base = current.repositoryId === scopeKey ? current.paths : defaultExpandedPaths;
       const next = new Set(base);
       const segments = folderPath.split("/");
       segments.forEach((_, index) => next.add(segments.slice(0, index + 1).join("/")));
-      return { repositoryId, paths: next };
+      return { repositoryId: scopeKey, paths: next };
     });
     setFocusRequest({ path: folderPath, id: Date.now() });
-  }, [defaultExpandedPaths, repositoryId]);
+  }, [defaultExpandedPaths, scopeKey]);
 
   const downloadFile = useCallback(async (filePath) => {
     if (downloadInFlight.current) return;
@@ -147,7 +150,7 @@ const RepositoryBrowser = ({
     setDownloadState({ path: filePath, status: "loading", error: "" });
     try {
       const response = await fetch(
-        `${apiBase}/repo/file/${repositoryId}/${encodeRepoPath(filePath)}`,
+        `${apiBase}/repo/file/${repositoryId}/${encodeRepoPath(filePath)}${branch ? `?branch=${encodeURIComponent(branch)}` : ""}`,
         { headers: getAuthHeaders() },
       );
       if (!response.ok) throw new Error(await getErrorMessage(response, "Download failed"));
@@ -166,7 +169,7 @@ const RepositoryBrowser = ({
     } finally {
       downloadInFlight.current = false;
     }
-  }, [apiBase, repositoryId]);
+  }, [apiBase, branch, repositoryId]);
 
   const renameFile = useCallback(async (filePath) => {
     const renamedFile = await onRename?.(filePath);
@@ -199,6 +202,7 @@ const RepositoryBrowser = ({
             focusRequest={focusRequest}
             onToggle={toggleFolder}
             onSelect={selectFile}
+            emptyMessage={emptyMessage}
           />
         </div>
       </aside>
@@ -207,6 +211,7 @@ const RepositoryBrowser = ({
           apiBase={apiBase}
           repositoryId={repositoryId}
           repositoryName={repositoryName}
+          branch={branch}
           selectedNode={selectedNode}
           preview={currentPreview}
           getAuthHeaders={getAuthHeaders}

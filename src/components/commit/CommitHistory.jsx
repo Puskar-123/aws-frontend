@@ -22,7 +22,7 @@ const responseError = async (response) => {
 const commitIdentifier = (commit, index) =>
   String(commit.hash || commit._id || `legacy-${index + 1}`);
 
-const CommitHistory = ({ repositoryId, commits = [], apiBase = API_BASE }) => {
+const CommitHistory = ({ repositoryId, commits = [], apiBase = API_BASE, emptyText = "No commits yet." }) => {
   const [expandedCommit, setExpandedCommit] = useState("");
   const [diffCache, setDiffCache] = useState({});
   const inFlight = useRef(new Map());
@@ -75,7 +75,7 @@ const CommitHistory = ({ repositoryId, commits = [], apiBase = API_BASE }) => {
         <span>{commits.length}</span>
       </div>
       {!commits.length ? (
-        <div className="commit-history__empty">No commits yet.</div>
+        <div className="commit-history__empty">{emptyText}</div>
       ) : commits.map((commit, index) => {
         const commitId = commitIdentifier(commit, index);
         const expanded = expandedCommit === commitId;

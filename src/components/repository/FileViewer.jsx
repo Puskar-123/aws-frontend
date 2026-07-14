@@ -22,6 +22,7 @@ const FileViewer = ({
   apiBase,
   repositoryId,
   repositoryName,
+  branch,
   selectedNode,
   preview,
   getAuthHeaders,
@@ -80,6 +81,7 @@ const FileViewer = ({
           repositoryId={repositoryId}
           filePath={path}
           filename={name}
+          branch={branch}
           getAuthHeaders={getAuthHeaders}
         />
       );

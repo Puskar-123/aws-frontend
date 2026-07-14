@@ -11,7 +11,7 @@ const responseError = async (response) => {
   }
 };
 
-const ImagePreview = ({ apiBase, repositoryId, filePath, filename, getAuthHeaders }) => {
+const ImagePreview = ({ apiBase, repositoryId, filePath, filename, branch, getAuthHeaders }) => {
   const [imageState, setImageState] = useState({ path: "", status: "loading", url: "", error: "" });
   const [loadErrorPath, setLoadErrorPath] = useState("");
   const requestId = useRef(0);
@@ -24,7 +24,7 @@ const ImagePreview = ({ apiBase, repositoryId, filePath, filename, getAuthHeader
     const loadImage = async () => {
       try {
         const response = await fetch(
-          `${apiBase}/repo/file/${repositoryId}/${encodeRepoPath(filePath)}`,
+          `${apiBase}/repo/file/${repositoryId}/${encodeRepoPath(filePath)}${branch ? `?branch=${encodeURIComponent(branch)}` : ""}`,
           { headers: getAuthHeaders(), signal: controller.signal },
         );
         if (!response.ok) throw new Error(await responseError(response));
@@ -45,7 +45,7 @@ const ImagePreview = ({ apiBase, repositoryId, filePath, filename, getAuthHeader
       controller.abort();
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
-  }, [apiBase, filePath, getAuthHeaders, repositoryId]);
+  }, [apiBase, branch, filePath, getAuthHeaders, repositoryId]);
 
   const currentState = imageState.path === filePath
     ? imageState
