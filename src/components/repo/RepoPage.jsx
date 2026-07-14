@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useAuth } from "../../authContext";
 import { authenticatedFetch, getAuthToken, getResponseError, parseResponse } from "../../utils/api";
 import { encodeRepoPath, normalizeRepoPath } from "../../utils/repoPath";
@@ -344,6 +344,7 @@ const RepoPage = () => {
         <div className="repo-header">
           <h1>{repo.owner?.username && <span>{repo.owner.username} / </span>}{repo.name}</h1>
           <div className="repo-header__actions">
+            <Link className="push-btn repo-pulls-link" to={`/repo/${id}/pulls`}>Pull requests</Link>
             <label className="upload-btn">Upload Project Folder<input ref={folderInputRef} type="file" multiple hidden onChange={handleFileSelect} /></label>
             <button type="button" onClick={handleAddFiles} className="push-btn">Add Files</button>
           </div>

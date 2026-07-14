@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { useParams, useSearchParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { getResponseError, parseResponse } from "../../utils/api";
 import Navbar from "../Navbar";
 import CompareBranchSelectors from "./CompareBranchSelectors";
@@ -16,6 +16,7 @@ const readData = async (response, fallback) => { const data = await parseRespons
 
 const ComparePage = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const initialParams = useRef({ base: searchParams.get("base") || "", compare: searchParams.get("compare") || "" });
   const cache = useRef(new Map());
@@ -25,7 +26,6 @@ const ComparePage = () => {
   const [branchState, setBranchState] = useState({ loading: true, error: "" });
   const [compareState, setCompareState] = useState({ loading: false, data: null, error: "" });
   const [activeTab, setActiveTab] = useState("commits");
-  const [pullRequestMessage, setPullRequestMessage] = useState("");
 
   useEffect(() => {
     const controller = new AbortController();
@@ -54,7 +54,6 @@ const ComparePage = () => {
     const load = async () => {
       await Promise.resolve();
       setSearchParams({ base, compare }, { replace: true });
-      setPullRequestMessage("");
       if (cached) { setCompareState({ loading: false, data: cached, error: "" }); return; }
       setCompareState({ loading: true, data: null, error: "" });
       try {
@@ -79,8 +78,7 @@ const ComparePage = () => {
       {branchState.loading && <div className="compare-state" role="status">Loading branches...</div>}
       {branchState.error && <div className="compare-state compare-state--error" role="alert">{branchState.error}</div>}
       {!branchState.loading && !branchState.error && branches.length < 2 && <div className="compare-state">Create another branch to compare changes.</div>}
-      {branches.length >= 2 && <CompareBranchSelectors branches={branches} base={base} compare={compare} onBase={chooseBase} onCompare={chooseCompare} onSwap={swap} canCreatePullRequest={canCreatePullRequest} onCreatePullRequest={() => setPullRequestMessage("Pull Requests are the next feature.")} />}
-      {pullRequestMessage && <div className="compare-pr-message" role="status">{pullRequestMessage}</div>}
+      {branches.length >= 2 && <CompareBranchSelectors branches={branches} base={base} compare={compare} onBase={chooseBase} onCompare={chooseCompare} onSwap={swap} canCreatePullRequest={canCreatePullRequest} onCreatePullRequest={() => navigate(`/repo/${id}/pulls/new?base=${encodeURIComponent(base)}&compare=${encodeURIComponent(compare)}`)} />}
       {compareState.loading && <div className="compare-state" role="status">Comparing branches...</div>}
       {compareState.error && <div className="compare-state compare-state--error" role="alert">{compareState.error}</div>}
       {data && <><CompareSummary comparison={data} /><CompareTabs active={activeTab} onChange={setActiveTab} commitCount={data.commits.length} fileCount={data.files.length} />

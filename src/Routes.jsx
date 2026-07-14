@@ -10,6 +10,9 @@ import Create from "./components/create/Create";
 import { useAuth } from "./authContext";
 import RepoPage from "./components/repo/RepoPage";
 import ComparePage from "./components/compare/ComparePage";
+import NewPullRequest from "./components/pulls/NewPullRequest";
+import PullRequestList from "./components/pulls/PullRequestList";
+import PullRequestPage from "./components/pulls/PullRequestPage";
 
 const ProjectRoutes = () => {
   const { currentUser, setCurrentUser } = useAuth();
@@ -67,6 +70,18 @@ const ProjectRoutes = () => {
     {
     path: "/repo/:id/compare",
     element: <ComparePage />
+    },
+    {
+    path: "/repo/:id/pulls/new",
+    element: <NewPullRequest />
+    },
+    {
+    path: "/repo/:id/pulls/:number",
+    element: <PullRequestPage />
+    },
+    {
+    path: "/repo/:id/pulls",
+    element: <PullRequestList />
     },
     {
     path: "/repo/:id",

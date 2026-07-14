@@ -13,6 +13,9 @@ import Profile from "./components/user/Profile";
 import Create from "./components/create/Create";
 import RepoPage from "./components/repo/RepoPage";
 import ComparePage from "./components/compare/ComparePage";
+import NewPullRequest from "./components/pulls/NewPullRequest";
+import PullRequestList from "./components/pulls/PullRequestList";
+import PullRequestPage from "./components/pulls/PullRequestPage";
 
 function Home() {
   const navigate = useNavigate();
@@ -98,6 +101,9 @@ function App() {
 
       {/* Repo */}
       <Route path="/repo/:id/compare" element={<ComparePage />} />
+      <Route path="/repo/:id/pulls/new" element={<NewPullRequest />} />
+      <Route path="/repo/:id/pulls/:number" element={<PullRequestPage />} />
+      <Route path="/repo/:id/pulls" element={<PullRequestList />} />
       <Route path="/repo/:id" element={<RepoPage />} />
 
       {/* ❌ Removed duplicate/unused routes */}
