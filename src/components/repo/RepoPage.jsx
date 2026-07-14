@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useParams, useSearchParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { getResponseError, parseResponse } from "../../utils/api";
 import { encodeRepoPath, normalizeRepoPath } from "../../utils/repoPath";
 import CommitHistory from "../commit/CommitHistory";
@@ -32,6 +32,7 @@ const isProtectedDisplayPath = (filePath) => {
 
 const RepoPage = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const initialBranch = useRef(searchParams.get("branch") || "");
   const invalidRepositoryId = !id || id === "undefined";
@@ -199,6 +200,16 @@ const RepoPage = () => {
     setBranchMessage(`Deleted branch ${branch.name}.`);
   };
 
+  const openCompare = () => {
+    if (branches.length < 2) return;
+    const base = defaultBranch;
+    const compare = selectedBranch !== base
+      ? selectedBranch
+      : branches.find((branch) => branch.name !== base)?.name;
+    if (!base || !compare) return;
+    navigate(`/repo/${id}/compare?base=${encodeURIComponent(base)}&compare=${encodeURIComponent(compare)}`);
+  };
+
   const deleteFile = async (filePath) => {
     if (!window.confirm(`Delete ${filePath}?`)) return false;
     try {
@@ -325,6 +336,7 @@ const RepoPage = () => {
           onSelect={(branch) => { setBranchMessage(""); setSelectedBranch(branch); }}
           onCreate={createBranch}
           onDelete={deleteBranch}
+          onCompare={openCompare}
         />
 
         <div className="commit-section">

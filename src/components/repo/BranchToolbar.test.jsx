@@ -78,4 +78,11 @@ describe("BranchToolbar", () => {
     expect(screen.getByText("Branches unavailable")).toBeTruthy();
     expect(rerender).toBeTruthy();
   });
+
+  test("disables compare when the repository has only one branch", () => {
+    render(<BranchToolbar {...props({ branches: [branches[0]] })} />);
+    const compareButton = screen.getByRole("button", { name: "Compare" });
+    expect(compareButton.disabled).toBe(true);
+    expect(compareButton.title).toBe("Create another branch to compare changes");
+  });
 });
