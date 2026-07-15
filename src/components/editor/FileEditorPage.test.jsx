@@ -57,4 +57,15 @@ describe("FileEditorPage", () => {
     rerender(<FileViewer {...common} selectedNode={{ path: "image.png", name: "image.png", file: { path: "image.png", size: 10 } }} preview={{ status: "ready", data: { content: null, previewSupported: false, binary: true } }} />);
     expect(screen.queryByRole("button", { name: "Edit" })).toBeNull();
   });
+
+  test("file More menu keeps copy path, rename, and dangerous delete behind one control", async () => {
+    Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText: vi.fn().mockResolvedValue(undefined) } });
+    const onRename = vi.fn(); const onDelete = vi.fn(); const onDownload = vi.fn();
+    render(<FileViewer apiBase="" repositoryId="repo" repositoryName="demo" branch="main" getAuthHeaders={() => ({})} onDownload={onDownload} onEdit={vi.fn()} onRename={onRename} onDelete={onDelete} preview={{ status: "ready", data: { content: "hello", previewSupported: true } }} selectedNode={{ path: "src/app.js", name: "app.js", file: { path: "src/app.js", size: 10 } }} />);
+    expect(screen.queryByRole("button", { name: "Rename" })).toBeNull(); fireEvent.click(screen.getByRole("button", { name: "More" }));
+    fireEvent.click(screen.getByRole("menuitem", { name: "Copy path" })); await waitFor(() => expect(navigator.clipboard.writeText).toHaveBeenCalledWith("src/app.js"));
+    fireEvent.click(screen.getByRole("button", { name: "More" })); fireEvent.click(screen.getByRole("menuitem", { name: "Rename" })); expect(onRename).toHaveBeenCalledWith("src/app.js");
+    fireEvent.click(screen.getByRole("button", { name: "More" })); fireEvent.click(screen.getByRole("menuitem", { name: "Delete" })); expect(onDelete).toHaveBeenCalledWith("src/app.js");
+    fireEvent.click(screen.getByRole("button", { name: "Download" })); expect(onDownload).toHaveBeenCalledWith("src/app.js");
+  });
 });

@@ -130,11 +130,9 @@ describe("BranchToolbar", () => {
     expect(rerender).toBeTruthy();
   });
 
-  test("disables compare when the repository has only one branch", () => {
+  test("hides compare when the repository has only one branch", () => {
     render(<BranchToolbar {...props({ branches: [branches[0]] })} />);
-    const compareButton = screen.getByRole("button", { name: "Compare" });
-    expect(compareButton.disabled).toBe(true);
-    expect(compareButton.title).toBe("Create another branch to compare changes");
+    expect(screen.queryByRole("button", { name: "Compare" })).toBeNull();
   });
 
   test("labels protected branches and explains direct-write and bypass states", () => {

@@ -4,6 +4,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import RepoPage from "./RepoPage";
+import AddFileMenu from "./AddFileMenu";
 
 const repositoryId = "507f1f77bcf86cd799439011";
 const ownerId = "507f1f77bcf86cd799439012";
@@ -33,7 +34,7 @@ beforeEach(() => {
 afterEach(() => { cleanup(); vi.restoreAllMocks(); localStorage.clear(); });
 
 describe("RepoPage branch integration", () => {
-  test("empty branch keeps the file tree, shows Quick Setup, and first README commit restores the normal preview", async () => {
+  test("empty branch shows only Quick Setup and creating a file restores the normal browser", async () => {
     let created = false; let snapshotRequests = 0; let historyRequests = 0; let branchRequests = 0;
     vi.spyOn(globalThis, "fetch").mockImplementation((url, options = {}) => {
       const value = String(url);
@@ -48,12 +49,15 @@ describe("RepoPage branch integration", () => {
     });
 
     renderPage();
-    expect(await screen.findByRole("heading", { name: "Quick setup" })).toBeTruthy(); expect(screen.getByRole("heading", { name: "Repository files" })).toBeTruthy();
-    expect(screen.getByText("This branch has no files")).toBeTruthy(); expect(screen.queryByText("Select a file to preview")).toBeNull();
-    expect(screen.getByText("No commits on this branch yet")).toBeTruthy();
-    const browser = document.querySelector(".repo-browser"); const history = document.querySelector(".commit-history");
-    expect(browser.compareDocumentPosition(history) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "Create README" }));
+    expect(await screen.findByRole("heading", { name: "Quick setup" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Settings" }).getAttribute("href")).toBe(`/repo/${repositoryId}/settings/collaborators`);
+    expect(screen.getByRole("link", { name: "Actions" }).getAttribute("href")).toBe(`/repo/${repositoryId}/actions`);
+    expect(screen.getByRole("link", { name: "Releases" }).getAttribute("href")).toBe(`/repo/${repositoryId}/releases`);
+    expect(screen.queryByRole("heading", { name: "Repository files" })).toBeNull();
+    expect(screen.getByText("This branch does not contain any files yet.")).toBeTruthy(); expect(screen.queryByText("Select a file to preview")).toBeNull();
+    expect(document.querySelector(".commit-section")).toBeNull(); expect(document.querySelector(".commit-history")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Compare" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Create file" }));
     await waitFor(() => expect(screen.queryByRole("heading", { name: "Quick setup" })).toBeNull());
     expect((await screen.findAllByText("README.md")).length).toBeGreaterThan(0); expect(await screen.findByText("Initial commit")).toBeTruthy();
     await waitFor(() => expect(screen.getByTestId("location-search").textContent).toContain("path=README.md"));
@@ -101,8 +105,8 @@ describe("RepoPage branch integration", () => {
       return Promise.resolve(jsonResponse({ content: "" }));
     });
     renderPage(`/repo/${repositoryId}?branch=empty`);
-    expect(await screen.findByText("This branch has no files")).toBeTruthy();
-    expect(await screen.findByText("No commits on this branch yet")).toBeTruthy();
+    expect(await screen.findByText("This branch does not contain any files yet.")).toBeTruthy();
+    expect(screen.queryByText("No commits on this branch yet")).toBeNull();
     expect(screen.getByRole("button", { name: /empty/i })).toBeTruthy();
   });
 
@@ -155,7 +159,8 @@ describe("RepoPage branch integration", () => {
     });
 
     renderPage();
-    await screen.findByText("This branch has no files");
+    await screen.findByText("This branch does not contain any files yet.");
+    expect(screen.queryByRole("link", { name: "Settings" })).toBeNull();
     expect(screen.queryByText("Upload Project Folder")).toBeNull();
     expect(screen.queryByRole("button", { name: "Add Files" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Commit" })).toBeNull();
@@ -185,7 +190,7 @@ describe("RepoPage branch integration", () => {
     });
 
     renderPage();
-    await screen.findByText("This branch has no files");
+    await screen.findByText("This branch does not contain any files yet.");
     fireEvent.click(screen.getByRole("button", { name: /main/i }));
     fireEvent.click(screen.getByRole("button", { name: /new branch/i }));
     fireEvent.change(screen.getByLabelText("Branch name"), { target: { value: "feature/no-token" } });
@@ -193,4 +198,15 @@ describe("RepoPage branch integration", () => {
     expect(await screen.findByText("Your session has expired. Please sign in again.")).toBeTruthy();
     expect(createRequests).toBe(0);
   });
+});
+
+test("Add file dropdown invokes handlers and closes with Escape or outside click", () => {
+  const handlers = { onCreate: vi.fn(), onUploadFiles: vi.fn(), onUploadFolder: vi.fn() };
+  render(<div><AddFileMenu {...handlers} /><button type="button">Outside</button></div>);
+  const toggle = screen.getByRole("button", { name: /Add file/ }); fireEvent.click(toggle);
+  fireEvent.keyDown(document, { key: "Escape" }); expect(toggle.getAttribute("aria-expanded")).toBe("false");
+  fireEvent.click(toggle); fireEvent.pointerDown(screen.getByRole("button", { name: "Outside" })); expect(toggle.getAttribute("aria-expanded")).toBe("false");
+  fireEvent.click(toggle); fireEvent.click(screen.getByRole("menuitem", { name: "Upload files" })); expect(handlers.onUploadFiles).toHaveBeenCalledOnce();
+  fireEvent.click(toggle); fireEvent.click(screen.getByRole("menuitem", { name: "Upload project folder" })); expect(handlers.onUploadFolder).toHaveBeenCalledOnce();
+  fireEvent.click(toggle); fireEvent.click(screen.getByRole("menuitem", { name: "Create new file" })); expect(handlers.onCreate).toHaveBeenCalledOnce();
 });

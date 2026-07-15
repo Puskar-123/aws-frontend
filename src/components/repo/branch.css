@@ -1,4 +1,4 @@
-.repo-branch-toolbar { position: relative; display: flex; align-items: center; gap: 18px; margin: 22px 0 14px; padding: 12px; border: 1px solid #30363d; border-radius: 8px; background: #161b22; }
+.repo-branch-toolbar { position: relative; display: flex; align-items: center; gap: 16px; margin: 16px 0 12px; padding: 8px 10px; border: 1px solid #30363d; border-radius: 8px; background: #161b22; }
 .repo-branch-selector { position: relative; min-width: 0; }
 .repo-branch-button { display: flex; width: min(250px, 100%); min-height: 36px; align-items: center; gap: 8px; padding: 6px 11px; border: 1px solid #484f58; border-radius: 6px; color: #f0f6fc; background: #21262d; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
 .repo-branch-button span { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left; }

@@ -27,13 +27,13 @@ const BranchToolbar = (props) => {
           <span className="repo-branch-count"><FiGitBranch aria-hidden="true" /><strong>{props.branches.length}</strong> {props.branches.length === 1 ? "branch" : "branches"}</span>
           <span className="repo-commit-count"><FiGitCommit aria-hidden="true" /><strong>{props.commitCount}</strong> {props.commitCount === 1 ? "commit" : "commits"}</span>
         </div>
-        <button
+        {canCompare && <button
           type="button"
           className="repo-compare-button"
           disabled={!canCompare}
           title={canCompare ? "Compare branches" : "Create another branch to compare changes"}
           onClick={props.onCompare}
-        >Compare</button>
+        >Compare</button>}
       </div>
       {props.message && <div className="repo-branch-message" role="status">{props.message}</div>}
       {props.protection?.protected && <div className={`repo-protection-message${props.protection.canBypass ? " is-bypass" : ""}`} role="status">
