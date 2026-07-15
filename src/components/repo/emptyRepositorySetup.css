@@ -1,19 +1,17 @@
-.empty-setup { width: min(100%,760px); box-sizing: border-box; margin: 32px auto; padding: 26px; color: #c9d1d9; background: #161b22; border: 1px solid #30363d; border-radius: 8px; }
-.empty-setup header { text-align: center; }
-.empty-setup h2 { margin: 0; color: #f0f6fc; font-size: 24px; }
-.empty-setup header p { margin: 7px 0 0; color: #8b949e; }
-.empty-setup h3 { margin: 24px 0 10px; color: #f0f6fc; font-size: 14px; font-weight: 600; }
-.empty-setup-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 20px; }
-.empty-setup-actions button,.empty-setup-more-toggle { min-height: 38px; padding: 7px 13px; border: 1px solid #484f58; border-radius: 6px; color: #f0f6fc; background: #21262d; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
-.empty-setup-actions button:first-child { border-color: #238636; background: #238636; }
-.empty-setup-cli { margin-top: 22px; padding-top: 1px; border-top: 1px solid #30363d; }
-.empty-setup-command { position: relative; display: grid; min-width: 0; grid-template-columns: minmax(0,1fr) auto; margin-top: 7px; overflow: hidden; border: 1px solid #30363d; border-radius: 6px; background: #0d1117; }
-.empty-setup-command code { min-width: 0; padding: 10px 12px; overflow-x: auto; color: #f0f6fc; font-size: 12px; white-space: nowrap; }
-.empty-setup-command button { min-width: 62px; border: 0; border-left: 1px solid #30363d; color: #58a6ff; background: #21262d; cursor: pointer; }
-.empty-setup-copy-status { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
-.empty-setup-more-toggle { display: flex; width: 100%; justify-content: space-between; margin-top: 18px; background: transparent; }
-.empty-setup-more { display: grid; gap: 10px; padding-top: 10px; }
-.empty-setup-more a { color: #58a6ff; font-size: 13px; }
-.empty-setup-protection { margin: 18px 0 0; padding: 11px; color: #f2cc60; background: rgba(187,128,9,.1); border: 1px solid rgba(187,128,9,.55); border-radius: 6px; }
-.empty-setup button:focus-visible,.empty-setup a:focus-visible { outline: 2px solid #58a6ff; outline-offset: 2px; }
-@media (max-width:480px) { .empty-setup { margin: 20px 0; padding: 18px 14px; } .empty-setup-actions { flex-direction: column; } .empty-setup-actions button { width: 100%; } .empty-setup-command { grid-template-columns: 1fr; } .empty-setup-command button { min-height: 36px; border-top: 1px solid #30363d; border-left: 0; } }
+.empty-repository-commands { width: 100%; margin: 20px 0 28px; border-top: 1px solid #30363d; }
+.empty-repository-command-section { padding: 26px 0; border-bottom: 1px solid #30363d; }
+.empty-repository-command-heading { margin: 0 0 12px; color: #f0f6fc; font-size: 20px; font-weight: 600; }
+.empty-repository-command-block { position: relative; min-width: 0; overflow: hidden; color: #f0f6fc; background: #161b22; border: 1px solid #30363d; border-radius: 6px; }
+.empty-repository-command-block pre { min-width: 0; margin: 0; padding: 16px 72px 16px 16px; overflow-x: auto; }
+.empty-repository-command-block code { font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; font-size: 14px; line-height: 1.65; white-space: pre; }
+.empty-repository-copy-button { position: absolute; top: 10px; right: 10px; min-width: 50px; min-height: 30px; padding: 4px 9px; color: #c9d1d9; background: #21262d; border: 1px solid #484f58; border-radius: 6px; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
+.empty-repository-copy-button:hover { color: #f0f6fc; background: #30363d; }
+.empty-repository-copy-button:focus-visible { outline: 2px solid #58a6ff; outline-offset: 2px; }
+.empty-repository-copy-status { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+
+@media (max-width: 480px) {
+  .empty-repository-commands { margin: 16px 0 22px; }
+  .empty-repository-command-section { padding: 20px 0; }
+  .empty-repository-command-heading { font-size: 17px; line-height: 1.35; }
+  .empty-repository-command-block pre { padding: 52px 14px 14px; }
+}

@@ -46,7 +46,7 @@ beforeEach(() => {
 afterEach(() => { cleanup(); vi.restoreAllMocks(); localStorage.clear(); });
 
 describe("RepoPage branch integration", () => {
-  test("empty branch shows only Quick Setup and creating a file restores the normal browser", async () => {
+  test("empty branch shows only command-line setup and header file creation restores the normal browser", async () => {
     let created = false; let snapshotRequests = 0; let historyRequests = 0; let branchRequests = 0;
     vi.spyOn(globalThis, "fetch").mockImplementation((url, options = {}) => {
       const value = String(url);
@@ -61,22 +61,66 @@ describe("RepoPage branch integration", () => {
     });
 
     renderPage();
-    expect(await screen.findByRole("heading", { name: "Quick setup" })).toBeTruthy();
+    expect(await screen.findByRole("heading", { name: "…or create a new repository from the command line" })).toBeTruthy();
     expect(screen.getByRole("link", { name: "Settings" }).getAttribute("href")).toBe(`/repo/${repositoryId}/settings/collaborators`);
     expect(screen.getByRole("link", { name: "Actions" }).getAttribute("href")).toBe(`/repo/${repositoryId}/actions`);
     expect(screen.getByRole("link", { name: "Releases" }).getAttribute("href")).toBe(`/repo/${repositoryId}/releases`);
     expect(screen.queryByRole("heading", { name: "Repository files" })).toBeNull();
-    expect(screen.getByText("This branch does not contain any files yet.")).toBeTruthy(); expect(screen.queryByText("Select a file to preview")).toBeNull();
+    expect(document.querySelectorAll(".empty-repository-command-section")).toHaveLength(2); expect(screen.queryByText("Select a file to preview")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Upload files" })).toBeNull(); expect(screen.queryByRole("button", { name: "Upload folder" })).toBeNull(); expect(screen.queryByRole("button", { name: "Create file" })).toBeNull();
     expect(document.querySelector(".commit-section")).toBeNull(); expect(document.querySelector(".commit-history")).toBeNull();
     expect(document.querySelector(".repo-browser")).toBeNull(); expect(document.querySelector(".repo-sidebar")).toBeNull();
     expect(screen.queryByRole("button", { name: "Compare" })).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "Create file" }));
-    await waitFor(() => expect(screen.queryByRole("heading", { name: "Quick setup" })).toBeNull());
+    fireEvent.click(screen.getByRole("button", { name: /Add file/ })); fireEvent.click(screen.getByRole("menuitem", { name: "Create new file" }));
+    await waitFor(() => expect(screen.queryByRole("heading", { name: "…or create a new repository from the command line" })).toBeNull());
     expect((await screen.findAllByText("README.md")).length).toBeGreaterThan(0); expect((await screen.findAllByText("Initial commit")).length).toBeGreaterThan(0);
     expect(document.querySelector(".repo-browser > .repo-tree")).toBeTruthy(); expect(document.querySelector(".repo-browser > .repo-browser__preview")).toBeTruthy(); expect(document.querySelector(".repo-browser > .repo-sidebar")).toBeTruthy();
     await waitFor(() => expect(screen.getByTestId("location-search").textContent).toContain("path=README.md"));
     expect(screen.getByTestId("location-search").textContent).toContain("branch=main");
     expect(snapshotRequests).toBe(2); expect(historyRequests).toBe(2); expect(branchRequests).toBe(1);
+  });
+
+  test.each([
+    ["browser file upload", "Upload files", "Choose files to upload", "app.js"],
+    ["project-folder upload", "Upload project folder", "Choose project folder to upload", "src/app.js"],
+  ])("%s removes the command setup after the selected-branch snapshot gains content", async (_label, menuItem, inputLabel, uploadedPath) => {
+    let uploaded = false; let addRequest;
+    vi.spyOn(window, "alert").mockImplementation(() => {});
+    vi.spyOn(globalThis, "fetch").mockImplementation((url, options = {}) => {
+      const value = String(url);
+      if (value.endsWith(`/repo/${repositoryId}`)) return Promise.resolve(jsonResponse({ _id: repositoryId, name: "upload-project", owner: { _id: ownerId, username: "Puskar" }, visibility: "private", permissions: { canUploadFiles: true, canEditFiles: true } }));
+      if (value.endsWith(`/repo/${repositoryId}/branches`)) return Promise.resolve(jsonResponse({ defaultBranch: "main", branches: [{ name: "main", isDefault: true }] }));
+      if (value.includes("/branches/main/snapshot")) return Promise.resolve(jsonResponse({ files: uploaded ? [{ filename: uploadedPath.split("/").at(-1), path: uploadedPath }] : [] }));
+      if (value.includes("/branches/main/history")) return Promise.resolve(jsonResponse({ commits: [] }));
+      if (value.endsWith(`/repo/add/${repositoryId}`) && options.method === "POST") { uploaded = true; addRequest = options.body; return Promise.resolve(jsonResponse({ message: "Files added" })); }
+      if (value.includes("/repo/preview/")) return Promise.resolve(jsonResponse({ content: "uploaded", previewSupported: true }));
+      return Promise.resolve(jsonResponse({ counts: { open: 0 }, pagination: { total: 0 } }));
+    });
+
+    renderPage(); await screen.findByRole("heading", { name: "…or create a new repository from the command line" });
+    fireEvent.click(screen.getByRole("button", { name: /Add file/ })); fireEvent.click(screen.getByRole("menuitem", { name: menuItem }));
+    const file = new File(["uploaded"], uploadedPath.split("/").at(-1), { type: "text/javascript" });
+    if (uploadedPath.includes("/")) Object.defineProperty(file, "webkitRelativePath", { value: uploadedPath });
+    fireEvent.change(screen.getByLabelText(inputLabel), { target: { files: [file] } });
+    await waitFor(() => expect(screen.queryByRole("heading", { name: "…or create a new repository from the command line" })).toBeNull());
+    expect(document.querySelector(".repo-browser")).toBeTruthy(); expect(addRequest).toBeInstanceOf(FormData); expect(addRequest.get("paths")).toBe(uploadedPath);
+  });
+
+  test("a CLI push containing files removes setup when the empty repository refreshes", async () => {
+    let pushed = false;
+    vi.spyOn(globalThis, "fetch").mockImplementation((url) => {
+      const value = String(url);
+      if (value.endsWith(`/repo/${repositoryId}`)) return Promise.resolve(jsonResponse({ _id: repositoryId, name: "cli-project", owner: { _id: ownerId, username: "Puskar" }, visibility: "public" }));
+      if (value.endsWith(`/repo/${repositoryId}/branches`)) return Promise.resolve(jsonResponse({ defaultBranch: "main", branches: [{ name: "main", isDefault: true }] }));
+      if (value.includes("/branches/main/snapshot")) return Promise.resolve(jsonResponse({ files: pushed ? [{ filename: "cli.js", path: "src/cli.js" }] : [] }));
+      if (value.includes("/branches/main/history")) return Promise.resolve(jsonResponse({ commits: pushed ? [{ hash: "cli1", message: "CLI push" }] : [] }));
+      if (value.includes("/repo/preview/")) return Promise.resolve(jsonResponse({ content: "cli", previewSupported: true }));
+      return Promise.resolve(jsonResponse({}));
+    });
+    renderPage(); await screen.findByRole("heading", { name: "…or create a new repository from the command line" });
+    pushed = true; fireEvent.focus(window);
+    await waitFor(() => expect(screen.queryByRole("heading", { name: "…or create a new repository from the command line" })).toBeNull());
+    expect((await screen.findAllByText("cli.js")).length).toBeGreaterThan(0); expect(document.querySelector(".repo-sidebar")).toBeTruthy();
   });
 
   test("switching branches replaces files and history without request loops", async () => {
@@ -161,13 +205,31 @@ describe("RepoPage branch integration", () => {
       if (value.endsWith(`/repo/${repositoryId}`)) return Promise.resolve(jsonResponse({ _id: repositoryId, name: "project", owner: { _id: ownerId }, visibility: "public" }));
       if (value.endsWith(`/repo/${repositoryId}/branches`)) return Promise.resolve(jsonResponse({ defaultBranch: "main", branches: [{ name: "main", isDefault: true }, { name: "empty", isDefault: false }] }));
       if (value.includes("/branches/empty/snapshot")) return Promise.resolve(jsonResponse({ branch: "empty", files: [] }));
-      if (value.includes("/branches/empty/history")) return Promise.resolve(jsonResponse({ branch: "empty", commits: [] }));
+      if (value.includes("/branches/empty/history")) return Promise.resolve(jsonResponse({ branch: "empty", commits: [{ hash: "empty-commit", message: "Empty initial commit" }] }));
       return Promise.resolve(jsonResponse({ content: "" }));
     });
     renderPage(`/repo/${repositoryId}?branch=empty`);
-    expect(await screen.findByText("This branch does not contain any files yet.")).toBeTruthy();
+    expect(await screen.findByRole("heading", { name: "…or create a new repository from the command line" })).toBeTruthy();
     expect(screen.queryByText("No commits on this branch yet")).toBeNull();
     expect(screen.getByRole("button", { name: /empty/i })).toBeTruthy();
+  });
+
+  test("switching from repository content to a truly empty branch restores only the command setup", async () => {
+    vi.spyOn(globalThis, "fetch").mockImplementation((url) => {
+      const value = String(url);
+      if (value.endsWith(`/repo/${repositoryId}`)) return Promise.resolve(jsonResponse({ _id: repositoryId, name: "project", owner: { _id: ownerId, username: "developer" }, visibility: "public" }));
+      if (value.endsWith(`/repo/${repositoryId}/branches`)) return Promise.resolve(jsonResponse({ defaultBranch: "main", branches: [{ name: "main", isDefault: true }, { name: "empty", isDefault: false }] }));
+      if (value.includes("/branches/main/snapshot")) return Promise.resolve(jsonResponse({ files: [{ filename: "README.md", path: "README.md" }] }));
+      if (value.includes("/branches/main/history")) return Promise.resolve(jsonResponse({ commits: [{ hash: "m1", message: "Content commit" }] }));
+      if (value.includes("/branches/empty/snapshot")) return Promise.resolve(jsonResponse({ files: [] }));
+      if (value.includes("/branches/empty/history")) return Promise.resolve(jsonResponse({ commits: [{ hash: "e1", message: "Empty commit" }] }));
+      if (value.includes("/repo/preview/")) return Promise.resolve(jsonResponse({ content: "# Project", previewSupported: true }));
+      return Promise.resolve(jsonResponse({}));
+    });
+    renderPage(); expect((await screen.findAllByText("README.md")).length).toBeGreaterThan(0);
+    fireEvent.click(screen.getByRole("button", { name: /main/i })); fireEvent.click(screen.getByRole("option", { name: /empty/i }));
+    expect(await screen.findByRole("heading", { name: "…or create a new repository from the command line" })).toBeTruthy();
+    expect(document.querySelectorAll(".empty-repository-command-section")).toHaveLength(2); expect(document.querySelector(".repo-browser")).toBeNull(); expect(document.querySelector(".commit-history")).toBeNull();
   });
 
   test("ownerId fallback creates, selects, and loads a slash-named branch without navigation", async () => {
@@ -219,7 +281,7 @@ describe("RepoPage branch integration", () => {
     });
 
     renderPage();
-    await screen.findByText("This branch does not contain any files yet.");
+    await screen.findByRole("heading", { name: "…or create a new repository from the command line" });
     expect(screen.queryByRole("link", { name: "Settings" })).toBeNull();
     expect(screen.queryByText("Upload Project Folder")).toBeNull();
     expect(screen.queryByRole("button", { name: "Add Files" })).toBeNull();
@@ -250,7 +312,7 @@ describe("RepoPage branch integration", () => {
     });
 
     renderPage();
-    await screen.findByText("This branch does not contain any files yet.");
+    await screen.findByRole("heading", { name: "…or create a new repository from the command line" });
     fireEvent.click(screen.getByRole("button", { name: /main/i }));
     fireEvent.click(screen.getByRole("button", { name: /new branch/i }));
     fireEvent.change(screen.getByLabelText("Branch name"), { target: { value: "feature/no-token" } });
@@ -288,16 +350,16 @@ test("public, private, described, and undescribed repositories share one header 
   expect(container.querySelector(".repo-header__actions")).toBeTruthy();
 });
 
-test("repository content states are exclusive and loading never exposes Quick Setup", () => {
-  const { rerender } = render(<RepoContent loading empty emptyContent={<h2>Quick setup</h2>}><p>Browser content</p></RepoContent>);
+test("repository content states are exclusive and loading never exposes command setup", () => {
+  const { rerender } = render(<RepoContent loading empty emptyContent={<h2>Command setup</h2>}><p>Browser content</p></RepoContent>);
   expect(screen.getByRole("status")).toBeTruthy();
-  expect(screen.queryByText("Quick setup")).toBeNull();
+  expect(screen.queryByText("Command setup")).toBeNull();
   expect(screen.queryByText("Browser content")).toBeNull();
-  rerender(<RepoContent loading={false} empty emptyContent={<h2>Quick setup</h2>}><p>Browser content</p></RepoContent>);
-  expect(screen.getByText("Quick setup")).toBeTruthy();
+  rerender(<RepoContent loading={false} empty emptyContent={<h2>Command setup</h2>}><p>Browser content</p></RepoContent>);
+  expect(screen.getByText("Command setup")).toBeTruthy();
   expect(screen.queryByText("Browser content")).toBeNull();
-  rerender(<RepoContent loading={false} empty={false} emptyContent={<h2>Quick setup</h2>}><p>Browser content</p></RepoContent>);
-  expect(screen.queryByText("Quick setup")).toBeNull();
+  rerender(<RepoContent loading={false} empty={false} emptyContent={<h2>Command setup</h2>}><p>Browser content</p></RepoContent>);
+  expect(screen.queryByText("Command setup")).toBeNull();
   expect(screen.getByText("Browser content")).toBeTruthy();
 });
 

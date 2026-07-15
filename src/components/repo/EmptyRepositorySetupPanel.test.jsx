@@ -1,42 +1,52 @@
 // @vitest-environment jsdom
 import React from "react";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import EmptyRepositorySetupPanel from "./EmptyRepositorySetupPanel";
 
 const repository = { _id: "repo-1", name: "empty-project", visibility: "private", owner: { username: "Puskar" } };
-const actions = { onUploadFiles: vi.fn(), onUploadFolder: vi.fn(), onCreateFile: vi.fn() };
-const renderPanel = (props = {}) => render(<MemoryRouter><EmptyRepositorySetupPanel repository={repository} selectedBranch="main" canCreateContent canDirectWrite {...actions} {...props} /></MemoryRouter>);
+const newRepositoryCommands = [
+  "codehub init https://codehub.sbs/Puskar/empty-project",
+  "codehub add README.md",
+  'codehub commit -m "first commit"',
+  "codehub push",
+].join("\n");
+const existingRepositoryCommands = [
+  "codehub init https://codehub.sbs/Puskar/empty-project",
+  "codehub add .",
+  'codehub commit -m "Initial commit"',
+  "codehub push",
+].join("\n");
 
 beforeEach(() => Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText: vi.fn().mockResolvedValue(undefined) } }));
-afterEach(() => { cleanup(); vi.restoreAllMocks(); Object.values(actions).forEach((mock) => mock.mockClear()); });
+afterEach(() => { cleanup(); vi.restoreAllMocks(); });
 
-test("quick setup renders concise real-repository CLI commands", () => {
-  renderPanel();
-  expect(screen.getByRole("heading", { name: "Quick setup" })).toBeTruthy();
-  expect(screen.getByText("This branch does not contain any files yet.")).toBeTruthy();
-  expect(screen.getByText("npm install -g codehub-sbs-cli")).toBeTruthy();
-  expect(screen.getByText("codehub login")).toBeTruthy();
-  expect(screen.getByText("codehub clone Puskar/empty-project")).toBeTruthy();
+test("empty repository renders exactly the two supported command sections", () => {
+  const { container } = render(<EmptyRepositorySetupPanel repository={repository} />);
+  expect(container.querySelectorAll(".empty-repository-command-section")).toHaveLength(2);
+  expect(screen.getByRole("heading", { name: "…or create a new repository from the command line" })).toBeTruthy();
+  expect(screen.getByRole("heading", { name: "…or push an existing repository from the command line" })).toBeTruthy();
+  expect([...container.querySelectorAll("code")].map((node) => node.textContent)).toEqual([newRepositoryCommands, existingRepositoryCommands]);
 });
 
-test("copy feedback is announced and copies the exact clone command", async () => {
-  renderPanel(); fireEvent.click(screen.getByRole("button", { name: "Copy repository clone command" }));
-  await waitFor(() => expect(navigator.clipboard.writeText).toHaveBeenCalledWith("codehub clone Puskar/empty-project"));
-  expect((await screen.findAllByText("Copied")).length).toBeGreaterThan(0);
+test("empty setup omits browser actions, recommendations, protocol controls, and unsupported CLI syntax", () => {
+  render(<EmptyRepositorySetupPanel repository={repository} />);
+  ["Upload files", "Upload folder", "Create file", "Quick setup", "More setup options", "HTTPS", "SSH", "README recommendations", "LICENSE recommendations", "codehub login"].forEach((label) => expect(screen.queryByText(label)).toBeNull());
+  expect(screen.queryByText(/codehub remote add origin/)).toBeNull();
+  expect(screen.queryByText(/codehub push -u origin main/)).toBeNull();
+  expect(screen.queryByText(/^codehub branch main$/m)).toBeNull();
+  expect(screen.getAllByRole("button", { name: /Copy/ })).toHaveLength(2);
 });
 
-test("browser setup actions reuse the supplied upload and create handlers", () => {
-  renderPanel();
-  fireEvent.click(screen.getByRole("button", { name: "Upload files" })); fireEvent.click(screen.getByRole("button", { name: "Upload folder" })); fireEvent.click(screen.getByRole("button", { name: "Create file" }));
-  expect(actions.onUploadFiles).toHaveBeenCalledOnce(); expect(actions.onUploadFolder).toHaveBeenCalledOnce(); expect(actions.onCreateFile).toHaveBeenCalledOnce();
-  const toggle = screen.getByRole("button", { name: /More setup options/ }); fireEvent.click(toggle);
-  expect(toggle.getAttribute("aria-expanded")).toBe("true"); expect(screen.getByRole("link", { name: "View full CLI documentation" })).toBeTruthy();
+test("each Copy button copies its complete command block", async () => {
+  render(<EmptyRepositorySetupPanel repository={repository} />);
+  fireEvent.click(screen.getByRole("button", { name: "Copy new repository commands" }));
+  await waitFor(() => expect(navigator.clipboard.writeText).toHaveBeenCalledWith(newRepositoryCommands));
+  fireEvent.click(screen.getByRole("button", { name: "Copy existing repository commands" }));
+  await waitFor(() => expect(navigator.clipboard.writeText).toHaveBeenCalledWith(existingRepositoryCommands));
 });
 
-test("read-only users see clone instructions but no write actions", () => {
-  renderPanel({ canCreateContent: false, canDirectWrite: false });
-  expect(screen.queryByRole("button", { name: "Upload files" })).toBeNull(); expect(screen.queryByRole("button", { name: "Create file" })).toBeNull();
-  expect(screen.getByText("codehub clone Puskar/empty-project")).toBeTruthy();
+test("authorized read-only viewers receive the same repository-specific command instructions", () => {
+  const { container } = render(<EmptyRepositorySetupPanel repository={repository} canCreateContent={false} canDirectWrite={false} />);
+  expect([...container.querySelectorAll("code")].map((node) => node.textContent)).toEqual([newRepositoryCommands, existingRepositoryCommands]);
 });

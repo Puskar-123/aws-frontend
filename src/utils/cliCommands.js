@@ -36,3 +36,19 @@ export const buildProtectedBranchCommands = (branch = "feature/initial-setup") =
   'codehub commit -m "Initial project setup"',
   "codehub push",
 ].join("\n");
+
+const repositoryUrl = (owner, repository) => `https://codehub.sbs/${reference(owner, repository)}`;
+
+export const buildEmptyNewRepositoryCommands = (owner, repository) => [
+  `codehub init ${repositoryUrl(owner, repository)}`,
+  "codehub add README.md",
+  'codehub commit -m "first commit"',
+  "codehub push",
+].join("\n");
+
+export const buildEmptyExistingRepositoryCommands = (owner, repository) => [
+  `codehub init ${repositoryUrl(owner, repository)}`,
+  "codehub add .",
+  'codehub commit -m "Initial commit"',
+  "codehub push",
+].join("\n");

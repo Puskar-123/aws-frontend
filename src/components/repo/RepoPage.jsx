@@ -267,6 +267,18 @@ const RepoPage = () => {
     setReloadVersion((value) => value + 1);
   }, [id, selectedBranch]);
 
+  useEffect(() => {
+    const key = `${id}:${selectedBranch}`;
+    const waitingForExternalContent = selectedBranch && snapshotState.key === key && historyState.key === key
+      && !snapshotState.loading && !historyState.loading && !snapshotState.error && !historyState.error
+      && snapshotState.files.length === 0;
+    if (!waitingForExternalContent) return undefined;
+    const refresh = () => refreshSelectedBranch();
+    const interval = window.setInterval(refresh, 5000);
+    window.addEventListener("focus", refresh);
+    return () => { window.clearInterval(interval); window.removeEventListener("focus", refresh); };
+  }, [historyState.error, historyState.key, historyState.loading, id, refreshSelectedBranch, selectedBranch, snapshotState.error, snapshotState.files.length, snapshotState.key, snapshotState.loading]);
+
   const createBranch = async ({ name, sourceBranch }) => {
     if (!getAuthToken()) {
       throw new Error("Your session has expired. Please sign in again.");
@@ -460,7 +472,7 @@ const RepoPage = () => {
     ? (selectedMetadata?.commitCount || 0)
     : historyState.commits.length;
   const onDefaultBranch = selectedBranch === defaultBranch;
-  const emptyBranch = !contentLoading && !contentError && visibleFiles.length === 0;
+  const emptyBranch = !contentLoading && !contentError && snapshotState.files.length === 0;
   const hasPendingChanges = pendingCommit || Boolean(snapshotState.state?.hasUncommittedChanges || snapshotState.state?.hasStagedChanges);
   const settingsPath = canManageCollaborators ? `/repo/${id}/settings/collaborators` : `/repo/${id}/settings/branches`;
 
@@ -500,15 +512,7 @@ const RepoPage = () => {
           onCompare={openCompare}
         />
 
-        <RepoContent loading={contentLoading} error={contentError} empty={emptyBranch} onRetry={refreshSelectedBranch} emptyContent={<EmptyRepositorySetupPanel
-          repository={repo}
-          selectedBranch={selectedBranch}
-          canCreateContent={Boolean(baseWritePermission)}
-          canDirectWrite={canWriteContent}
-          onUploadFiles={() => fileInputRef.current?.click()}
-          onUploadFolder={() => folderInputRef.current?.click()}
-          onCreateFile={() => createStarterFile("readme", `# ${repo.name}\n`)}
-        />}>
+        <RepoContent loading={contentLoading} error={contentError} empty={emptyBranch} onRetry={refreshSelectedBranch} emptyContent={<EmptyRepositorySetupPanel repository={repo} />}>
           {canWriteContent && hasPendingChanges && <div className="commit-section">
             <input type="text" placeholder={`Commit message for ${selectedBranch || defaultBranch}`} value={commitMessage} onChange={(event) => setCommitMessage(event.target.value)} className="commit-input" />
             <button type="button" onClick={handleCommit} className="push-btn" disabled={committing}>{committing ? "Committing..." : "Commit"}</button>
