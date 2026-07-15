@@ -25,6 +25,9 @@ import InvitationsPage from "./components/collaborators/InvitationsPage";
 import BranchProtectionSettingsPage from "./components/branches/BranchProtectionSettingsPage";
 import InsightsPage from "./components/insights/InsightsPage";
 import CliDocsPage from "./components/docs/CliDocsPage";
+import ReleaseListPage from "./components/releases/ReleaseListPage";
+import NewReleasePage from "./components/releases/NewReleasePage";
+import ReleaseDetailPage from "./components/releases/ReleaseDetailPage";
 
 const protectedPage = (page) => <ProtectedRoute>{page}</ProtectedRoute>;
 
@@ -52,6 +55,9 @@ const App = () => <Routes>
   <Route path="/repo/:id/issues/new" element={protectedPage(<NewIssue />)} />
   <Route path="/repo/:id/issues/:number" element={protectedPage(<IssuePage />)} />
   <Route path="/repo/:id/issues" element={protectedPage(<IssueList />)} />
+  <Route path="/repo/:id/releases/new" element={protectedPage(<NewReleasePage />)} />
+  <Route path="/repo/:id/releases/:releaseId" element={<ReleaseDetailPage />} />
+  <Route path="/repo/:id/releases" element={<ReleaseListPage />} />
   <Route path="/repo/:id/insights/commits" element={protectedPage(<InsightsPage view="commits" />)} />
   <Route path="/repo/:id/insights/contributors" element={protectedPage(<InsightsPage view="contributors" />)} />
   <Route path="/repo/:id/insights/activity" element={protectedPage(<InsightsPage view="activity" />)} />
