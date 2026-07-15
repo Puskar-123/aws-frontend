@@ -174,8 +174,8 @@ const FileViewer = ({
           <div className="repo-file-more" ref={moreRef}>
             <button type="button" className="repo-browser-button" aria-haspopup="menu" aria-expanded={moreOpen} onClick={() => setMoreOpen((value) => !value)}><FiMoreHorizontal aria-hidden="true" />More</button>
             {moreOpen && <div className="repo-file-more__menu" role="menu">
-              <button type="button" role="menuitem" onClick={() => { copyPath(); setMoreOpen(false); }}><FiCopy aria-hidden="true" />{copyStatus === "copied" ? "Path copied" : "Copy path"}</button>
               {onRename && <button type="button" role="menuitem" onClick={() => { setMoreOpen(false); onRename(path); }}><FiEdit2 aria-hidden="true" />Rename</button>}
+              <button type="button" role="menuitem" onClick={() => { copyPath(); setMoreOpen(false); }}><FiCopy aria-hidden="true" />{copyStatus === "copied" ? "Path copied" : "Copy path"}</button>
               {onDelete && <button type="button" role="menuitem" className="is-danger" onClick={() => { setMoreOpen(false); onDelete(path); }}><FiTrash2 aria-hidden="true" />Delete</button>}
             </div>}
           </div>

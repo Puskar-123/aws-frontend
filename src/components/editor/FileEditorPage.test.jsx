@@ -68,4 +68,23 @@ describe("FileEditorPage", () => {
     fireEvent.click(screen.getByRole("button", { name: "More" })); fireEvent.click(screen.getByRole("menuitem", { name: "Delete" })); expect(onDelete).toHaveBeenCalledWith("src/app.js");
     fireEvent.click(screen.getByRole("button", { name: "Download" })); expect(onDownload).toHaveBeenCalledWith("src/app.js");
   });
+
+  test("markdown, code, image, and unsupported previews keep the same outer file shell", () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue({ ok: true, blob: async () => new Blob(["image"]) });
+    const common = { apiBase: "", repositoryId: "repo", repositoryName: "demo", branch: "main", getAuthHeaders: () => ({}), onDownload: vi.fn() };
+    const cases = [
+      { path: "README.md", contentType: "text/markdown", preview: { status: "ready", data: { content: "# Demo", previewSupported: true } } },
+      { path: "src/app.js", contentType: "text/javascript", preview: { status: "ready", data: { content: "const demo = true;", previewSupported: true } } },
+      { path: "logo.png", contentType: "image/png", preview: { status: "ready", data: { previewSupported: true } } },
+      { path: "archive.zip", contentType: "application/zip", preview: { status: "ready", data: { previewSupported: false, binary: true } } },
+    ];
+    const view = (item) => <FileViewer {...common} preview={item.preview} selectedNode={{ path: item.path, name: item.path.split("/").at(-1), file: { path: item.path, size: 10, contentType: item.contentType } }} />;
+    const { container, rerender } = render(view(cases[0]));
+    const shellClasses = () => ({ viewer: container.querySelector(".repo-file-viewer")?.className, toolbar: container.querySelector(".repo-file-toolbar")?.className, content: container.querySelector(".repo-file-viewer__content")?.className });
+    const expected = shellClasses();
+    cases.slice(1).forEach((item) => {
+      rerender(view(item));
+      expect(shellClasses()).toEqual(expected);
+    });
+  });
 });

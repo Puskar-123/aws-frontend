@@ -12,6 +12,7 @@ import RepositorySocialActions from "./RepositorySocialActions";
 import RepositoryCodeMenu from "./RepositoryCodeMenu";
 import EmptyRepositorySetupPanel from "./EmptyRepositorySetupPanel";
 import AddFileMenu from "./AddFileMenu";
+import { RepoContent, RepoHeader, RepoTabs } from "./RepositoryPageShell";
 import { resolveAuthenticatedUserId, resolveRepositoryOwnerId } from "./branchUtils";
 import "./repo.css";
 import "./branch.css";
@@ -43,6 +44,7 @@ const RepoPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
+  const setSearchParamsRef = useRef(setSearchParams);
   const initialBranch = useRef(searchParams.get("branch") || "");
   const invalidRepositoryId = !id || id === "undefined";
   const folderInputRef = useRef(null);
@@ -50,16 +52,22 @@ const RepoPage = () => {
   const snapshotCache = useRef(new Map());
   const historyCache = useRef(new Map());
   const pendingSelectedPath = useRef("");
+  const activeBranchKey = useRef("");
+  const repositoryRequestId = useRef(0);
+  const branchRequestId = useRef(0);
+  const snapshotRequestId = useRef(0);
+  const historyRequestId = useRef(0);
 
   const [repo, setRepo] = useState(null);
   const [repoState, setRepoState] = useState({ loading: true, error: "" });
   const [repoWarning, setRepoWarning] = useState("");
   const [branches, setBranches] = useState([]);
+  const [branchRepositoryId, setBranchRepositoryId] = useState("");
   const [defaultBranch, setDefaultBranch] = useState("main");
   const [selectedBranch, setSelectedBranch] = useState("");
   const [branchListState, setBranchListState] = useState({ loading: true, error: "" });
-  const [snapshotState, setSnapshotState] = useState({ loading: false, files: [], state: null, error: "" });
-  const [historyState, setHistoryState] = useState({ loading: false, commits: [], error: "" });
+  const [snapshotState, setSnapshotState] = useState({ key: "", loading: false, files: [], state: null, error: "" });
+  const [historyState, setHistoryState] = useState({ key: "", loading: false, commits: [], error: "" });
   const [branchMessage, setBranchMessage] = useState("");
   const [reloadVersion, setReloadVersion] = useState(0);
   const [selectedFiles, setSelectedFiles] = useState([]);
@@ -70,7 +78,8 @@ const RepoPage = () => {
 
   useEffect(() => {
     if (!location.state?.message) return;
-    setBranchMessage(location.state.message);
+    const message = location.state.message;
+    Promise.resolve().then(() => setBranchMessage(message));
     navigate(`${location.pathname}${location.search}`, { replace: true, state: null });
   }, [location.pathname, location.search, location.state, navigate]);
 
@@ -83,7 +92,8 @@ const RepoPage = () => {
     && Boolean(repositoryOwnerId)
     && loggedInUserId === repositoryOwnerId;
   const permissions = repo?.permissions || {};
-  const selectedProtection = branches.find((branch) => branch.name === selectedBranch)?.protection
+  const currentBranches = branchRepositoryId === id ? branches : [];
+  const selectedProtection = currentBranches.find((branch) => branch.name === selectedBranch)?.protection
     || (repo?.currentBranch === selectedBranch ? repo.branchProtection : { protected: false, canBypass: false });
   const branchDirectBlocked = Boolean(selectedProtection?.protected
     && (selectedProtection.blockDirectCommits || selectedProtection.requirePullRequest)
@@ -106,17 +116,27 @@ const RepoPage = () => {
       folderInputRef.current.setAttribute("directory", "");
     }
   }, []);
+  useEffect(() => { setSearchParamsRef.current = setSearchParams; }, [setSearchParams]);
+  useEffect(() => {
+    initialBranch.current = searchParams.get("branch") || "";
+    pendingSelectedPath.current = "";
+    activeBranchKey.current = "";
+    // Query-only changes are handled by branch selection; these refs are repository-scoped.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
 
   const fetchRepo = useCallback(async (signal) => {
     if (invalidRepositoryId) return;
+    const requestId = ++repositoryRequestId.current;
     try {
       const response = await fetch(`${API_BASE}/repo/${id}`, { headers: authHeaders(), signal });
       const data = await requestData(response, "Unable to load repository");
+      if (requestId !== repositoryRequestId.current) return;
       setRepo(data);
       setRepoWarning((data.warnings || []).join(" "));
       setRepoState({ loading: false, error: "" });
     } catch (error) {
-      if (error.name !== "AbortError") setRepoState({ loading: false, error: error.message });
+      if (error.name !== "AbortError" && requestId === repositoryRequestId.current) setRepoState({ loading: false, error: error.message });
     }
   }, [id, invalidRepositoryId]);
 
@@ -139,11 +159,13 @@ const RepoPage = () => {
   useEffect(() => {
     if (invalidRepositoryId) return undefined;
     const controller = new AbortController();
+    const requestId = ++branchRequestId.current;
     const loadBranches = async () => {
       setBranchListState({ loading: true, error: "" });
       try {
         const response = await fetch(`${API_BASE}/repo/${id}/branches`, { headers: authHeaders(), signal: controller.signal });
         const data = await requestData(response, "Unable to load branches");
+        if (requestId !== branchRequestId.current) return;
         const loaded = Array.isArray(data.branches) && data.branches.length
           ? data.branches
           : [{ name: "main", head: null, isDefault: true, commitCount: 0 }];
@@ -153,13 +175,16 @@ const RepoPage = () => {
         const requested = initialBranch.current;
         const initial = loaded.some((branch) => branch.name === requested) ? requested : fallback;
         setBranches(loaded);
+        setBranchRepositoryId(id);
         setDefaultBranch(fallback);
         setSelectedBranch(initial);
         setBranchListState({ loading: false, error: "" });
       } catch (error) {
         if (error.name !== "AbortError") {
+          if (requestId !== branchRequestId.current) return;
           const fallback = [{ name: "main", head: null, isDefault: true, commitCount: 0 }];
           setBranches(fallback);
+          setBranchRepositoryId(id);
           setDefaultBranch("main");
           setSelectedBranch("main");
           setBranchListState({ loading: false, error: error.message });
@@ -173,35 +198,41 @@ const RepoPage = () => {
   useEffect(() => {
     if (!selectedBranch || invalidRepositoryId) return undefined;
     const controller = new AbortController();
+    const snapshotRequest = ++snapshotRequestId.current;
+    const historyRequest = ++historyRequestId.current;
     const cacheKey = `${id}:${selectedBranch}`;
+    const branchChanged = activeBranchKey.current !== cacheKey;
+    activeBranchKey.current = cacheKey;
     const cachedSnapshot = snapshotCache.current.get(cacheKey);
     const cachedHistory = historyCache.current.get(cacheKey);
     const loadBranch = async () => {
       await Promise.resolve();
-      setSearchParams((current) => {
+      setSearchParamsRef.current((current) => {
         const next = new URLSearchParams(current);
         next.set("branch", selectedBranch);
+        if (branchChanged && !pendingSelectedPath.current) next.delete("path");
         return next;
       }, { replace: true });
       setSnapshotState(cachedSnapshot
-        ? { loading: false, files: cachedSnapshot.files, state: cachedSnapshot.state, error: "" }
-        : { loading: true, files: [], state: null, error: "" });
+        ? { key: cacheKey, loading: false, files: cachedSnapshot.files, state: cachedSnapshot.state, error: "" }
+        : { key: cacheKey, loading: true, files: [], state: null, error: "" });
       setHistoryState(cachedHistory
-        ? { loading: false, commits: cachedHistory, error: "" }
-        : { loading: true, commits: [], error: "" });
+        ? { key: cacheKey, loading: false, commits: cachedHistory, error: "" }
+        : { key: cacheKey, loading: true, commits: [], error: "" });
 
       if (!cachedSnapshot) {
         fetch(`${API_BASE}/repo/${id}/branches/${encodeURIComponent(selectedBranch)}/snapshot`, { headers: authHeaders(), signal: controller.signal })
         .then((response) => requestData(response, "Unable to load branch files"))
         .then((data) => {
+          if (snapshotRequest !== snapshotRequestId.current) return;
           const files = Array.isArray(data.files) ? data.files : [];
           const state = data?.state || null;
           snapshotCache.current.set(cacheKey, { files, state });
-          setSnapshotState({ loading: false, files, state, error: "" });
+          setSnapshotState({ key: cacheKey, loading: false, files, state, error: "" });
           if (pendingSelectedPath.current && files.some((file) => file.path === pendingSelectedPath.current)) {
             const filePath = pendingSelectedPath.current;
             pendingSelectedPath.current = "";
-            setSearchParams((current) => {
+            setSearchParamsRef.current((current) => {
               const next = new URLSearchParams(current);
               next.set("branch", selectedBranch);
               next.set("path", filePath);
@@ -209,23 +240,24 @@ const RepoPage = () => {
             }, { replace: true });
           }
         })
-        .catch((error) => { if (error.name !== "AbortError") setSnapshotState({ loading: false, files: [], state: null, error: error.message }); });
+        .catch((error) => { if (error.name !== "AbortError" && snapshotRequest === snapshotRequestId.current) setSnapshotState({ key: cacheKey, loading: false, files: [], state: null, error: error.message }); });
       }
       if (!cachedHistory) {
         fetch(`${API_BASE}/repo/${id}/branches/${encodeURIComponent(selectedBranch)}/history`, { headers: authHeaders(), signal: controller.signal })
         .then((response) => requestData(response, "Unable to load branch history"))
         .then((data) => {
+          if (historyRequest !== historyRequestId.current) return;
           const commits = Array.isArray(data.commits) ? data.commits : [];
           historyCache.current.set(cacheKey, commits);
-          setHistoryState({ loading: false, commits, error: "" });
+          setHistoryState({ key: cacheKey, loading: false, commits, error: "" });
           setBranches((current) => current.map((branch) => branch.name === selectedBranch ? { ...branch, commitCount: commits.length } : branch));
         })
-        .catch((error) => { if (error.name !== "AbortError") setHistoryState({ loading: false, commits: [], error: error.message }); });
+        .catch((error) => { if (error.name !== "AbortError" && historyRequest === historyRequestId.current) setHistoryState({ key: cacheKey, loading: false, commits: [], error: error.message }); });
       }
     };
     loadBranch();
     return () => controller.abort();
-  }, [id, invalidRepositoryId, reloadVersion, selectedBranch, setSearchParams]);
+  }, [id, invalidRepositoryId, reloadVersion, selectedBranch]);
 
   const refreshSelectedBranch = useCallback(() => {
     const cacheKey = `${id}:${selectedBranch}`;
@@ -377,6 +409,14 @@ const RepoPage = () => {
     if (!response.ok) throw new Error(getResponseError(data, "Unable to create starter file"));
     const filePath = data?.file?.path;
     pendingSelectedPath.current = filePath || "";
+    if (filePath) {
+      setSearchParams((current) => {
+        const next = new URLSearchParams(current);
+        next.set("branch", selectedBranch || defaultBranch);
+        next.set("path", filePath);
+        return next;
+      }, { replace: true });
+    }
     if (data?.state) {
       setBranches((current) => current.map((branch) => branch.name === (selectedBranch || defaultBranch)
         ? { ...branch, state: data.state, commitCount: data.state.commitCount }
@@ -403,17 +443,23 @@ const RepoPage = () => {
   };
 
   if (invalidRepositoryId) return <><Navbar /><main className="repo-page-state error">Repository not found</main></>;
-  if (repoState.loading) return <><Navbar /><main className="repo-page-state loading" role="status">Loading repository...</main></>;
+  if (repoState.loading || (repo && String(repo._id) !== String(id))) return <><Navbar /><main className="repo-page-state loading" role="status">Loading repository...</main></>;
   if (repoState.error || !repo) return <><Navbar /><main className="repo-page-state error" role="alert">{repoState.error || "Repository not found"}</main></>;
 
-  const selectedMetadata = branches.find((branch) => branch.name === selectedBranch);
-  const defaultProtection = branches.find((branch) => branch.name === defaultBranch)?.protection
+  const selectedMetadata = currentBranches.find((branch) => branch.name === selectedBranch);
+  const defaultProtection = currentBranches.find((branch) => branch.name === defaultBranch)?.protection
     || (selectedBranch === defaultBranch ? selectedProtection : { protected: false });
-  const branchCommitCount = historyState.loading
+  const contentKey = `${id}:${selectedBranch}`;
+  const contentLoading = branchListState.loading || branchRepositoryId !== id || !selectedBranch
+    || snapshotState.key !== contentKey || historyState.key !== contentKey || snapshotState.loading || historyState.loading;
+  const contentError = !contentLoading && (snapshotState.error
+    ? `Files for ${selectedBranch} could not be loaded: ${snapshotState.error}`
+    : historyState.error ? `History for ${selectedBranch} could not be loaded: ${historyState.error}` : "");
+  const branchCommitCount = historyState.key !== contentKey || historyState.loading
     ? (selectedMetadata?.commitCount || 0)
     : historyState.commits.length;
   const onDefaultBranch = selectedBranch === defaultBranch;
-  const emptyBranch = !snapshotState.loading && !snapshotState.error && visibleFiles.length === 0;
+  const emptyBranch = !contentLoading && !contentError && visibleFiles.length === 0;
   const hasPendingChanges = pendingCommit || Boolean(snapshotState.state?.hasUncommittedChanges || snapshotState.state?.hasStagedChanges);
   const settingsPath = canManageCollaborators ? `/repo/${id}/settings/collaborators` : `/repo/${id}/settings/branches`;
 
@@ -421,31 +467,24 @@ const RepoPage = () => {
     <div className="repo-page">
       <Navbar />
       <main className="repo-container">
-        <div className="repo-header">
-          <div className="repo-header__identity"><div className="repo-header__title-row"><h1 className="repo-title">
-            {repo.owner?.username && <><span className="repo-title__owner">{repo.owner.username}</span><span className="repo-title__separator" aria-hidden="true">/</span></>}
-            <span className="repo-title__name">{repo.name}</span>
-          </h1><span className="repo-visibility-badge">{repo.visibility === "private" ? "Private" : "Public"}</span>{selectedProtection?.protected && <span className="repo-protected-badge">{selectedBranch} Protected</span>}</div>
-          <p className="repo-header__description">{repo.description || "No description provided."}</p></div>
-          <div className="repo-header__actions">
-            <RepositorySocialActions repository={repo} onForked={(repositoryId) => navigate(`/repo/${repositoryId}`)} />
-            <RepositoryCodeMenu repository={repo} defaultBranch={defaultBranch} protection={defaultProtection} role={repo.currentUserRole} />
-            {canUploadFiles && <AddFileMenu onCreate={() => createStarterFile("readme", `# ${repo.name}\n`)} onUploadFiles={() => fileInputRef.current?.click()} onUploadFolder={() => folderInputRef.current?.click()} />}
-          </div>
-        </div>
+        <RepoHeader repository={repo} protectedBranch={selectedProtection?.protected ? selectedBranch : ""}>
+          <RepositorySocialActions repository={repo} onForked={(repositoryId) => navigate(`/repo/${repositoryId}`)} />
+          <RepositoryCodeMenu repository={repo} defaultBranch={defaultBranch} protection={defaultProtection} role={repo.currentUserRole} />
+          {canUploadFiles && <AddFileMenu onCreate={() => createStarterFile("readme", `# ${repo.name}\n`)} onUploadFiles={() => fileInputRef.current?.click()} onUploadFolder={() => folderInputRef.current?.click()} />}
+        </RepoHeader>
         <input ref={fileInputRef} className="sr-only" type="file" multiple onChange={handleUploadSelection} aria-label="Choose files to upload" />
         <input ref={folderInputRef} className="sr-only" type="file" multiple onChange={handleUploadSelection} aria-label="Choose project folder to upload" />
         {repo.forkedFrom && <p className="repo-fork-source">forked from <Link to={`/repo/${repo.forkedFrom._id}`}>{repo.forkedFrom.owner?.username ? `${repo.forkedFrom.owner.username} / ` : ""}{repo.forkedFrom.name || "Deleted repository"}</Link></p>}
 
-        <nav className="repo-tabs" aria-label="Repository sections"><Link className={location.pathname === `/repo/${id}` ? "active" : ""} to={`/repo/${id}`}>Code</Link><Link to={`/repo/${id}/issues`}>Issues <span>{navigationCounts.issues}</span></Link><Link to={`/repo/${id}/pulls`}>Pull requests <span>{navigationCounts.pulls}</span></Link><Link to={`/repo/${id}/actions`}>Actions</Link><Link to={`/repo/${id}/releases`}>Releases</Link><Link to={`/repo/${id}/insights`}>Insights</Link>{(canManageCollaborators || canManageBranchProtection) && <Link to={settingsPath}>Settings</Link>}</nav>
+        <RepoTabs repositoryId={id} pathname={location.pathname} counts={navigationCounts} settingsPath={(canManageCollaborators || canManageBranchProtection) ? settingsPath : ""} />
         {repoWarning && <p className="error">{repoWarning}</p>}
 
         <BranchToolbar
-          branches={branches}
+          branches={currentBranches}
           selectedBranch={selectedBranch}
           defaultBranch={defaultBranch}
           commitCount={branchCommitCount}
-          loading={branchListState.loading}
+          loading={branchListState.loading || branchRepositoryId !== id}
           error={branchListState.error}
           canManageBranches={canManageBranches}
           isAuthenticated={isAuthenticated}
@@ -457,15 +496,7 @@ const RepoPage = () => {
           onCompare={openCompare}
         />
 
-        {!emptyBranch && canWriteContent && hasPendingChanges && <div className="commit-section">
-          <input type="text" placeholder={`Commit message for ${selectedBranch || defaultBranch}`} value={commitMessage} onChange={(event) => setCommitMessage(event.target.value)} className="commit-input" />
-          <button type="button" onClick={handleCommit} className="push-btn" disabled={committing}>{committing ? "Committing..." : "Commit"}</button>
-           <button type="button" onClick={() => runRepositoryAction("push", "Push successful!")} className="repo-secondary-button">Push</button>
-           <button type="button" onClick={() => runRepositoryAction("pull", "Pull successful!")} className="repo-secondary-button">Pull</button>
-         </div>}
-
-        {snapshotState.error && <div className="repo-branch-section-error" role="alert">Files for {selectedBranch} could not be loaded: {snapshotState.error}</div>}
-        {emptyBranch ? <EmptyRepositorySetupPanel
+        <RepoContent loading={contentLoading} error={contentError} empty={emptyBranch} onRetry={refreshSelectedBranch} emptyContent={<EmptyRepositorySetupPanel
           repository={repo}
           selectedBranch={selectedBranch}
           canCreateContent={Boolean(baseWritePermission)}
@@ -473,7 +504,14 @@ const RepoPage = () => {
           onUploadFiles={() => fileInputRef.current?.click()}
           onUploadFolder={() => folderInputRef.current?.click()}
           onCreateFile={() => createStarterFile("readme", `# ${repo.name}\n`)}
-        /> : <RepositoryBrowser
+        />}>
+          {canWriteContent && hasPendingChanges && <div className="commit-section">
+            <input type="text" placeholder={`Commit message for ${selectedBranch || defaultBranch}`} value={commitMessage} onChange={(event) => setCommitMessage(event.target.value)} className="commit-input" />
+            <button type="button" onClick={handleCommit} className="push-btn" disabled={committing}>{committing ? "Committing..." : "Commit"}</button>
+            <button type="button" onClick={() => runRepositoryAction("push", "Push successful!")} className="repo-secondary-button">Push</button>
+            <button type="button" onClick={() => runRepositoryAction("pull", "Pull successful!")} className="repo-secondary-button">Pull</button>
+          </div>}
+          <RepositoryBrowser
           repositoryId={id}
           repositoryName={repo.name}
           files={visibleFiles}
@@ -489,11 +527,9 @@ const RepoPage = () => {
             if (!isBrowserEditableFile(filePath, file?.size)) return;
             navigate(`/repo/${id}/edit?branch=${encodeURIComponent(selectedBranch || defaultBranch)}&path=${encodeURIComponent(filePath)}`);
           } : undefined}
-        />}
-
-        {!emptyBranch && historyState.loading && <div className="repo-history-state" role="status">Loading commit history...</div>}
-        {!emptyBranch && historyState.error && <div className="repo-branch-section-error" role="alert">History for {selectedBranch} could not be loaded: {historyState.error}</div>}
-        {!emptyBranch && !historyState.loading && <CommitHistory repositoryId={id} branch={selectedBranch} commits={historyState.commits} emptyText="No commits on this branch yet" />}
+          />
+          <CommitHistory repositoryId={id} branch={selectedBranch} commits={historyState.commits} emptyText="No commits on this branch yet" />
+        </RepoContent>
       </main>
     </div>
   );

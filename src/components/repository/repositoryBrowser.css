@@ -1,6 +1,6 @@
 .repo-browser {
   display: grid;
-  grid-template-columns: minmax(280px, 32%) minmax(0, 1fr);
+  grid-template-columns: minmax(240px, 32%) minmax(0, 68%);
   height: clamp(600px, 72vh, 680px);
   margin: 20px 0 28px;
   overflow: hidden;
@@ -29,10 +29,10 @@
 
 .repo-tree__header {
   display: flex;
-  min-height: 48px;
+  min-height: 42px;
   align-items: center;
   gap: 8px;
-  padding: 0 14px;
+  padding: 0 11px;
   color: #f0f6fc;
   border-bottom: 1px solid #30363d;
 }
@@ -106,7 +106,7 @@
 
 .repo-tree-node__row--active {
   color: #f0f6fc;
-  background: rgba(56, 139, 253, 0.16);
+  background: rgba(56, 139, 253, 0.24);
   border-color: rgba(56, 139, 253, 0.4);
 }
 

@@ -1,10 +1,12 @@
 // @vitest-environment jsdom
 import React from "react";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
+import { MemoryRouter, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import RepoPage from "./RepoPage";
 import AddFileMenu from "./AddFileMenu";
+import { RepoContent, RepoHeader } from "./RepositoryPageShell";
+import { repositoryDescription } from "./repositoryPageUtils";
 
 const repositoryId = "507f1f77bcf86cd799439011";
 const ownerId = "507f1f77bcf86cd799439012";
@@ -18,6 +20,15 @@ const jsonResponse = (body, status = 200) => ({
 });
 
 const LocationState = () => <output data-testid="location-search">{useLocation().search}</output>;
+const NavigateToRepository = ({ id }) => {
+  const navigate = useNavigate();
+  return <button type="button" onClick={() => navigate(`/repo/${id}`)}>Open next repository</button>;
+};
+const deferred = () => {
+  let resolve;
+  const promise = new Promise((done) => { resolve = done; });
+  return { promise, resolve };
+};
 
 const renderPage = (entry = `/repo/${repositoryId}`) => render(
   <MemoryRouter initialEntries={[entry]}>
@@ -93,6 +104,52 @@ describe("RepoPage branch integration", () => {
       expect(calls.filter((url) => url.includes("/branches/feature%2Flogin/snapshot"))).toHaveLength(1);
       expect(calls.filter((url) => url.includes("/branches/feature%2Flogin/history"))).toHaveLength(1);
     });
+  });
+
+  test("a late snapshot from the previous branch cannot overwrite the selected branch", async () => {
+    const mainSnapshot = deferred();
+    vi.spyOn(globalThis, "fetch").mockImplementation((url) => {
+      const value = String(url);
+      if (value.endsWith(`/repo/${repositoryId}`)) return Promise.resolve(jsonResponse({ _id: repositoryId, name: "project", owner: { _id: ownerId, username: "developer" }, visibility: "public" }));
+      if (value.endsWith(`/repo/${repositoryId}/branches`)) return Promise.resolve(jsonResponse({ defaultBranch: "main", branches: [{ name: "main", isDefault: true }, { name: "feature", isDefault: false }] }));
+      if (value.includes("/branches/main/snapshot")) return mainSnapshot.promise;
+      if (value.includes("/branches/main/history")) return Promise.resolve(jsonResponse({ commits: [] }));
+      if (value.includes("/branches/feature/snapshot")) return Promise.resolve(jsonResponse({ files: [{ filename: "feature.js", path: "feature.js" }] }));
+      if (value.includes("/branches/feature/history")) return Promise.resolve(jsonResponse({ commits: [{ hash: "f1", message: "Feature stays selected", author: { name: "Dev" } }] }));
+      if (value.includes("/repo/preview/")) return Promise.resolve(jsonResponse({ content: "feature", previewSupported: true }));
+      return Promise.resolve(jsonResponse({}));
+    });
+
+    renderPage();
+    fireEvent.click(await screen.findByRole("button", { name: /main/i }));
+    fireEvent.click(screen.getByRole("option", { name: /feature/i }));
+    expect((await screen.findAllByText("feature.js")).length).toBeGreaterThan(0);
+    mainSnapshot.resolve(jsonResponse({ files: [{ filename: "README.md", path: "README.md" }] }));
+    await Promise.resolve();
+    expect(screen.queryByText("README.md")).toBeNull();
+    expect(screen.getByText("Feature stays selected")).toBeTruthy();
+  });
+
+  test("a late repository response cannot replace the newly navigated repository", async () => {
+    const oldRepository = deferred();
+    const nextId = "507f1f77bcf86cd799439099";
+    vi.spyOn(globalThis, "fetch").mockImplementation((url) => {
+      const value = String(url);
+      if (value.endsWith(`/repo/${repositoryId}`)) return oldRepository.promise;
+      if (value.endsWith(`/repo/${nextId}`)) return Promise.resolve(jsonResponse({ _id: nextId, name: "new-project", owner: { _id: ownerId, username: "developer" }, visibility: "private" }));
+      if (value.endsWith("/branches")) return Promise.resolve(jsonResponse({ defaultBranch: "main", branches: [{ name: "main", isDefault: true }] }));
+      if (value.includes("/snapshot")) return Promise.resolve(jsonResponse({ files: [] }));
+      if (value.includes("/history")) return Promise.resolve(jsonResponse({ commits: [] }));
+      return Promise.resolve(jsonResponse({ counts: { open: 0 }, pagination: { total: 0 } }));
+    });
+
+    render(<MemoryRouter initialEntries={[`/repo/${repositoryId}`]}><NavigateToRepository id={nextId} /><Routes><Route path="/repo/:id" element={<RepoPage />} /></Routes></MemoryRouter>);
+    fireEvent.click(screen.getByRole("button", { name: "Open next repository" }));
+    expect(await screen.findByRole("heading", { name: /new-project/i })).toBeTruthy();
+    oldRepository.resolve(jsonResponse({ _id: repositoryId, name: "old-project", owner: { username: "old-owner" }, visibility: "public" }));
+    await Promise.resolve();
+    expect(screen.queryByText("old-project")).toBeNull();
+    expect(screen.getByText("Private")).toBeTruthy();
   });
 
   test("a valid branch query wins during initialization and an empty snapshot is clear", async () => {
@@ -209,4 +266,34 @@ test("Add file dropdown invokes handlers and closes with Escape or outside click
   fireEvent.click(toggle); fireEvent.click(screen.getByRole("menuitem", { name: "Upload files" })); expect(handlers.onUploadFiles).toHaveBeenCalledOnce();
   fireEvent.click(toggle); fireEvent.click(screen.getByRole("menuitem", { name: "Upload project folder" })); expect(handlers.onUploadFolder).toHaveBeenCalledOnce();
   fireEvent.click(toggle); fireEvent.click(screen.getByRole("menuitem", { name: "Create new file" })); expect(handlers.onCreate).toHaveBeenCalledOnce();
+});
+
+test("public, private, described, and undescribed repositories share one header structure", () => {
+  expect(repositoryDescription("x")).toBe("No description provided.");
+  expect(repositoryDescription(null)).toBe("No description provided.");
+  expect(repositoryDescription("A useful project")).toBe("A useful project");
+  const publicRepository = { name: "project", owner: { username: "developer" }, visibility: "public", description: "x" };
+  const { container, rerender } = render(<RepoHeader repository={publicRepository}><button type="button">Action</button></RepoHeader>);
+  const publicStructure = container.querySelector(".repo-header").className;
+  expect(container.querySelectorAll(".repo-header")).toHaveLength(1);
+  expect(screen.getByText("No description provided.")).toBeTruthy();
+  rerender(<RepoHeader repository={{ ...publicRepository, visibility: "private", description: "A useful project" }}><button type="button">Action</button></RepoHeader>);
+  expect(container.querySelectorAll(".repo-header")).toHaveLength(1);
+  expect(container.querySelector(".repo-header").className).toBe(publicStructure);
+  expect(screen.getByText("Private")).toBeTruthy();
+  expect(screen.getByText("A useful project")).toBeTruthy();
+  expect(container.querySelector(".repo-header__actions")).toBeTruthy();
+});
+
+test("repository content states are exclusive and loading never exposes Quick Setup", () => {
+  const { rerender } = render(<RepoContent loading empty emptyContent={<h2>Quick setup</h2>}><p>Browser content</p></RepoContent>);
+  expect(screen.getByRole("status")).toBeTruthy();
+  expect(screen.queryByText("Quick setup")).toBeNull();
+  expect(screen.queryByText("Browser content")).toBeNull();
+  rerender(<RepoContent loading={false} empty emptyContent={<h2>Quick setup</h2>}><p>Browser content</p></RepoContent>);
+  expect(screen.getByText("Quick setup")).toBeTruthy();
+  expect(screen.queryByText("Browser content")).toBeNull();
+  rerender(<RepoContent loading={false} empty={false} emptyContent={<h2>Quick setup</h2>}><p>Browser content</p></RepoContent>);
+  expect(screen.queryByText("Quick setup")).toBeNull();
+  expect(screen.getByText("Browser content")).toBeTruthy();
 });
