@@ -10,8 +10,8 @@ const GettingStarted = () => (
       <h2 id="getting-started-heading">Getting started</h2>
     </div>
     <ol className="dashboard-cli-steps">
-      <li><span>Install the CodeHub CLI</span><pre><code>{buildInstallCommand()}</code></pre></li>
-      <li><span>Sign in to CodeHub</span><pre><code>{buildLoginCommand()}</code></pre></li>
+      <li><span>Install the ContalSystem CLI</span><pre><code>{buildInstallCommand()}</code></pre></li>
+      <li><span>Sign in to ContalSystem</span><pre><code>{buildLoginCommand()}</code></pre></li>
       <li><span>Clone a repository or connect an existing project</span><pre><code>{`${buildCloneCommand("Owner", "Repository")}\ncd Repository`}</code></pre></li>
       <li><span>Create a branch, commit, and push changes</span><pre><code>{buildProtectedBranchCommands("feature/my-change").replace("Initial project setup", "My changes")}</code></pre></li>
     </ol>

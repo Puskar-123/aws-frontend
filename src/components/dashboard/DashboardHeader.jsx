@@ -7,7 +7,7 @@ const DashboardHeader = ({ username = "Developer" }) => (
     <div>
       <p className="dashboard-header__eyebrow">Dashboard</p>
       <h1>Welcome back, {username}</h1>
-      <p>Manage your repositories and recent CodeHub activity.</p>
+      <p>Manage your repositories and recent ContalSystem activity.</p>
     </div>
     <Link className="dashboard-primary-button" to="/create">
       <FiPlus aria-hidden="true" />

@@ -1,0 +1,38 @@
+.brand-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-primary, #f0f6fc);
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.brand-logo__image {
+  display: block;
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.brand-logo__text {
+  color: var(--text-primary, #f0f6fc);
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.brand-logo--large .brand-logo__image {
+  width: 64px;
+  height: 64px;
+}
+
+.brand-logo--large .brand-logo__text {
+  font-size: 30px;
+}
+
+.brand-logo--compact .brand-logo__text {
+  display: none;
+}

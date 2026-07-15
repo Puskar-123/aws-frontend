@@ -37,8 +37,7 @@
 }
 
 .auth-container { width: min(100%, 420px); position: relative; }
-.auth-brand { display: flex; justify-content: center; align-items: center; gap: 10px; margin-bottom: 24px; color: var(--auth-text); font-size: 20px; font-weight: 650; letter-spacing: -0.2px; }
-.auth-brand img { width: 40px; height: 40px; }
+.auth-brand { display: flex; justify-content: center; align-items: center; margin-bottom: 24px; --text-primary: var(--auth-text); }
 .auth-header { margin-bottom: 22px; text-align: center; }
 .auth-heading { margin: 0 0 6px; color: var(--auth-text); font-size: 26px; line-height: 1.25; font-weight: 600; letter-spacing: -0.4px; }
 .auth-subtitle { color: var(--auth-muted); font-size: 15px; }

@@ -1,14 +1,11 @@
 import React from "react";
-import logo from "../../assets/github-mark-white.svg";
+import BrandLogo from "../common/BrandLogo";
 
 const AuthLayout = ({ title, subtitle, children, footer }) => (
   <main className="auth-page">
     <div className="auth-page__glow" aria-hidden="true" />
     <div className="auth-container">
-      <div className="auth-brand" aria-label="CodeHub">
-        <img src={logo} alt="" />
-        <span>CodeHub</span>
-      </div>
+      <div className="auth-brand"><BrandLogo /></div>
       <header className="auth-header">
         <h1 className="auth-heading">{title}</h1>
         <p className="auth-subtitle">{subtitle}</p>

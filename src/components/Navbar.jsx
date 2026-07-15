@@ -4,20 +4,13 @@ import "./navbar.css";
 import NotificationBell from "./notifications/NotificationBell";
 import { useAuth } from "../authContext";
 import GlobalSearch from "./search/GlobalSearch";
+import BrandLogo from "./common/BrandLogo";
 
 const Navbar = () => {
   const { isAuthenticated } = useAuth() || {};
   return (
     <nav className="codehub-navbar">
-      <Link to="/">
-        <div>
-          <img
-            src="https://www.github.com/images/modules/logos_page/GitHub-Mark.png"
-            alt="CodeHub Logo"
-          />
-          <h3>CodeHub</h3>
-        </div>
-      </Link>
+      <BrandLogo />
       {isAuthenticated && <GlobalSearch />}
       <div className="codehub-navbar__links">
         {isAuthenticated && <Link to="/explore"><p>Explore</p></Link>}

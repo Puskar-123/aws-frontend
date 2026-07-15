@@ -73,8 +73,8 @@ const Login = () => {
   return (
     <AuthLayout
       title="Welcome back"
-      subtitle="Sign in to continue to CodeHub"
-      footer={<p>New to CodeHub? <Link to="/signup">Create an account</Link></p>}
+      subtitle="Sign in to continue to ContalSystem"
+      footer={<p>New to ContalSystem? <Link to="/signup">Create an account</Link></p>}
     >
       <form onSubmit={handleLogin} noValidate>
         {requestError && <div className="auth-error auth-error--form" role="alert">{requestError}</div>}
