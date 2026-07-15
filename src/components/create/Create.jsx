@@ -183,7 +183,7 @@ const Create = () => {
             <div>
               <h2 id="cli-heading">Continue from the command line</h2>
               <p>After creating the repository, initialize your local project with:</p>
-              <code>codehub init --repo &lt;repository-id&gt;</code>
+              <code>codehub init Owner/{name.trim() || "Repository"}</code>
             </div>
           </section>
 

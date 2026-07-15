@@ -22,6 +22,15 @@ const readRepositories = (data) => {
   return Array.isArray(data?.repositories) ? data.repositories : [];
 };
 
+const readStatistics = (data) => {
+  const statistics = data?.statistics;
+  const fields = ["repositories", "publicRepositories", "privateRepositories", "commits"];
+  if (!statistics || fields.some((field) => !Number.isSafeInteger(statistics[field]) || statistics[field] < 0)) {
+    throw new Error("Repository statistics are missing or invalid");
+  }
+  return statistics;
+};
+
 const deleteErrorMessage = (status, data) => {
   if (data?.error || data?.message) return data.error || data.message;
   const messages = {
@@ -43,6 +52,7 @@ const Dashboard = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [visibility, setVisibility] = useState("all");
   const [status, setStatus] = useState("loading");
+  const [statistics, setStatistics] = useState(null);
   const [deletingRepoId, setDeletingRepoId] = useState(null);
   const deleteInFlightRef = React.useRef(false);
 
@@ -57,18 +67,19 @@ const Dashboard = () => {
       const response = await authenticatedFetch(`${API_BASE}/repo/user/${userId}`);
       if (response.status === 404) {
         setRepositories([]);
-        setStatus("ready");
-        return;
+        throw new Error("Repository statistics were not found");
       }
       if (!response.ok) throw new Error("Failed to fetch repositories");
       const data = await parseResponse(response);
       setRepositories(Array.isArray(data?.myRepositories) ? data.myRepositories : readRepositories(data));
       setSharedRepositories(Array.isArray(data?.sharedRepositories) ? data.sharedRepositories : []);
+      setStatistics(readStatistics(data));
       setStatus("ready");
     } catch (error) {
       console.error("Error fetching repositories:", error);
       setRepositories([]);
       setSharedRepositories([]);
+      setStatistics(null);
       setStatus("error");
     }
   }, [userId]);
@@ -153,6 +164,7 @@ const Dashboard = () => {
       if (!response.ok) throw new Error(deleteErrorMessage(response.status, data));
 
       setRepositories((current) => removeRepositoryById(current, repositoryId));
+      await fetchRepositories();
       window.alert(data.message || `Repository "${repository.name}" deleted.`);
     } catch (error) {
       console.error("Repository deletion failed:", error);
@@ -161,14 +173,14 @@ const Dashboard = () => {
       deleteInFlightRef.current = false;
       setDeletingRepoId(null);
     }
-  }, []);
+  }, [fetchRepositories]);
 
   return (
     <div className="dashboard-page">
       <Navbar />
       <div className="dashboard-shell">
         <DashboardHeader username={username} />
-        <DashboardStats repositories={repositories} loading={status === "loading"} />
+        <DashboardStats statistics={statistics} loading={status === "loading"} error={status === "error"} onRetry={fetchRepositories} />
 
         <div className="dashboard-layout">
           <main className="dashboard-repositories" aria-labelledby="repositories-heading">

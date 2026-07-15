@@ -1,16 +1,14 @@
-import React, { useMemo } from "react";
-import { calculateRepositoryStats } from "../../utils/repository";
+import React from "react";
 
-const DashboardStats = ({ repositories = [], loading = false }) => {
-  const stats = useMemo(() => {
-    const counts = calculateRepositoryStats(repositories);
-    return [
-      { label: "Repositories", value: counts.total },
-      { label: "Public", value: counts.public },
-      { label: "Private", value: counts.private },
-      { label: "Commits", value: counts.commits },
-    ];
-  }, [repositories]);
+const DashboardStats = ({ statistics, loading = false, error = false, onRetry }) => {
+  const stats = [
+    { label: "Repositories", value: statistics?.repositories },
+    { label: "Public", value: statistics?.publicRepositories },
+    { label: "Private", value: statistics?.privateRepositories },
+    { label: "Commits", value: statistics?.commits },
+  ];
+
+  if (error) return <section className="dashboard-stats-error" role="alert"><span>Unable to load repository statistics.</span><button type="button" onClick={onRetry}>Retry</button></section>;
 
   return (
     <section className="dashboard-stats" aria-label="Repository statistics" aria-busy={loading}>

@@ -126,6 +126,8 @@
 
 .dashboard-stat strong { font-size: 24px; line-height: 1.1; }
 .dashboard-stat > span:last-child { margin-top: 4px; color: var(--dashboard-muted); font-size: 12px; }
+.dashboard-stats-error { display: flex; min-height: 82px; align-items: center; justify-content: center; gap: 12px; margin-bottom: 24px; color: #ff7b72; background: var(--dashboard-panel); border: 1px solid var(--dashboard-red); border-radius: 7px; }
+.dashboard-stats-error button { padding: 6px 12px; color: var(--dashboard-text); background: #21262d; border: 1px solid var(--dashboard-border); border-radius: 6px; cursor: pointer; }
 
 .dashboard-layout {
   display: grid;
@@ -287,9 +289,16 @@
 .dashboard-panel { padding: 16px; }
 .dashboard-panel__heading { margin-bottom: 14px; }
 .dashboard-panel__heading svg { color: var(--dashboard-muted); }
-.dashboard-getting-started ol { margin: 0 0 15px; padding-left: 20px; color: #c9d1d9; font-size: 12px; line-height: 1.8; }
+.dashboard-getting-started ol { margin: 0 0 12px; padding-left: 20px; color: #c9d1d9; font-size: 12px; }
+.dashboard-cli-steps li + li { margin-top: 9px; }
+.dashboard-cli-steps li > span { display: block; margin-bottom: 4px; line-height: 1.4; }
 .dashboard-getting-started pre { max-width: 100%; margin: 0; padding: 11px; overflow-x: auto; background: var(--dashboard-bg); border: 1px solid var(--dashboard-border); border-radius: 6px; }
 .dashboard-getting-started pre code { display: block; padding: 0; color: #c9d1d9; font-size: 11px; line-height: 1.65; white-space: pre; background: transparent; }
+.dashboard-cli-existing { margin: 12px 0; color: var(--dashboard-muted); font-size: 12px; }
+.dashboard-cli-existing summary { color: #c9d1d9; cursor: pointer; }
+.dashboard-cli-existing pre { margin-top: 8px; }
+.dashboard-cli-docs-link { display: inline-block; color: var(--dashboard-blue); font-size: 12px; text-decoration: none; }
+.dashboard-cli-docs-link:hover { text-decoration: underline; }
 
 .dashboard-suggestion-list { margin: 0; padding: 0; list-style: none; }
 .dashboard-suggestion-list li + li { border-top: 1px solid var(--dashboard-border); }
