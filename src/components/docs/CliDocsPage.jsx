@@ -5,7 +5,7 @@ import "./cli-docs.css";
 
 const Command = ({ children }) => <pre><code>{children}</code></pre>;
 const CliDocsPage = () => <div className="cli-docs-page"><Navbar /><main className="cli-docs">
-  <header><p>ContalSystem documentation</p><h1>ContalSystem CLI</h1><p>Clone repositories, create branches, commit locally, and push through the same permissions and branch protections as the web application.</p></header>
+  <header><p>CodeHub documentation</p><h1>CodeHub CLI</h1><p>Clone repositories, create branches, commit locally, and push through the same permissions and branch protections as the web application.</p></header>
   <nav className="cli-docs-return" aria-label="CLI documentation navigation"><Link to="/dashboard">← Return to Dashboard</Link></nav>
   <section><h2>Install</h2><Command>npm install -g codehub-sbs-cli</Command><p>Node.js 18 or newer is required.</p></section>
   <section><h2>Sign in</h2><Command>{"codehub login\ncodehub whoami"}</Command><p>The password is hidden while typing. Your access token is stored in the operating system application-data folder, never in a repository.</p></section>

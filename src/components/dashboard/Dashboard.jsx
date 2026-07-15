@@ -187,7 +187,7 @@ const Dashboard = () => {
             <div className="dashboard-section-header">
               <div>
                 <h2 id="repositories-heading">Your repositories</h2>
-                <p>Browse and manage your ContalSystem projects.</p>
+                <p>Browse and manage your CodeHub projects.</p>
               </div>
               <button className="dashboard-text-button" type="button" onClick={() => navigate("/create")}>
                 New
@@ -264,7 +264,7 @@ const Dashboard = () => {
                 </ul>
               ) : (
                 <p className="dashboard-panel__muted">
-                  Discover public projects from the ContalSystem community as they become available.
+                  Discover public projects from the CodeHub community as they become available.
                 </p>
               )}
               <button type="button" className="dashboard-explore-all" onClick={() => navigate("/explore")}>View all repositories →</button>

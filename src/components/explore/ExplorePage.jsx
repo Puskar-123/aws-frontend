@@ -28,7 +28,7 @@ const ExplorePage = () => {
   }, [language, page, query, retry, sort]);
 
   return <div className="explore-page"><Navbar /><main className="explore-container">
-    <header><h1>Explore repositories</h1><p>Discover public projects from the ContalSystem community.</p></header>
+    <header><h1>Explore repositories</h1><p>Discover public projects from the CodeHub community.</p></header>
     <form className="explore-search" onSubmit={(event) => { event.preventDefault(); update({ q: draft.trim(), page: "" }); }}><label htmlFor="explore-query">Search public repositories or users</label><div><FiSearch aria-hidden="true" /><input id="explore-query" type="search" value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="Search public repositories or users..." /><button type="submit">Search</button></div></form>
     <div className="explore-filters"><label>Sort<select value={sort} onChange={(event) => update({ sort: event.target.value, page: "" })}><option value="recent">Recently updated</option><option value="stars">Most stars</option><option value="forks">Most forks</option><option value="watchers">Most watched</option><option value="name">Name</option></select></label><label>Language<select value={language} onChange={(event) => update({ language: event.target.value, page: "" })}><option value="">All languages</option>{LANGUAGES.map((item) => <option key={item}>{item}</option>)}</select></label></div>
     {state.loading && <p className="explore-state" role="status">Loading public repositories...</p>}

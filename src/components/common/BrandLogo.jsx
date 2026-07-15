@@ -12,9 +12,9 @@ const BrandLogo = ({ compact = false, size, className = "" }) => {
   ].filter(Boolean).join(" ");
 
   return (
-    <Link className={classes} to="/" aria-label="ContalSystem home">
+    <Link className={classes} to="/" aria-label="CodeHub home">
       <img className="brand-logo__image" src={logo} alt="" />
-      <span className="brand-logo__text">ContalSystem</span>
+      <span className="brand-logo__text">CodeHub</span>
     </Link>
   );
 };

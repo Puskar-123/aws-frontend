@@ -13,7 +13,7 @@ afterEach(() => { cleanup(); localStorage.clear(); vi.restoreAllMocks(); });
 
 test("logged-out landing page presents sign-in and signup calls to action", async () => {
   renderHome();
-  expect(await screen.findByRole("heading", { name: "Build, collaborate, and ship code with ContalSystem" })).toBeTruthy();
+  expect(await screen.findByRole("heading", { name: "Build, collaborate, and ship code with CodeHub" })).toBeTruthy();
   expect(screen.getAllByRole("link", { name: "Get started" }).every((link) => link.getAttribute("href") === "/signup")).toBe(true);
   expect(screen.getAllByRole("link", { name: "Sign in" }).every((link) => link.getAttribute("href") === "/login")).toBe(true);
   expect(screen.getByText("Repository management")).toBeTruthy();

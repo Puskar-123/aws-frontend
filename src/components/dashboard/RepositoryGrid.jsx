@@ -40,7 +40,7 @@ const RepositoryGrid = ({
         <h3>{hasFilters ? "No repositories match your filters" : "No repositories yet"}</h3>
         <p>{hasFilters
           ? "Try a different search term or visibility filter."
-          : "Create your first repository or initialize one using ContalSystem CLI."}</p>
+          : "Create your first repository or initialize one using CodeHub CLI."}</p>
         {!hasFilters && (
           <div className="dashboard-state__actions">
             <Link className="dashboard-primary-button" to="/create"><FiPlus aria-hidden="true" />Create repository</Link>

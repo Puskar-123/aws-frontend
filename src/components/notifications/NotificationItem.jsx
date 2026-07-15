@@ -22,7 +22,7 @@ const NotificationItem = ({ notification, onOpen, onMarkRead, compact = false })
       <span className="notification-item__content">
         <strong>{notification.title}</strong>
         {notification.message && <span>{notification.message}</span>}
-        <small>{notification.repository?.name || "ContalSystem"} · {relativeTime(notification.createdAt)}</small>
+        <small>{notification.repository?.name || "CodeHub"} · {relativeTime(notification.createdAt)}</small>
       </span>
       {!notification.read && <span className="notification-item__dot"><span className="sr-only">Unread</span></span>}
     </button>

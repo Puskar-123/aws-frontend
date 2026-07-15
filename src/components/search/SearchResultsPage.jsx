@@ -19,7 +19,7 @@ const SearchResultsPage = () => {
     return () => controller.abort();
   }, [page, query, type]);
   const hasResults = data.repositories?.length || data.users?.length; const activePagination = type === "users" ? data.pagination?.users : data.pagination?.repositories;
-  return <div className="search-page"><Navbar /><main className="search-container"><h1>{query ? <>Search results for “{query}”</> : "Search ContalSystem"}</h1>
+  return <div className="search-page"><Navbar /><main className="search-container"><h1>{query ? <>Search results for “{query}”</> : "Search CodeHub"}</h1>
     <nav className="search-tabs" aria-label="Search result types">{["all", "repositories", "users"].map((item) => <button key={item} type="button" className={type === item ? "active" : ""} aria-pressed={type === item} onClick={() => update({ type: item === "all" ? "" : item, page: "" })}>{item[0].toUpperCase() + item.slice(1)}</button>)}</nav>
     {!query.trim() && <p className="search-state">Start typing to search repositories and users.</p>}
     {state.loading && <p className="search-state" role="status">Searching public repositories and users...</p>}
