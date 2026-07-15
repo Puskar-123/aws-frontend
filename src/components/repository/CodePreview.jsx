@@ -73,17 +73,7 @@ const CodePreview = ({ content = "", filePath = "", language, showLineNumbers = 
         startingLineNumber={1}
         useInlineStyles={false}
         wrapLongLines={false}
-        customStyle={{
-          margin: 0,
-          padding: "16px 0",
-          width: "100%",
-          minHeight: "auto",
-          background: "transparent",
-        }}
-        codeTagProps={{
-          className: "repo-code-preview__code",
-          style: { display: "block", textAlign: "left" },
-        }}
+        codeTagProps={{ className: "repo-code-preview__code" }}
       >
         {displayedContent}
       </SyntaxHighlighter>

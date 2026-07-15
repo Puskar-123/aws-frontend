@@ -2,7 +2,7 @@
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  color: var(--text-primary, #f0f6fc);
+  color: var(--text-primary, var(--text-primary));
   text-decoration: none;
   flex-shrink: 0;
 }
@@ -17,7 +17,7 @@
 }
 
 .brand-logo__text {
-  color: var(--text-primary, #f0f6fc);
+  color: var(--text-primary, var(--text-primary));
   font-size: 20px;
   font-weight: 700;
   line-height: 1;

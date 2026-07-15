@@ -1,19 +1,19 @@
-.cli-docs-page { min-height: 100svh; color: #c9d1d9; background: #0d1117; text-align: left; }
+.cli-docs-page { min-height: 100svh; color: var(--text-secondary); background: var(--bg-page); text-align: left; }
 .cli-docs { width: min(100% - 40px, 900px); margin: 0 auto; padding: 42px 0 80px; }
-.cli-docs header { padding-bottom: 24px; border-bottom: 1px solid #30363d; }
-.cli-docs header > p:first-child { margin: 0; color: #58a6ff; font-size: 13px; font-weight: 600; }
-.cli-docs h1 { margin: 8px 0; color: #f0f6fc; font-size: clamp(30px,5vw,44px); font-weight: 600; }
-.cli-docs h2 { margin: 0 0 12px; color: #f0f6fc; font-size: 21px; }
-.cli-docs section { padding: 25px 0; border-bottom: 1px solid #21262d; }
-.cli-docs p { color: #8b949e; line-height: 1.6; }
-.cli-docs pre { max-width: 100%; margin: 12px 0; padding: 15px; overflow-x: auto; border: 1px solid #30363d; border-radius: 7px; color: #f0f6fc; background: #161b22; white-space: pre; }
+.cli-docs header { padding-bottom: 24px; border-bottom: 1px solid var(--border-default); }
+.cli-docs header > p:first-child { margin: 0; color: var(--accent-link); font-size: 13px; font-weight: 600; }
+.cli-docs h1 { margin: 8px 0; color: var(--text-primary); font-size: clamp(30px,5vw,44px); font-weight: 600; }
+.cli-docs h2 { margin: 0 0 12px; color: var(--text-primary); font-size: 21px; }
+.cli-docs section { padding: 25px 0; border-bottom: 1px solid var(--bg-surface-muted); }
+.cli-docs p { color: var(--text-muted); line-height: 1.6; }
+.cli-docs pre { max-width: 100%; margin: 12px 0; padding: 15px; overflow-x: auto; border: 1px solid var(--border-default); border-radius: 7px; color: var(--text-primary); background: var(--bg-surface); white-space: pre; }
 .cli-docs code { font-family: ui-monospace,SFMono-Regular,Consolas,monospace; }
 .cli-docs dl { display: grid; gap: 12px; }
 .cli-docs dl div { display: grid; grid-template-columns: minmax(150px,1fr) 3fr; gap: 16px; }
-.cli-docs dt { color: #f0f6fc; font-weight: 600; }
-.cli-docs dd { margin: 0; color: #8b949e; }
+.cli-docs dt { color: var(--text-primary); font-weight: 600; }
+.cli-docs dd { margin: 0; color: var(--text-muted); }
 .cli-docs-return { margin-top: 20px; }
-.cli-docs a { color: #58a6ff; }
+.cli-docs a { color: var(--accent-link); }
 .cli-command-reference dt { overflow-wrap: anywhere; }
 .cli-docs-footer { padding-top: 28px; }
 @media (max-width: 600px) { .cli-docs { width: min(100% - 24px,900px); padding-top: 26px; } .cli-docs dl div { grid-template-columns: 1fr; gap: 4px; } }

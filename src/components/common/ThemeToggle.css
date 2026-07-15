@@ -1,0 +1,12 @@
+.theme-toggle { position: relative; flex: 0 0 auto; }
+.theme-toggle__button { display: grid; width: 36px; height: 36px; padding: 0; place-items: center; color: var(--text-secondary); background: transparent; border: 1px solid transparent; border-radius: 6px; cursor: pointer; }
+.theme-toggle__button:hover { color: var(--text-primary); background: var(--bg-hover); border-color: var(--border-default); }
+.theme-toggle__button:focus-visible, .theme-toggle__menu button:focus-visible { outline: 2px solid var(--accent-link); outline-offset: 2px; }
+.theme-toggle__button svg { width: 18px; height: 18px; }
+.theme-toggle__menu { position: absolute; z-index: 100; top: calc(100% + 7px); right: 0; width: 180px; padding: 6px; color: var(--text-primary); background: var(--bg-elevated); border: 1px solid var(--border-default); border-radius: 8px; box-shadow: var(--shadow-menu); }
+.theme-toggle__menu > p { padding: 7px 9px; color: var(--text-muted); font-size: 12px; font-weight: 600; text-align: left; }
+.theme-toggle__menu button { display: grid; width: 100%; grid-template-columns: 16px 18px 1fr; align-items: center; gap: 8px; padding: 8px; color: var(--text-primary); background: transparent; border: 0; border-radius: 6px; font: inherit; font-size: 13px; text-align: left; cursor: pointer; }
+.theme-toggle__menu button:hover { background: var(--bg-hover); }
+.theme-toggle__menu button > svg:first-child { visibility: hidden; color: var(--accent-link); }
+.theme-toggle__menu button > svg:first-child.is-visible { visibility: visible; }
+@media (max-width: 480px) { .theme-toggle__menu { position: fixed; top: 58px; right: 10px; } }

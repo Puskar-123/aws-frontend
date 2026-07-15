@@ -1,40 +1,40 @@
-.collaborator-page { min-height: 100vh; color: #f0f6fc; background: #0d1117; }
+.collaborator-page { min-height: 100vh; color: var(--text-primary); background: var(--bg-page); }
 .collaborator-shell, .invitation-shell { width: min(980px, calc(100% - 32px)); margin: 0 auto; padding: 32px 0 64px; }
 .invitation-shell { width: min(760px, calc(100% - 32px)); }
 .collaborator-shell header, .invitation-shell header { margin: 22px 0; }
-.collaborator-shell header p, .invitation-shell header p { margin: 0 0 5px; color: #58a6ff; font-size: 12px; font-weight: 700; text-transform: uppercase; }
+.collaborator-shell header p, .invitation-shell header p { margin: 0 0 5px; color: var(--accent-link); font-size: 12px; font-weight: 700; text-transform: uppercase; }
 .collaborator-shell h1, .invitation-shell h1 { margin: 0 0 7px; font-size: clamp(26px, 4vw, 36px); }
-.collaborator-shell header span, .invitation-shell header span, .collaborator-list li > div:nth-child(2) span { color: #8b949e; }
-.collaborator-breadcrumb { justify-content: flex-start; padding: 0; gap: 8px; color: #8b949e; font-size: 13px; background: transparent; border: 0; }
-.collaborator-breadcrumb a { color: #58a6ff; }
-.collaborator-panel, .invitation-card { margin-top: 18px; padding: 20px; background: #161b22; border: 1px solid #30363d; border-radius: 8px; }
+.collaborator-shell header span, .invitation-shell header span, .collaborator-list li > div:nth-child(2) span { color: var(--text-muted); }
+.collaborator-breadcrumb { justify-content: flex-start; padding: 0; gap: 8px; color: var(--text-muted); font-size: 13px; background: transparent; border: 0; }
+.collaborator-breadcrumb a { color: var(--accent-link); }
+.collaborator-panel, .invitation-card { margin-top: 18px; padding: 20px; background: var(--bg-surface); border: 1px solid var(--border-default); border-radius: 8px; }
 .collaborator-panel h2, .invitation-card h2 { margin: 0 0 16px; font-size: 18px; }
 .collaborator-invite-form { display: grid; grid-template-columns: minmax(180px, 1fr) 160px; gap: 14px; }
-.collaborator-invite-form label { display: grid; gap: 6px; color: #c9d1d9; font-size: 13px; font-weight: 600; }
+.collaborator-invite-form label { display: grid; gap: 6px; color: var(--text-secondary); font-size: 13px; font-weight: 600; }
 .collaborator-message { grid-column: 1 / -1; }
-.collaborator-invite-form input, .collaborator-invite-form select, .collaborator-list select { min-height: 38px; padding: 7px 10px; color: #f0f6fc; background: #0d1117; border: 1px solid #30363d; border-radius: 6px; }
-.collaborator-invite-form button, .invitation-actions button, .collaborator-error button { width: fit-content; min-height: 38px; padding: 7px 14px; color: #fff; font-weight: 600; background: #238636; border: 1px solid rgba(240,246,252,.1); border-radius: 6px; cursor: pointer; }
+.collaborator-invite-form input, .collaborator-invite-form select, .collaborator-list select { min-height: 38px; padding: 7px 10px; color: var(--text-primary); background: var(--bg-page); border: 1px solid var(--border-default); border-radius: 6px; }
+.collaborator-invite-form button, .invitation-actions button, .collaborator-error button { width: fit-content; min-height: 38px; padding: 7px 14px; color: #fff; font-weight: 600; background: var(--accent-primary); border: 1px solid rgba(240,246,252,.1); border-radius: 6px; cursor: pointer; }
 .collaborator-invite-form button:disabled, .invitation-actions button:disabled { cursor: not-allowed; opacity: .6; }
-.collaborator-notice, .collaborator-error { padding: 12px 14px; color: #c9d1d9; background: #161b22; border: 1px solid #30363d; border-radius: 6px; }
-.collaborator-error { color: #ff7b72; }
-.collaborator-error button { margin-left: 12px; background: #21262d; }
+.collaborator-notice, .collaborator-error { padding: 12px 14px; color: var(--text-secondary); background: var(--bg-surface); border: 1px solid var(--border-default); border-radius: 6px; }
+.collaborator-error { color: var(--danger); }
+.collaborator-error button { margin-left: 12px; background: var(--bg-surface-muted); }
 .collaborator-list { margin: 0; padding: 0; list-style: none; }
 .collaborator-list li { display: flex; align-items: center; gap: 12px; padding: 13px 0; }
-.collaborator-list li + li { border-top: 1px solid #30363d; }
-.collaborator-avatar { display: grid; width: 36px; height: 36px; flex: 0 0 auto; place-items: center; color: #fff; font-weight: 700; background: #30363d; border-radius: 50%; }
+.collaborator-list li + li { border-top: 1px solid var(--border-default); }
+.collaborator-avatar { display: grid; width: 36px; height: 36px; flex: 0 0 auto; place-items: center; color: #fff; font-weight: 700; background: var(--border-default); border-radius: 50%; }
 .collaborator-list li > div:nth-child(2) { display: grid; min-width: 0; flex: 1; gap: 3px; }
 .collaborator-list li > div:nth-child(2) span { font-size: 12px; }
-.collaborator-role { padding: 3px 9px; color: #c9d1d9; font-size: 12px; border: 1px solid #484f58; border-radius: 999px; }
-.collaborator-remove { min-height: 34px; padding: 6px 10px; color: #ff7b72; background: transparent; border: 1px solid #f85149; border-radius: 6px; cursor: pointer; }
-.collaborator-empty { color: #8b949e; }
-.invitation-card > p { margin: 0 0 6px; color: #8b949e; font-size: 12px; text-transform: uppercase; }
-.invitation-card > a { display: inline-block; margin: 2px 0 15px; color: #58a6ff; font-size: 20px; text-decoration: none; overflow-wrap: anywhere; }
+.collaborator-role { padding: 3px 9px; color: var(--text-secondary); font-size: 12px; border: 1px solid var(--border-muted); border-radius: 999px; }
+.collaborator-remove { min-height: 34px; padding: 6px 10px; color: var(--danger); background: transparent; border: 1px solid var(--danger); border-radius: 6px; cursor: pointer; }
+.collaborator-empty { color: var(--text-muted); }
+.invitation-card > p { margin: 0 0 6px; color: var(--text-muted); font-size: 12px; text-transform: uppercase; }
+.invitation-card > a { display: inline-block; margin: 2px 0 15px; color: var(--accent-link); font-size: 20px; text-decoration: none; overflow-wrap: anywhere; }
 .invitation-card dl { display: flex; gap: 28px; }
 .invitation-card dl div { display: grid; gap: 3px; }
-.invitation-card dt { color: #8b949e; font-size: 12px; }
+.invitation-card dt { color: var(--text-muted); font-size: 12px; }
 .invitation-card dd { margin: 0; }
-.invitation-card blockquote { margin: 15px 0; padding-left: 12px; color: #c9d1d9; border-left: 3px solid #30363d; }
+.invitation-card blockquote { margin: 15px 0; padding-left: 12px; color: var(--text-secondary); border-left: 3px solid var(--border-default); }
 .invitation-actions { display: flex; gap: 10px; margin-top: 18px; }
-.invitation-actions .secondary { color: #f0f6fc; background: #21262d; border-color: #30363d; }
-.collaborator-page button:focus-visible, .collaborator-page input:focus-visible, .collaborator-page select:focus-visible, .collaborator-page a:focus-visible { outline: 2px solid #58a6ff; outline-offset: 2px; }
+.invitation-actions .secondary { color: var(--text-primary); background: var(--bg-surface-muted); border-color: var(--border-default); }
+.collaborator-page button:focus-visible, .collaborator-page input:focus-visible, .collaborator-page select:focus-visible, .collaborator-page a:focus-visible { outline: 2px solid var(--accent-link); outline-offset: 2px; }
 @media (max-width: 600px) { .collaborator-shell, .invitation-shell { width: min(100% - 20px, 980px); padding-top: 20px; } .collaborator-panel, .invitation-card { padding: 15px; } .collaborator-invite-form { grid-template-columns: 1fr; } .collaborator-message { grid-column: auto; } .collaborator-invite-form button { width: 100%; } .collaborator-list li { align-items: stretch; flex-wrap: wrap; } .collaborator-list li > div:nth-child(2) { flex-basis: calc(100% - 50px); } .collaborator-list select, .collaborator-remove { flex: 1; } .invitation-card dl { flex-direction: column; gap: 10px; } .invitation-actions button { flex: 1; } }

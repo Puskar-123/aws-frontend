@@ -5,6 +5,7 @@ import NotificationBell from "./notifications/NotificationBell";
 import { useAuth } from "../authContext";
 import GlobalSearch from "./search/GlobalSearch";
 import BrandLogo from "./common/BrandLogo";
+import ThemeToggle from "./common/ThemeToggle";
 
 const Navbar = () => {
   const { isAuthenticated } = useAuth() || {};
@@ -15,6 +16,7 @@ const Navbar = () => {
       <div className="codehub-navbar__links">
         {isAuthenticated && <Link to="/explore"><p>Explore</p></Link>}
         {isAuthenticated && <Link to="/invitations"><p>Invitations</p></Link>}
+        <ThemeToggle />
         <NotificationBell />
         {isAuthenticated && <Link to="/create">
           <p>Create a Repository</p>

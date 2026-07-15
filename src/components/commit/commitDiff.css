@@ -1,7 +1,7 @@
 .commit-history {
   margin: 24px 0 36px;
-  color: #c9d1d9;
-  border: 1px solid #30363d;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-default);
   border-radius: 8px;
   overflow: hidden;
 }
@@ -12,36 +12,36 @@
   align-items: center;
   gap: 10px;
   padding: 0 16px;
-  background: #161b22;
-  border-bottom: 1px solid #30363d;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-default);
 }
 
 .commit-history__header h2 {
   flex: 1;
   margin: 0;
-  color: #f0f6fc;
+  color: var(--text-primary);
   font-size: 16px;
 }
 
 .commit-history__header > span {
   min-width: 26px;
   padding: 2px 8px;
-  color: #8b949e;
+  color: var(--text-muted);
   font-size: 12px;
   text-align: center;
-  background: #21262d;
+  background: var(--bg-surface-muted);
   border-radius: 999px;
 }
 
 .commit-history__empty {
   padding: 36px 16px;
-  color: #8b949e;
+  color: var(--text-muted);
   text-align: center;
 }
 
 .commit-card {
-  background: #0d1117;
-  border-bottom: 1px solid #21262d;
+  background: var(--bg-page);
+  border-bottom: 1px solid var(--bg-surface-muted);
 }
 
 .commit-card:last-child {
@@ -49,7 +49,7 @@
 }
 
 .commit-card--expanded {
-  background: #161b22;
+  background: var(--bg-surface);
 }
 
 .commit-card__body {
@@ -64,7 +64,7 @@
   width: 18px;
   height: 18px;
   margin-top: 3px;
-  color: #8b949e;
+  color: var(--text-muted);
 }
 
 .commit-card__details {
@@ -75,7 +75,7 @@
 .commit-card__details h3 {
   margin: 0 0 6px;
   overflow-wrap: anywhere;
-  color: #f0f6fc;
+  color: var(--text-primary);
   font-size: 15px;
   font-weight: 600;
 }
@@ -87,20 +87,20 @@
   align-items: center;
   gap: 6px;
   margin: 0 0 8px;
-  color: #8b949e;
+  color: var(--text-muted);
   font-size: 12px;
 }
 
 .commit-card__metadata code {
-  color: #c9d1d9;
+  color: var(--text-secondary);
   font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
 }
 
 .commit-card__branch {
   width: fit-content;
   padding: 2px 7px;
-  color: #c9d1d9;
-  background: #21262d;
+  color: var(--text-secondary);
+  background: var(--bg-surface-muted);
   border-radius: 999px;
 }
 
@@ -108,7 +108,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
-  color: #8b949e;
+  color: var(--text-muted);
   font-size: 12px;
 }
 
@@ -116,14 +116,14 @@
 .commit-diff-summary__additions,
 .commit-diff-file-row__totals span:first-child,
 .commit-file-diff__totals span:first-child {
-  color: #3fb950;
+  color: var(--success);
 }
 
 .commit-card__deletions,
 .commit-diff-summary__deletions,
 .commit-diff-file-row__totals span:last-child,
 .commit-file-diff__totals span:last-child {
-  color: #f85149;
+  color: var(--danger);
 }
 
 .commit-card__toggle,
@@ -135,11 +135,11 @@
   justify-content: center;
   gap: 6px;
   padding: 5px 10px;
-  color: #c9d1d9;
+  color: var(--text-secondary);
   font: inherit;
   font-size: 12px;
   font-weight: 600;
-  background: #21262d;
+  background: var(--bg-surface-muted);
   border: 1px solid #363b42;
   border-radius: 6px;
   cursor: pointer;
@@ -148,23 +148,23 @@
 .commit-card__toggle:hover,
 .commit-diff__topbar > button:hover,
 .commit-diff-state--error button:hover {
-  color: #f0f6fc;
-  background: #30363d;
+  color: var(--text-primary);
+  background: var(--border-default);
 }
 
 .commit-card__toggle:focus-visible,
 .commit-diff__topbar > button:focus-visible,
 .commit-diff-state--error button:focus-visible,
 .commit-diff-file-row:focus-visible {
-  outline: 2px solid #58a6ff;
+  outline: 2px solid var(--accent-link);
   outline-offset: 2px;
 }
 
 .commit-diff {
   margin: 0 16px 18px;
   overflow: hidden;
-  background: #0d1117;
-  border: 1px solid #30363d;
+  background: var(--bg-page);
+  border: 1px solid var(--border-default);
   border-radius: 8px;
 }
 
@@ -175,8 +175,8 @@
   justify-content: space-between;
   gap: 12px;
   padding: 8px 12px;
-  background: #161b22;
-  border-bottom: 1px solid #30363d;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-default);
 }
 
 .commit-diff__topbar > div {
@@ -188,7 +188,7 @@
 
 .commit-diff__topbar strong {
   overflow: hidden;
-  color: #f0f6fc;
+  color: var(--text-primary);
   font-size: 13px;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -196,7 +196,7 @@
 
 .commit-diff__topbar code {
   flex: 0 0 auto;
-  color: #8b949e;
+  color: var(--text-muted);
   font-size: 12px;
 }
 
@@ -212,9 +212,9 @@
   align-items: center;
   gap: 14px;
   padding: 10px 14px;
-  color: #8b949e;
+  color: var(--text-muted);
   font-size: 12px;
-  border-bottom: 1px solid #30363d;
+  border-bottom: 1px solid var(--border-default);
 }
 
 .commit-diff-summary > div {
@@ -224,14 +224,14 @@
 }
 
 .commit-diff-summary strong {
-  color: #f0f6fc;
+  color: var(--text-primary);
   font-size: 18px;
 }
 
 .commit-diff__warning {
   margin: 0;
   padding: 8px 14px;
-  color: #f2cc60;
+  color: var(--warning);
   font-size: 12px;
   background: rgba(187, 128, 9, 0.15);
   border-bottom: 1px solid rgba(187, 128, 9, 0.4);
@@ -245,17 +245,17 @@
 
 .commit-diff-files {
   min-width: 0;
-  background: #161b22;
-  border-right: 1px solid #30363d;
+  background: var(--bg-surface);
+  border-right: 1px solid var(--border-default);
 }
 
 .commit-diff-files h4 {
   min-height: 40px;
   margin: 0;
   padding: 11px 12px;
-  color: #f0f6fc;
+  color: var(--text-primary);
   font-size: 13px;
-  border-bottom: 1px solid #30363d;
+  border-bottom: 1px solid var(--border-default);
 }
 
 .commit-diff-files__list {
@@ -271,23 +271,23 @@
   align-items: center;
   gap: 7px;
   padding: 9px 10px;
-  color: #c9d1d9;
+  color: var(--text-secondary);
   font: inherit;
   font-size: 12px;
   text-align: left;
   background: transparent;
   border: 0;
-  border-bottom: 1px solid #21262d;
+  border-bottom: 1px solid var(--bg-surface-muted);
   cursor: pointer;
 }
 
 .commit-diff-file-row:hover,
 .commit-diff-file-row--active {
-  background: #21262d;
+  background: var(--bg-surface-muted);
 }
 
 .commit-diff-file-row--active {
-  box-shadow: inset 3px 0 #58a6ff;
+  box-shadow: inset 3px 0 var(--accent-link);
 }
 
 .commit-diff-file-row__status {
@@ -296,25 +296,25 @@
   height: 20px;
   align-items: center;
   justify-content: center;
-  color: #c9d1d9;
+  color: var(--text-secondary);
   font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
   font-weight: 700;
-  background: #30363d;
+  background: var(--border-default);
   border-radius: 4px;
 }
 
 .commit-diff-file-row__status--added {
-  color: #3fb950;
+  color: var(--success);
   background: rgba(46, 160, 67, 0.15);
 }
 
 .commit-diff-file-row__status--deleted {
-  color: #f85149;
+  color: var(--danger);
   background: rgba(248, 81, 73, 0.15);
 }
 
 .commit-diff-file-row__status--renamed {
-  color: #d29922;
+  color: var(--warning);
   background: rgba(187, 128, 9, 0.15);
 }
 
@@ -334,7 +334,7 @@
 
 .commit-file-diff {
   min-width: 0;
-  background: #0d1117;
+  background: var(--bg-page);
 }
 
 .commit-file-diff__header {
@@ -343,7 +343,7 @@
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
-  border-bottom: 1px solid #30363d;
+  border-bottom: 1px solid var(--border-default);
 }
 
 .commit-file-diff__header > div {
@@ -357,7 +357,7 @@
 }
 
 .commit-file-diff__old-path {
-  color: #8b949e;
+  color: var(--text-muted);
 }
 
 .commit-diff-viewer__scroll {
@@ -370,7 +370,7 @@
   width: max-content;
   min-width: 100%;
   padding-bottom: 12px;
-  color: #c9d1d9;
+  color: var(--text-secondary);
   font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
   font-size: 12px;
   line-height: 20px;
@@ -384,7 +384,7 @@
 
 .commit-diff-line__number {
   padding: 0 8px;
-  color: #6e7681;
+  color: var(--text-muted);
   text-align: right;
   background: rgba(110, 118, 129, 0.06);
   border-right: 1px solid rgba(110, 118, 129, 0.18);
@@ -413,7 +413,7 @@
 }
 
 .commit-diff-context {
-  background: #0d1117;
+  background: var(--bg-page);
 }
 
 .commit-diff-hunk {
@@ -432,7 +432,7 @@
   justify-content: center;
   gap: 8px;
   padding: 28px;
-  color: #8b949e;
+  color: var(--text-muted);
   text-align: center;
 }
 
@@ -447,7 +447,7 @@
 }
 
 .commit-diff-state--error {
-  color: #ff7b72;
+  color: var(--danger);
 }
 
 .commit-diff-state p {
@@ -461,7 +461,7 @@
 
   .commit-diff-files {
     border-right: 0;
-    border-bottom: 1px solid #30363d;
+    border-bottom: 1px solid var(--border-default);
   }
 
   .commit-diff-files__list {
