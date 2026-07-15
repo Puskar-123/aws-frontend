@@ -5,6 +5,7 @@ import {
   FiEdit2,
   FiEdit3,
   FiFile,
+  FiGitCommit,
   FiMoreHorizontal,
   FiRefreshCw,
   FiTrash2,
@@ -21,11 +22,21 @@ import ImagePreview from "./ImagePreview";
 const CodePreview = lazy(() => import("./CodePreview"));
 const MarkdownPreview = lazy(() => import("./MarkdownPreview"));
 
+const relativeCommitTime = (value) => {
+  const timestamp = Date.parse(value);
+  if (Number.isNaN(timestamp)) return "Date unavailable";
+  const seconds = Math.round((timestamp - Date.now()) / 1000);
+  const units = [["year", 31536000], ["month", 2592000], ["week", 604800], ["day", 86400], ["hour", 3600], ["minute", 60]];
+  const [unit, size] = units.find(([, unitSize]) => Math.abs(seconds) >= unitSize) || ["second", 1];
+  return new Intl.RelativeTimeFormat("en", { numeric: "auto" }).format(Math.round(seconds / size), unit);
+};
+
 const FileViewer = ({
   apiBase,
   repositoryId,
   repositoryName,
   branch,
+  latestCommit,
   selectedNode,
   preview,
   getAuthHeaders,
@@ -70,6 +81,10 @@ const FileViewer = ({
     && (category === "text" || category === "markdown")
     && preview.status === "ready"
     && preview.data?.previewSupported !== false;
+  const commitHash = String(latestCommit?.hash || latestCommit?._id || "");
+  const commitAuthor = latestCommit?.author?.name || latestCommit?.author?.username || "Unknown author";
+  const commitTime = relativeCommitTime(latestCommit?.time);
+  const commitTimeTitle = latestCommit?.time && !Number.isNaN(Date.parse(latestCommit.time)) ? new Date(latestCommit.time).toLocaleString() : undefined;
 
   const copyPath = async () => {
     clearTimeout(copyTimerRef.current);
@@ -174,13 +189,20 @@ const FileViewer = ({
           <div className="repo-file-more" ref={moreRef}>
             <button type="button" className="repo-browser-button" aria-haspopup="menu" aria-expanded={moreOpen} onClick={() => setMoreOpen((value) => !value)}><FiMoreHorizontal aria-hidden="true" />More</button>
             {moreOpen && <div className="repo-file-more__menu" role="menu">
-              {onRename && <button type="button" role="menuitem" onClick={() => { setMoreOpen(false); onRename(path); }}><FiEdit2 aria-hidden="true" />Rename</button>}
               <button type="button" role="menuitem" onClick={() => { copyPath(); setMoreOpen(false); }}><FiCopy aria-hidden="true" />{copyStatus === "copied" ? "Path copied" : "Copy path"}</button>
+              {onRename && <button type="button" role="menuitem" onClick={() => { setMoreOpen(false); onRename(path); }}><FiEdit2 aria-hidden="true" />Rename</button>}
               {onDelete && <button type="button" role="menuitem" className="is-danger" onClick={() => { setMoreOpen(false); onDelete(path); }}><FiTrash2 aria-hidden="true" />Delete</button>}
             </div>}
           </div>
         </div>
       </div>
+      {latestCommit && <div className="repo-file-commit" aria-label="Latest commit">
+        <FiGitCommit aria-hidden="true" />
+        <strong>{commitAuthor}</strong>
+        <span className="repo-file-commit__message">{latestCommit.message || "No commit message"}</span>
+        <time dateTime={latestCommit.time || undefined} title={commitTimeTitle}>{commitTime}</time>
+        {commitHash && <code>{commitHash.slice(0, 7)}</code>}
+      </div>}
       {copyStatus === "error" && (
         <p className="repo-file-viewer__notice" role="alert">Clipboard access failed. Check browser permissions and try again.</p>
       )}

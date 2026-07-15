@@ -7,6 +7,7 @@ import RepoPage from "./RepoPage";
 import AddFileMenu from "./AddFileMenu";
 import { RepoContent, RepoHeader } from "./RepositoryPageShell";
 import { repositoryDescription } from "./repositoryPageUtils";
+import RepositorySidebar from "../repository/RepositorySidebar";
 
 const repositoryId = "507f1f77bcf86cd799439011";
 const ownerId = "507f1f77bcf86cd799439012";
@@ -67,10 +68,12 @@ describe("RepoPage branch integration", () => {
     expect(screen.queryByRole("heading", { name: "Repository files" })).toBeNull();
     expect(screen.getByText("This branch does not contain any files yet.")).toBeTruthy(); expect(screen.queryByText("Select a file to preview")).toBeNull();
     expect(document.querySelector(".commit-section")).toBeNull(); expect(document.querySelector(".commit-history")).toBeNull();
+    expect(document.querySelector(".repo-browser")).toBeNull(); expect(document.querySelector(".repo-sidebar")).toBeNull();
     expect(screen.queryByRole("button", { name: "Compare" })).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Create file" }));
     await waitFor(() => expect(screen.queryByRole("heading", { name: "Quick setup" })).toBeNull());
-    expect((await screen.findAllByText("README.md")).length).toBeGreaterThan(0); expect(await screen.findByText("Initial commit")).toBeTruthy();
+    expect((await screen.findAllByText("README.md")).length).toBeGreaterThan(0); expect((await screen.findAllByText("Initial commit")).length).toBeGreaterThan(0);
+    expect(document.querySelector(".repo-browser > .repo-tree")).toBeTruthy(); expect(document.querySelector(".repo-browser > .repo-browser__preview")).toBeTruthy(); expect(document.querySelector(".repo-browser > .repo-sidebar")).toBeTruthy();
     await waitFor(() => expect(screen.getByTestId("location-search").textContent).toContain("path=README.md"));
     expect(screen.getByTestId("location-search").textContent).toContain("branch=main");
     expect(snapshotRequests).toBe(2); expect(historyRequests).toBe(2); expect(branchRequests).toBe(1);
@@ -93,11 +96,11 @@ describe("RepoPage branch integration", () => {
 
     renderPage();
     expect((await screen.findAllByText("README.md")).length).toBeGreaterThan(0);
-    expect(await screen.findByText("Main commit")).toBeTruthy();
+    expect((await screen.findAllByText("Main commit")).length).toBeGreaterThan(0);
     fireEvent.click(screen.getByRole("button", { name: /main/i }));
     fireEvent.click(screen.getByRole("option", { name: /feature\/login/i }));
     expect((await screen.findAllByText("login.js")).length).toBeGreaterThan(0);
-    expect(await screen.findByText("Feature commit")).toBeTruthy();
+    expect((await screen.findAllByText("Feature commit")).length).toBeGreaterThan(0);
     expect(screen.queryAllByText("README.md")).toHaveLength(0);
     await waitFor(() => {
       expect(calls.filter((url) => url.endsWith(`/repo/${repositoryId}/branches`))).toHaveLength(1);
@@ -127,7 +130,7 @@ describe("RepoPage branch integration", () => {
     mainSnapshot.resolve(jsonResponse({ files: [{ filename: "README.md", path: "README.md" }] }));
     await Promise.resolve();
     expect(screen.queryByText("README.md")).toBeNull();
-    expect(screen.getByText("Feature stays selected")).toBeTruthy();
+    expect(screen.getAllByText("Feature stays selected").length).toBeGreaterThan(0);
   });
 
   test("a late repository response cannot replace the newly navigated repository", async () => {
@@ -296,4 +299,27 @@ test("repository content states are exclusive and loading never exposes Quick Se
   rerender(<RepoContent loading={false} empty={false} emptyContent={<h2>Quick setup</h2>}><p>Browser content</p></RepoContent>);
   expect(screen.queryByText("Quick setup")).toBeNull();
   expect(screen.getByText("Browser content")).toBeTruthy();
+});
+
+test("repository sidebar renders existing social, release, and language data", async () => {
+  vi.spyOn(globalThis, "fetch").mockImplementation((url) => Promise.resolve(String(url).includes("/releases")
+    ? jsonResponse({ releases: [{ _id: "release-1", title: "Version 1.0", tag: { name: "v1.0.0" } }], pagination: { total: 3 }, canManage: true })
+    : jsonResponse({ languages: [{ name: "JavaScript", bytes: 75, percentage: 75 }, { name: "CSS", bytes: 25, percentage: 25 }] })));
+  const repository = { _id: repositoryId, description: "Modern repository", social: { starCount: 8, watcherCount: 4, forkCount: 2 } };
+  render(<MemoryRouter><RepositorySidebar repository={repository} branch="main" files={[{ path: "README.md" }]} /></MemoryRouter>);
+  expect(screen.getByText("Modern repository")).toBeTruthy();
+  expect(screen.getByRole("link", { name: "README" })).toBeTruthy();
+  expect(await screen.findByRole("link", { name: /Version 1.0/ })).toBeTruthy();
+  expect(screen.getByText("3")).toBeTruthy();
+  expect(screen.getByRole("progressbar", { name: "JavaScript 75 percent" })).toBeTruthy();
+  expect(screen.getByRole("link", { name: "Create a new release" })).toBeTruthy();
+});
+
+test("repository sidebar safely hides unavailable language and release details", async () => {
+  vi.spyOn(globalThis, "fetch").mockResolvedValue(jsonResponse({ error: "Unavailable" }, 500));
+  render(<MemoryRouter><RepositorySidebar repository={{ _id: repositoryId, description: "x" }} branch="main" files={[]} /></MemoryRouter>);
+  expect(screen.getByText("No description provided.")).toBeTruthy();
+  await waitFor(() => expect(screen.getByText("No published releases.")).toBeTruthy());
+  expect(screen.queryByRole("progressbar")).toBeNull();
+  expect(screen.queryByRole("link", { name: "README" })).toBeNull();
 });

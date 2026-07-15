@@ -1,9 +1,24 @@
+.repo-page {
+  --repo-bg: #0d1117;
+  --repo-surface: #111827;
+  --repo-surface-alt: #161b22;
+  --repo-border: #30363d;
+  --repo-text: #f0f6fc;
+  --repo-muted: #8b949e;
+  --repo-blue: #58a6ff;
+  --repo-green: #238636;
+  --repo-green-hover: #2ea043;
+  min-width: 0;
+  overflow-x: clip;
+  background: var(--repo-bg);
+}
+
 /* ================= CONTAINER ================= */
 .repo-container {
   width: 100%;
-  max-width: 1280px;
+  max-width: 1480px;
   margin: 0 auto;
-  padding: 24px;
+  padding: 24px 32px;
   box-sizing: border-box;
   background: #0d1117;
   min-height: 100vh;
@@ -120,15 +135,20 @@
   border-bottom: 1px solid #30363d;
   padding-bottom: 0;
   scrollbar-width: thin;
+  flex-wrap: nowrap;
 }
 
 .repo-tabs > a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   cursor: pointer;
   color: #8b949e;
   flex: 0 0 auto;
   padding: 9px 12px;
   text-decoration: none;
 }
+.repo-tabs > a > svg { flex: 0 0 auto; }
 
 .repo-tabs > a.active {
   color: white;
@@ -190,9 +210,11 @@
 }
 .repo-secondary-button { min-height: 38px; padding: 7px 12px; border: 1px solid #30363d; border-radius: 6px; color: #c9d1d9; background: #21262d; cursor: pointer; }
 
+@media (max-width: 1100px) { .repo-container { padding: 20px; } }
+
 @media (max-width: 768px) {
   .repo-container {
-    padding: 16px;
+    padding: 20px;
   }
 
   .repo-header {

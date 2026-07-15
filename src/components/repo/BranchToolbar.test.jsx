@@ -135,6 +135,17 @@ describe("BranchToolbar", () => {
     expect(screen.queryByRole("button", { name: "Compare" })).toBeNull();
   });
 
+  test("shows functional Go to file and History actions only when data exists", () => {
+    const onGoToFile = vi.fn(); const onHistory = vi.fn();
+    const { rerender } = render(<BranchToolbar {...props({ files: [{ path: "README.md" }, { path: "src/app.js" }], onGoToFile, onHistory })} />);
+    fireEvent.change(screen.getByRole("combobox", { name: "Go to file" }), { target: { value: "src/app.js" } });
+    expect(onGoToFile).toHaveBeenCalledWith("src/app.js");
+    fireEvent.click(screen.getByRole("button", { name: "History" })); expect(onHistory).toHaveBeenCalledOnce();
+    rerender(<BranchToolbar {...props({ files: [], commitCount: 0, onGoToFile, onHistory })} />);
+    expect(screen.queryByRole("combobox", { name: "Go to file" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "History" })).toBeNull();
+  });
+
   test("labels protected branches and explains direct-write and bypass states", () => {
     const protectedBranches = [{ ...branches[0], protection: { protected: true, canBypass: false } }, branches[1]];
     const { rerender } = render(<BranchToolbar {...props({ branches: protectedBranches, protection: { protected: true, canBypass: false } })} />);

@@ -9,6 +9,7 @@ import { getFileCategory } from "../../utils/fileType";
 import { encodeRepoPath, normalizeRepoPath } from "../../utils/repoPath";
 import FileTree from "./FileTree";
 import FileViewer from "./FileViewer";
+import RepositorySidebar from "./RepositorySidebar";
 import "./repositoryBrowser.css";
 
 const API_BASE = "https://api.codehub.sbs";
@@ -35,8 +36,10 @@ const parentPaths = (filePath) => {
 const RepositoryBrowser = ({
   repositoryId,
   repositoryName,
+  repository,
   files = [],
   branch = "",
+  latestCommit = null,
   loading = false,
   emptyMessage = "No files in this repository",
   apiBase = API_BASE,
@@ -67,8 +70,10 @@ const RepositoryBrowser = ({
     : automaticPath;
   useEffect(() => {
     if (requestedPath && availablePaths.has(requestedPath)) {
-      setSelection({ repositoryId: scopeKey, path: requestedPath });
-      setExpandedState({ repositoryId: scopeKey, paths: new Set(parentPaths(requestedPath)) });
+      Promise.resolve().then(() => {
+        setSelection({ repositoryId: scopeKey, path: requestedPath });
+        setExpandedState({ repositoryId: scopeKey, paths: new Set(parentPaths(requestedPath)) });
+      });
     }
   }, [availablePaths, requestedPath, scopeKey]);
   const selectedNode = fileNodes.find((node) => node.path === selectedPath) || null;
@@ -198,7 +203,7 @@ const RepositoryBrowser = ({
       <aside className="repo-tree">
         <div className="repo-tree__header">
           <FiFolder aria-hidden="true" />
-          <h2>Repository files</h2>
+          <h2>Files</h2>
           <span>{fileNodes.length}</span>
         </div>
         <div className="repo-tree__scroll">
@@ -219,6 +224,7 @@ const RepositoryBrowser = ({
           repositoryId={repositoryId}
           repositoryName={repositoryName}
           branch={branch}
+          latestCommit={latestCommit}
           selectedNode={selectedNode}
           preview={currentPreview}
           getAuthHeaders={getAuthHeaders}
@@ -232,6 +238,7 @@ const RepositoryBrowser = ({
           onFolderClick={focusFolder}
         />}
       </main>
+      <RepositorySidebar repository={repository} branch={branch} files={files} apiBase={apiBase} />
     </section>
   );
 };

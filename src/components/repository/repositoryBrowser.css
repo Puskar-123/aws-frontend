@@ -1,13 +1,12 @@
 .repo-browser {
   display: grid;
-  grid-template-columns: minmax(240px, 32%) minmax(0, 68%);
+  grid-template-columns: minmax(220px, 1.25fr) minmax(0, 2.75fr) minmax(240px, 1fr);
+  gap: 16px;
   height: clamp(600px, 72vh, 680px);
   margin: 20px 0 28px;
-  overflow: hidden;
+  min-width: 0;
   color: #c9d1d9;
   background: #0d1117;
-  border: 1px solid #30363d;
-  border-radius: 8px;
 }
 
 .repo-browser--loading {
@@ -24,7 +23,9 @@
   min-height: 0;
   flex-direction: column;
   background: #161b22;
-  border-right: 1px solid #30363d;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  overflow: hidden;
 }
 
 .repo-tree__header {
@@ -144,6 +145,9 @@
   min-height: 0;
   min-width: 0;
   background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  overflow: hidden;
 }
 
 .repo-file-viewer {
@@ -253,6 +257,13 @@
   justify-content: flex-end;
   gap: 6px;
 }
+
+.repo-file-commit { display: flex; min-width: 0; min-height: 38px; align-items: center; gap: 7px; padding: 7px 12px; color: #8b949e; background: #111827; border-bottom: 1px solid #30363d; font-size: 11px; }
+.repo-file-commit > svg { flex: 0 0 auto; }
+.repo-file-commit strong { flex: 0 0 auto; color: #f0f6fc; }
+.repo-file-commit__message { min-width: 0; flex: 1; overflow: hidden; color: #c9d1d9; text-overflow: ellipsis; white-space: nowrap; }
+.repo-file-commit time, .repo-file-commit code { flex: 0 0 auto; }
+.repo-file-commit code { padding: 2px 5px; color: #c9d1d9; background: #21262d; border-radius: 4px; }
 
 .repo-browser-button {
   display: inline-flex;
@@ -554,13 +565,7 @@
   align-items: center;
   justify-content: center;
   padding: 20px;
-  background-color: #161b22;
-  background-image: linear-gradient(45deg, #21262d 25%, transparent 25%),
-    linear-gradient(-45deg, #21262d 25%, transparent 25%),
-    linear-gradient(45deg, transparent 75%, #21262d 75%),
-    linear-gradient(-45deg, transparent 75%, #21262d 75%);
-  background-position: 0 0, 0 8px, 8px -8px, -8px 0;
-  background-size: 16px 16px;
+  background: #161b22;
   border: 1px solid #30363d;
   border-radius: 8px;
 }
@@ -572,16 +577,23 @@
   object-fit: contain;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1099px) {
   .repo-browser {
     height: auto;
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: minmax(220px, 3fr) minmax(0, 7fr);
   }
 
-  .repo-tree {
-    border-right: 0;
-    border-bottom: 1px solid #30363d;
-  }
+  .repo-tree, .repo-browser__preview { height: min(68vh, 620px); }
+
+  .repo-tree__scroll { max-height: none; }
+}
+
+@media (max-width: 767px) {
+  .repo-browser { grid-template-columns: minmax(0, 1fr); }
+
+  .repo-tree { height: 340px; }
+
+  .repo-browser__preview { height: min(72vh, 580px); }
 
   .repo-tree__scroll {
     flex: none;
@@ -595,14 +607,6 @@
 }
 
 @media (max-width: 640px) {
-  .repo-browser {
-    margin-right: -14px;
-    margin-left: -14px;
-    border-right: 0;
-    border-left: 0;
-    border-radius: 0;
-  }
-
   .repo-file-toolbar {
     align-items: stretch;
     flex-direction: column;
@@ -615,6 +619,9 @@
   .repo-file-toolbar__actions {
     justify-content: flex-start;
   }
+
+  .repo-file-commit { flex-wrap: wrap; }
+  .repo-file-commit__message { flex-basis: calc(100% - 28px); }
 
   .repo-browser-button {
     flex: 1 1 auto;

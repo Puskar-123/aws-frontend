@@ -1,0 +1,28 @@
+.repo-sidebar { display: flex; min-width: 0; min-height: 0; flex-direction: column; gap: 12px; overflow: auto; }
+.repo-sidebar-card { padding: 14px; color: var(--repo-text); background: var(--repo-surface-alt); border: 1px solid var(--repo-border); border-radius: 8px; }
+.repo-sidebar-card h2 { margin: 0; color: var(--repo-text); font-size: 14px; font-weight: 600; }
+.repo-sidebar-description { margin: 10px 0 12px; color: var(--repo-muted); font-size: 13px; line-height: 1.5; overflow-wrap: anywhere; }
+.repo-sidebar-links { display: grid; gap: 7px; padding-bottom: 12px; border-bottom: 1px solid var(--repo-border); }
+.repo-sidebar-links a, .repo-sidebar-section-link { display: inline-flex; align-items: center; gap: 7px; color: var(--repo-blue); font-size: 12px; text-decoration: none; }
+.repo-sidebar-links a:hover, .repo-sidebar-section-link:hover { text-decoration: underline; }
+.repo-sidebar-stats { display: grid; gap: 8px; margin: 12px 0 0; }
+.repo-sidebar-stats div { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.repo-sidebar-stats dt { display: inline-flex; align-items: center; gap: 7px; color: var(--repo-muted); font-size: 12px; }
+.repo-sidebar-stats dd { margin: 0; color: var(--repo-text); font-size: 12px; font-weight: 600; }
+.repo-sidebar-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.repo-sidebar-heading > span { min-width: 22px; padding: 1px 6px; color: var(--repo-muted); background: #21262d; border-radius: 999px; font-size: 11px; text-align: center; }
+.repo-sidebar-release { display: flex; min-width: 0; align-items: flex-start; gap: 8px; margin: 12px 0; color: var(--repo-text); text-decoration: none; }
+.repo-sidebar-release > svg { flex: 0 0 auto; margin-top: 2px; color: #a371f7; }
+.repo-sidebar-release span { display: grid; min-width: 0; gap: 2px; }
+.repo-sidebar-release strong, .repo-sidebar-release small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.repo-sidebar-release strong { font-size: 12px; }
+.repo-sidebar-release small, .repo-sidebar-empty { color: var(--repo-muted); font-size: 11px; }
+.repo-sidebar-empty { margin: 12px 0; }
+.repo-sidebar-section-link { margin-right: 10px; }
+.repo-sidebar-languages { display: grid; gap: 10px; margin: 12px 0 0; padding: 0; list-style: none; }
+.repo-sidebar-languages li > div { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 4px; font-size: 11px; }
+.repo-sidebar-languages li span { color: var(--repo-muted); }
+.repo-sidebar-languages progress { display: block; width: 100%; height: 7px; overflow: hidden; accent-color: var(--repo-blue); border: 0; border-radius: 999px; }
+
+@media (max-width: 1099px) { .repo-sidebar { display: grid; grid-column: 1 / -1; grid-template-columns: repeat(3, minmax(0, 1fr)); overflow: visible; } }
+@media (max-width: 767px) { .repo-sidebar { grid-template-columns: minmax(0, 1fr); } }

@@ -49,6 +49,7 @@ const RepoPage = () => {
   const invalidRepositoryId = !id || id === "undefined";
   const folderInputRef = useRef(null);
   const fileInputRef = useRef(null);
+  const historySectionRef = useRef(null);
   const snapshotCache = useRef(new Map());
   const historyCache = useRef(new Map());
   const pendingSelectedPath = useRef("");
@@ -490,7 +491,10 @@ const RepoPage = () => {
           isAuthenticated={isAuthenticated}
           message={branchMessage}
           protection={selectedProtection}
+          files={visibleFiles}
           onSelect={(branch) => { setBranchMessage(""); setSelectedBranch(branch); }}
+          onGoToFile={(filePath) => setSearchParams((current) => { const next = new URLSearchParams(current); next.set("branch", selectedBranch); next.set("path", filePath); return next; }, { replace: true })}
+          onHistory={historyState.commits.length ? () => historySectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }) : undefined}
           onCreate={createBranch}
           onDelete={deleteBranch}
           onCompare={openCompare}
@@ -514,8 +518,10 @@ const RepoPage = () => {
           <RepositoryBrowser
           repositoryId={id}
           repositoryName={repo.name}
+          repository={repo}
           files={visibleFiles}
           branch={selectedBranch}
+          latestCommit={historyState.commits[0] || null}
           loading={snapshotState.loading}
           setupState={{ loading: snapshotState.loading, error: snapshotState.error, isEmpty: false }}
           emptyMessage="This branch has no files"
@@ -528,7 +534,7 @@ const RepoPage = () => {
             navigate(`/repo/${id}/edit?branch=${encodeURIComponent(selectedBranch || defaultBranch)}&path=${encodeURIComponent(filePath)}`);
           } : undefined}
           />
-          <CommitHistory repositoryId={id} branch={selectedBranch} commits={historyState.commits} emptyText="No commits on this branch yet" />
+          <div ref={historySectionRef}><CommitHistory repositoryId={id} branch={selectedBranch} commits={historyState.commits} emptyText="No commits on this branch yet" /></div>
         </RepoContent>
       </main>
     </div>

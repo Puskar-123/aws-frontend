@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { FiActivity, FiAlertCircle, FiBarChart2, FiCode, FiGitPullRequest, FiSettings, FiTag } from "react-icons/fi";
 import { repositoryDescription } from "./repositoryPageUtils";
 
 export const RepoHeader = ({ repository, protectedBranch, children }) => <header className="repo-header">
@@ -16,11 +17,11 @@ export const RepoHeader = ({ repository, protectedBranch, children }) => <header
 
 export const RepoTabs = ({ repositoryId, pathname, counts, settingsPath }) => {
   const tabs = [
-    ["Code", `/repo/${repositoryId}`], ["Issues", `/repo/${repositoryId}/issues`, counts.issues], ["Pull requests", `/repo/${repositoryId}/pulls`, counts.pulls],
-    ["Actions", `/repo/${repositoryId}/actions`], ["Releases", `/repo/${repositoryId}/releases`], ["Insights", `/repo/${repositoryId}/insights`],
-    ...(settingsPath ? [["Settings", settingsPath]] : []),
+    ["Code", `/repo/${repositoryId}`, undefined, FiCode], ["Issues", `/repo/${repositoryId}/issues`, counts.issues, FiAlertCircle], ["Pull requests", `/repo/${repositoryId}/pulls`, counts.pulls, FiGitPullRequest],
+    ["Actions", `/repo/${repositoryId}/actions`, undefined, FiActivity], ["Releases", `/repo/${repositoryId}/releases`, undefined, FiTag], ["Insights", `/repo/${repositoryId}/insights`, undefined, FiBarChart2],
+    ...(settingsPath ? [["Settings", settingsPath, undefined, FiSettings]] : []),
   ];
-  return <nav className="repo-tabs" aria-label="Repository sections">{tabs.map(([label, path, count]) => <Link key={label} className={pathname === path || (label === "Settings" && pathname.startsWith(`/repo/${repositoryId}/settings/`)) ? "active" : ""} to={path}>{label}{count !== undefined && <span>{count}</span>}</Link>)}</nav>;
+  return <nav className="repo-tabs" aria-label="Repository sections">{tabs.map(([label, path, count, Icon]) => <Link key={label} className={pathname === path || (label === "Settings" && pathname.startsWith(`/repo/${repositoryId}/settings/`)) ? "active" : ""} to={path}>{React.createElement(Icon, { "aria-hidden": true })}{label}{count !== undefined && <span>{count}</span>}</Link>)}</nav>;
 };
 
 export const RepoContent = ({ loading, error, empty, emptyContent, children, onRetry }) => <section className="repo-content" aria-live="polite">
