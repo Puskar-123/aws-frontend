@@ -127,6 +127,7 @@
 .merge-panel { border-color: rgba(46,160,67,.55); }
 .merge-panel--blocked { border-color: rgba(187,128,9,.7); }
 .merge-panel--done { border-color: rgba(137,87,229,.7); }
+.pr-checks { margin-bottom: 12px; padding: 16px; border: 1px solid #30363d; border-radius: 8px; background: #161b22; }.pr-checks h2 { margin: 0 0 9px; color: #f0f6fc; font-size: 16px; }.pr-checks p { color: #8b949e; font-size: 12px; }.pr-checks ul { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }.pr-checks li { display: grid; grid-template-columns: auto minmax(0,1fr) auto; gap: 8px; align-items: center; font-size: 12px; }.pr-checks li.is-success > span { color: #3fb950; }.pr-checks li.is-failure > span, .pr-checks-error { color: #ff7b72 !important; }.pr-checks small { color: #8b949e; }
 .pull-list-controls button:focus-visible, .pull-primary:focus-visible, .pull-secondary:focus-visible, .pull-tabs button:focus-visible, .pull-form input:focus-visible, .pull-form textarea:focus-visible, .pull-form select:focus-visible, .pull-comment-form textarea:focus-visible, .pull-review-form textarea:focus-visible, .pull-review-form input:focus-visible { outline: 2px solid #58a6ff; outline-offset: 2px; }
 
 @media (max-width: 768px) { .pull-container { width: min(100% - 28px,1080px); } .pull-conversation, .pull-files-layout { grid-template-columns: 1fr; } .pull-conversation aside, .pull-files-layout > aside { order: -1; } }

@@ -5,11 +5,12 @@ import { authenticatedFetch, getResponseError, parseResponse } from "../../utils
 import "./branchProtection.css";
 
 const API_BASE = "https://api.codehub.sbs";
-const defaults = { branch: "", requirePullRequest: true, requiredApprovals: 1, blockDirectCommits: true, blockForcePush: true, blockDeletion: true, requireResolvedConversations: false, dismissStaleApprovals: false, allowOwnerBypass: true, allowMaintainerBypass: false };
+const defaults = { branch: "", requirePullRequest: true, requiredApprovals: 1, blockDirectCommits: true, blockForcePush: true, blockDeletion: true, requireResolvedConversations: false, dismissStaleApprovals: false, requireStatusChecks: false, requiredStatusChecks: [], requireUpToDate: false, allowOwnerBypass: true, allowMaintainerBypass: false };
 const checks = [
   ["requirePullRequest", "Require pull request before merging"], ["blockDirectCommits", "Block direct commits"],
   ["blockForcePush", "Block force push"], ["blockDeletion", "Block branch deletion"],
   ["requireResolvedConversations", "Require resolved conversations"], ["dismissStaleApprovals", "Dismiss stale approvals"],
+  ["requireStatusChecks", "Require status checks before merging"], ["requireUpToDate", "Require the pull request branch to be up to date"],
   ["allowOwnerBypass", "Allow owner bypass"], ["allowMaintainerBypass", "Allow maintainer bypass"],
 ];
 
@@ -74,7 +75,8 @@ const BranchProtectionSettingsPage = () => {
         <label>Branch<select value={form.branch} disabled={Boolean(editing)} onChange={(event) => setForm({ ...form, branch: event.target.value })}><option value="" disabled>Select a branch</option>{state.branches.map((branch) => <option key={branch.name} value={branch.name} disabled={!editing && protectedNames.has(branch.name)}>{branch.name}{branch.isDefault ? " (default)" : ""}</option>)}</select></label>
         <label>Required approvals<input type="number" min="0" max="10" step="1" value={form.requiredApprovals} onChange={(event) => setForm({ ...form, requiredApprovals: event.target.value })} /></label>
         <fieldset><legend>Rules</legend>{checks.map(([field, text]) => <label className="branch-protection-check" key={field}><input type="checkbox" checked={Boolean(form[field])} onChange={(event) => setForm({ ...form, [field]: event.target.checked })} /><span>{text}</span></label>)}</fieldset>
-        <div className="branch-protection-actions">{editing && <button type="button" className="secondary" onClick={reset}>Cancel</button>}<button type="submit" disabled={saving || !form.branch}>{saving ? "Saving..." : "Save protection rule"}</button></div>
+        {form.requireStatusChecks && <label>Required check names<textarea rows="3" placeholder="test&#10;lint" value={(form.requiredStatusChecks || []).join("\n")} onChange={(event) => setForm({ ...form, requiredStatusChecks: event.target.value.split("\n").map((value) => value.trim()).filter(Boolean) })} /><small>Enter one workflow job name per line.</small></label>}
+        <div className="branch-protection-actions">{editing && <button type="button" className="secondary" onClick={reset}>Cancel</button>}<button type="submit" disabled={saving || !form.branch || (form.requireStatusChecks && !(form.requiredStatusChecks || []).length)}>{saving ? "Saving..." : "Save protection rule"}</button></div>
       </form></section>
       <section className="branch-protection-panel"><h2>Protected branches</h2>{state.protections.length === 0 ? <p className="branch-protection-empty">No protected branches.</p> : <ul className="branch-protection-list">{state.protections.map((item) => <li key={item.branch}><div><h3>{item.branch} <span className="protected-badge">Protected</span></h3><p>Require pull request: {item.rules.requirePullRequest ? "Yes" : "No"} · Required approvals: {item.rules.requiredApprovals}</p><p>Block direct commits: {item.rules.blockDirectCommits ? "Yes" : "No"} · Block deletion: {item.rules.blockDeletion ? "Yes" : "No"} · Owner bypass: {item.rules.allowOwnerBypass ? "Yes" : "No"}</p></div><div className="branch-protection-row-actions"><button type="button" onClick={() => edit(item)}>Edit</button><button className="danger" type="button" onClick={() => remove(item)}>Remove</button></div></li>)}</ul>}</section>
     </>}

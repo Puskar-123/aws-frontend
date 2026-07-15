@@ -28,6 +28,8 @@ import CliDocsPage from "./components/docs/CliDocsPage";
 import ReleaseListPage from "./components/releases/ReleaseListPage";
 import NewReleasePage from "./components/releases/NewReleasePage";
 import ReleaseDetailPage from "./components/releases/ReleaseDetailPage";
+import ActionsPage from "./components/actions/ActionsPage";
+import WorkflowRunPage from "./components/actions/WorkflowRunPage";
 
 const protectedPage = (page) => <ProtectedRoute>{page}</ProtectedRoute>;
 
@@ -58,6 +60,8 @@ const App = () => <Routes>
   <Route path="/repo/:id/releases/new" element={protectedPage(<NewReleasePage />)} />
   <Route path="/repo/:id/releases/:releaseId" element={<ReleaseDetailPage />} />
   <Route path="/repo/:id/releases" element={<ReleaseListPage />} />
+  <Route path="/repo/:id/actions/runs/:runId" element={<WorkflowRunPage />} />
+  <Route path="/repo/:id/actions" element={<ActionsPage />} />
   <Route path="/repo/:id/insights/commits" element={protectedPage(<InsightsPage view="commits" />)} />
   <Route path="/repo/:id/insights/contributors" element={protectedPage(<InsightsPage view="contributors" />)} />
   <Route path="/repo/:id/insights/activity" element={protectedPage(<InsightsPage view="activity" />)} />

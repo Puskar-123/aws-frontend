@@ -16,7 +16,7 @@ import "./insights.css";
 const API_BASE = "https://api.codehub.sbs";
 const validRanges = new Set(["7d", "30d", "90d", "1y", "all"]);
 const endpoints = {
-  overview: ["overview", "commits", "languages", "issues", "pull-requests", "branches", "activity", "files"],
+  overview: ["overview", "commits", "languages", "issues", "pull-requests", "branches", "activity", "files", "actions"],
   commits: ["commits", "branches"], contributors: ["contributors"], activity: ["activity"],
 };
 
@@ -43,7 +43,7 @@ const InsightsPage = ({ view = "overview" }) => {
     } catch (error) { if (error.name !== "AbortError") setState((current) => ({ ...current, loading: false, error: error.message })); }
   }, [branch, filter, id, page, range, requestPaths]);
   useEffect(() => { const controller = new AbortController(); Promise.resolve().then(() => load(controller.signal)); return () => controller.abort(); }, [load]);
-  const retry = () => load(); const overview = state.data.overview; const commits = state.data.commits;
+  const retry = () => load(); const overview = state.data.overview; const commits = state.data.commits; const actions = state.data.actions;
   return <div className="insights-page"><Navbar /><main className="insights-shell">
     <header className="insights-header"><div><Link to={`/repo/${id}`}>Repository</Link><h1>Repository insights</h1><p>Activity and health metrics calculated from stored repository data.</p></div><InsightsRangeSelector value={range} onChange={(value) => updateParams({ range: value, page: "" })} /></header>
     <InsightsTabs repositoryId={id} active={view} range={range} />
@@ -51,8 +51,11 @@ const InsightsPage = ({ view = "overview" }) => {
     {state.error && <div className="insights-state insights-state--error" role="alert"><p>{state.error}</p><button type="button" onClick={retry}>Retry</button></div>}
     {!state.loading && !state.error && view === "overview" && <>
       <section className="insights-cards" aria-label="Repository summary">{[
-        ["Commits", overview?.summary?.commits], ["Contributors", overview?.summary?.contributors], ["Branches", overview?.summary?.branches], ["Open issues", overview?.summary?.openIssues], ["Merged PRs", overview?.summary?.mergedPullRequests], ["Stars", overview?.summary?.stars], ["Forks", overview?.summary?.forks], ["Watchers", overview?.summary?.watchers],
+        ["Commits", overview?.summary?.commits], ["Contributors", overview?.summary?.contributors], ["Branches", overview?.summary?.branches], ["Open issues", overview?.summary?.openIssues], ["Merged PRs", overview?.summary?.mergedPullRequests], ["Workflow runs", overview?.summary?.workflowRuns], ["Successful runs", overview?.summary?.successfulWorkflowRuns], ["Failed runs", overview?.summary?.failedWorkflowRuns], ["Stars", overview?.summary?.stars], ["Forks", overview?.summary?.forks], ["Watchers", overview?.summary?.watchers],
       ].map(([label, value]) => <article key={label}><strong>{Number(value || 0).toLocaleString()}</strong><span>{label}</span></article>)}</section>
+      <section className="insights-panel"><div className="insights-section-heading"><div><h2>CI/CD health</h2><p>Workflow results for the selected range</p></div></div><div className="insights-cards">{[
+        ["Runs", actions?.summary?.total], ["Success rate", actions?.summary?.successRate == null ? "—" : `${actions.summary.successRate}%`], ["Cancelled", actions?.summary?.cancelled], ["Average duration", actions?.summary?.averageDurationMs == null ? "—" : `${Math.round(actions.summary.averageDurationMs / 1000)}s`],
+      ].map(([label, value]) => <article key={label}><strong>{typeof value === "number" ? value.toLocaleString() : value}</strong><span>{label}</span></article>)}</div>{actions?.mostFrequentlyFailingWorkflow && <p>Most frequently failing workflow: <strong>{actions.mostFrequentlyFailingWorkflow.name}</strong> ({actions.mostFrequentlyFailingWorkflow.failures} failures)</p>}</section>
       <section className="insights-panel"><div className="insights-section-heading"><div><h2>Commit activity</h2><p>{commits?.totalCommits || 0} commits · {commits?.timezone || "UTC"}</p></div></div><CommitActivityChart data={commits} /></section>
       <div className="insights-grid"><LanguageBreakdown data={state.data.languages} /><IssuePrSummary issues={state.data.issues} pulls={state.data["pull-requests"]} /></div>
       <BranchSummary data={state.data.branches} /><div className="insights-grid"><ActivityTimeline data={state.data.activity} /><MostChangedFiles data={state.data.files} /></div>
