@@ -33,6 +33,34 @@ beforeEach(() => {
 afterEach(() => { cleanup(); vi.restoreAllMocks(); localStorage.clear(); });
 
 describe("RepoPage branch integration", () => {
+  test("empty branch keeps the file tree, shows Quick Setup, and first README commit restores the normal preview", async () => {
+    let created = false; let snapshotRequests = 0; let historyRequests = 0; let branchRequests = 0;
+    vi.spyOn(globalThis, "fetch").mockImplementation((url, options = {}) => {
+      const value = String(url);
+      if (value.endsWith(`/repo/${repositoryId}`)) return Promise.resolve(jsonResponse({ _id: repositoryId, name: "empty-project", owner: { _id: ownerId, username: "Puskar" }, visibility: "public", currentUserRole: "owner", permissions: { canEditFiles: true, canUploadFiles: true, canDeleteFiles: true, canRenameFiles: true, canDeleteBranch: true, canManageCollaborators: true } }));
+      if (value.endsWith(`/repo/${repositoryId}/branches`)) { branchRequests += 1; return Promise.resolve(jsonResponse({ defaultBranch: "main", branches: [{ name: "main", isDefault: true, head: created ? "c1" : null, commitCount: created ? 1 : 0, state: { isEmpty: !created, fileCount: created ? 1 : 0, commitCount: created ? 1 : 0 }, protection: { protected: false } }] })); }
+      if (value.includes("/branches/main/snapshot")) { snapshotRequests += 1; return Promise.resolve(jsonResponse({ branch: "main", state: { isEmpty: !created, fileCount: created ? 1 : 0, commitCount: created ? 1 : 0 }, files: created ? [{ filename: "README.md", path: "README.md", contentType: "text/markdown" }] : [] })); }
+      if (value.includes("/branches/main/history")) { historyRequests += 1; return Promise.resolve(jsonResponse({ branch: "main", commits: created ? [{ hash: "c1", message: "Initial commit", branch: "main", author: { name: "Puskar" }, time: new Date().toISOString(), files: [{ path: "README.md" }] }] : [] })); }
+      if (value.endsWith(`/repo/${repositoryId}/file-editor`) && options.method === "POST") { created = true; return Promise.resolve(jsonResponse({ file: { path: "README.md", branch: "main" }, commit: { hash: "c1", message: "Initial commit" }, state: { isEmpty: false, fileCount: 1, commitCount: 1 } }, 201)); }
+      if (value.includes("/repo/preview/")) return Promise.resolve(jsonResponse({ content: "# empty-project\n", contentType: "text/markdown", previewSupported: true }));
+      if (value.includes("/issues") || value.includes("/pulls")) return Promise.resolve(jsonResponse({ counts: { open: 0 }, pagination: { total: 0 } }));
+      return Promise.resolve(jsonResponse({}));
+    });
+
+    renderPage();
+    expect(await screen.findByRole("heading", { name: "Quick setup" })).toBeTruthy(); expect(screen.getByRole("heading", { name: "Repository files" })).toBeTruthy();
+    expect(screen.getByText("This branch has no files")).toBeTruthy(); expect(screen.queryByText("Select a file to preview")).toBeNull();
+    expect(screen.getByText("No commits on this branch yet")).toBeTruthy();
+    const browser = document.querySelector(".repo-browser"); const history = document.querySelector(".commit-history");
+    expect(browser.compareDocumentPosition(history) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Create README" }));
+    await waitFor(() => expect(screen.queryByRole("heading", { name: "Quick setup" })).toBeNull());
+    expect((await screen.findAllByText("README.md")).length).toBeGreaterThan(0); expect(await screen.findByText("Initial commit")).toBeTruthy();
+    await waitFor(() => expect(screen.getByTestId("location-search").textContent).toContain("path=README.md"));
+    expect(screen.getByTestId("location-search").textContent).toContain("branch=main");
+    expect(snapshotRequests).toBe(2); expect(historyRequests).toBe(2); expect(branchRequests).toBe(1);
+  });
+
   test("switching branches replaces files and history without request loops", async () => {
     const calls = [];
     vi.spyOn(globalThis, "fetch").mockImplementation((url) => {

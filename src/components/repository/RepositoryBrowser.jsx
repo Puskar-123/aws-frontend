@@ -44,6 +44,9 @@ const RepositoryBrowser = ({
   onDelete,
   onEdit,
   requestedPath = "",
+  setupState,
+  emptyPreview,
+  onSetupRetry,
 }) => {
   const scopeKey = `${repositoryId}:${branch || "default"}`;
   const tree = useMemo(() => buildFileTree(files), [files]);
@@ -190,10 +193,6 @@ const RepositoryBrowser = ({
     await onDelete?.(filePath);
   }, [onDelete]);
 
-  if (loading) {
-    return <div className="repo-browser repo-browser--loading" role="status">Loading repository files…</div>;
-  }
-
   return (
     <section className="repo-browser" aria-label={`${repositoryName} repository browser`}>
       <aside className="repo-tree">
@@ -210,12 +209,12 @@ const RepositoryBrowser = ({
             focusRequest={focusRequest}
             onToggle={toggleFolder}
             onSelect={selectFile}
-            emptyMessage={emptyMessage}
+            emptyMessage={loading ? "Loading repository files…" : emptyMessage}
           />
         </div>
       </aside>
       <main className="repo-browser__preview">
-        <FileViewer
+        {setupState?.loading ? <div className="repo-preview-state" role="status">Loading repository setup...</div> : setupState?.error ? <div className="repo-preview-state repo-preview-state--error" role="alert"><span>Unable to load repository setup.</span>{onSetupRetry && <button type="button" className="repo-browser-button" onClick={onSetupRetry}>Retry</button>}</div> : setupState?.isEmpty && emptyPreview ? emptyPreview : <FileViewer
           apiBase={apiBase}
           repositoryId={repositoryId}
           repositoryName={repositoryName}
@@ -231,7 +230,7 @@ const RepositoryBrowser = ({
           onDelete={onDelete ? deleteFile : undefined}
           onRetry={() => setRetryCount((count) => count + 1)}
           onFolderClick={focusFolder}
-        />
+        />}
       </main>
     </section>
   );

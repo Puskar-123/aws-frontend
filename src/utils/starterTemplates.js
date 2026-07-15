@@ -1,0 +1,18 @@
+export const GITIGNORE_TEMPLATES = Object.freeze({
+  Node: "node_modules/\ndist/\nbuild/\ncoverage/\n.env\n.env.*\n*.log\n",
+  React: "node_modules/\ndist/\ncoverage/\n.env\n.env.*\n*.local\n*.log\n",
+  Python: "__pycache__/\n*.py[cod]\n.venv/\nvenv/\ndist/\nbuild/\n.env\n*.log\n",
+  Java: ".gradle/\nbuild/\ntarget/\n*.class\n*.jar\n.idea/\n.env\n*.log\n",
+  General: ".DS_Store\nThumbs.db\n.vscode/\n.idea/\n.env\n.env.*\n*.log\n",
+});
+
+const year = () => new Date().getFullYear();
+const owner = (holder) => String(holder || "Copyright holder").trim();
+
+export const LICENSE_TEMPLATES = Object.freeze({
+  MIT: (holder) => `MIT License\n\nCopyright (c) ${year()} ${owner(holder)}\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n`,
+  "Apache-2.0": (holder) => `Copyright ${year()} ${owner(holder)}\n\nLicensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy at\n\nhttps://www.apache.org/licenses/LICENSE-2.0\n\nUnless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.\n`,
+  "GPL-3.0": (holder) => `Copyright (C) ${year()} ${owner(holder)}\n\nThis program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 3.\n\nThis program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See https://www.gnu.org/licenses/gpl-3.0.html for the complete license.\n`,
+  "BSD-3-Clause": (holder) => `BSD 3-Clause License\n\nCopyright (c) ${year()}, ${owner(holder)}\nAll rights reserved.\n\nRedistribution and use in source and binary forms, with or without modification, are permitted provided that the copyright notice, conditions, and disclaimer are retained; neither the copyright holder nor contributor names may be used to endorse derived products without specific permission.\n\nTHIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTIES OF ANY KIND.\n`,
+  Unlicense: () => `This is free and unencumbered software released into the public domain.\n\nAnyone is free to copy, modify, publish, use, compile, sell, or distribute this software for any purpose, commercial or non-commercial, and by any means.\n\nTHE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND. For more information, please refer to https://unlicense.org\n`,
+});

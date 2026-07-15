@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { buildCloneCommand, buildInitCommand, buildInstallCommand } from "../../utils/cliCommands";
 
 const CopyCommand = ({ label, value }) => {
   const [copied, setCopied] = useState(false);
@@ -15,7 +16,7 @@ const RepositoryCodeMenu = ({ repository, defaultBranch, protection, role }) => 
   const [open, setOpen] = useState(false);
   const dialogRef = useRef(null);
   const owner = repository?.owner?.username || "owner";
-  const repositoryReference = `${owner}/${repository?.name || "repository"}`;
+  const repositoryName = repository?.name || "repository";
   const roleLabel = role ? `${role.charAt(0).toUpperCase()}${role.slice(1)}` : "Public visitor";
   useEffect(() => {
     if (!open) return undefined;
@@ -41,10 +42,10 @@ const RepositoryCodeMenu = ({ repository, defaultBranch, protection, role }) => 
       <section ref={dialogRef} className="repo-code-dialog" role="dialog" aria-modal="true" aria-labelledby="repo-code-title">
         <header><div><h2 id="repo-code-title">CodeHub CLI</h2><p>Clone or connect this repository from your terminal.</p></div><button type="button" className="repo-code-close" aria-label="Close Code menu" onClick={() => setOpen(false)}>×</button></header>
         <dl className="repo-code-meta"><div><dt>Default branch</dt><dd>{defaultBranch}</dd></div><div><dt>Protection</dt><dd>{protection?.protected ? "Protected" : "Not protected"}</dd></div><div><dt>Your role</dt><dd>{roleLabel}</dd></div></dl>
-        <h3>Install</h3><CopyCommand label="install command" value="npm install -g codehub-sbs-cli" />
-        <h3>Clone with CodeHub CLI</h3><CopyCommand label="clone command" value={`codehub clone ${repositoryReference}`} />
+        <h3>Install</h3><CopyCommand label="install command" value={buildInstallCommand()} />
+        <h3>Clone with CodeHub CLI</h3><CopyCommand label="clone command" value={buildCloneCommand(owner, repositoryName)} />
         <h3>Upload an existing project</h3>
-        <CopyCommand label="initialization command" value={`codehub init ${repositoryReference}`} />
+        <CopyCommand label="initialization command" value={buildInitCommand(owner, repositoryName)} />
         <CopyCommand label="add command" value="codehub add ." />
         <CopyCommand label="commit command" value={'codehub commit -m "Initial commit"'} />
         <CopyCommand label="push command" value="codehub push" />
