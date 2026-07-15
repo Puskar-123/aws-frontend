@@ -102,25 +102,28 @@ describe("RepoPage branch integration", () => {
     const file = new File(["uploaded"], uploadedPath.split("/").at(-1), { type: "text/javascript" });
     if (uploadedPath.includes("/")) Object.defineProperty(file, "webkitRelativePath", { value: uploadedPath });
     fireEvent.change(screen.getByLabelText(inputLabel), { target: { files: [file] } });
+    expect(screen.getByRole("heading", { name: "…or create a new repository from the command line" })).toBeTruthy();
+    expect(screen.queryByText(/Loading repository content/)).toBeNull();
     await waitFor(() => expect(screen.queryByRole("heading", { name: "…or create a new repository from the command line" })).toBeNull());
     expect(document.querySelector(".repo-browser")).toBeTruthy(); expect(addRequest).toBeInstanceOf(FormData); expect(addRequest.get("paths")).toBe(uploadedPath);
   });
 
-  test("a CLI push containing files removes setup when the empty repository refreshes", async () => {
-    let pushed = false;
+  test("an empty repository does not poll or leave setup after sixty seconds", async () => {
+    let repositoryRequests = 0; let snapshotRequests = 0; let historyRequests = 0;
+    const intervalSpy = vi.spyOn(window, "setInterval");
     vi.spyOn(globalThis, "fetch").mockImplementation((url) => {
       const value = String(url);
-      if (value.endsWith(`/repo/${repositoryId}`)) return Promise.resolve(jsonResponse({ _id: repositoryId, name: "cli-project", owner: { _id: ownerId, username: "Puskar" }, visibility: "public" }));
+      if (value.endsWith(`/repo/${repositoryId}`)) { repositoryRequests += 1; return Promise.resolve(jsonResponse({ _id: repositoryId, name: "stable-empty", owner: { _id: ownerId, username: "Puskar" }, visibility: "public" })); }
       if (value.endsWith(`/repo/${repositoryId}/branches`)) return Promise.resolve(jsonResponse({ defaultBranch: "main", branches: [{ name: "main", isDefault: true }] }));
-      if (value.includes("/branches/main/snapshot")) return Promise.resolve(jsonResponse({ files: pushed ? [{ filename: "cli.js", path: "src/cli.js" }] : [] }));
-      if (value.includes("/branches/main/history")) return Promise.resolve(jsonResponse({ commits: pushed ? [{ hash: "cli1", message: "CLI push" }] : [] }));
-      if (value.includes("/repo/preview/")) return Promise.resolve(jsonResponse({ content: "cli", previewSupported: true }));
+      if (value.includes("/branches/main/snapshot")) { snapshotRequests += 1; return Promise.resolve(jsonResponse({ files: [] })); }
+      if (value.includes("/branches/main/history")) { historyRequests += 1; return Promise.resolve(jsonResponse({ commits: [] })); }
       return Promise.resolve(jsonResponse({}));
     });
     renderPage(); await screen.findByRole("heading", { name: "…or create a new repository from the command line" });
-    pushed = true; fireEvent.focus(window);
-    await waitFor(() => expect(screen.queryByRole("heading", { name: "…or create a new repository from the command line" })).toBeNull());
-    expect((await screen.findAllByText("cli.js")).length).toBeGreaterThan(0); expect(document.querySelector(".repo-sidebar")).toBeTruthy();
+    expect([repositoryRequests, snapshotRequests, historyRequests]).toEqual([1, 1, 1]); intervalSpy.mockClear();
+    fireEvent.focus(window); vi.useFakeTimers(); vi.advanceTimersByTime(60000); vi.useRealTimers(); await Promise.resolve();
+    expect(intervalSpy).not.toHaveBeenCalled(); expect([repositoryRequests, snapshotRequests, historyRequests]).toEqual([1, 1, 1]);
+    expect(screen.getByRole("heading", { name: "…or create a new repository from the command line" })).toBeTruthy(); expect(screen.queryByRole("status", { name: /Loading/ })).toBeNull();
   });
 
   test("switching branches replaces files and history without request loops", async () => {

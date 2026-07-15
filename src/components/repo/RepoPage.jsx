@@ -58,6 +58,8 @@ const RepoPage = () => {
   const branchRequestId = useRef(0);
   const snapshotRequestId = useRef(0);
   const historyRequestId = useRef(0);
+  const snapshotStateRef = useRef(null);
+  const historyStateRef = useRef(null);
 
   const [repo, setRepo] = useState(null);
   const [repoState, setRepoState] = useState({ loading: true, error: "" });
@@ -69,6 +71,7 @@ const RepoPage = () => {
   const [branchListState, setBranchListState] = useState({ loading: true, error: "" });
   const [snapshotState, setSnapshotState] = useState({ key: "", loading: false, files: [], state: null, error: "" });
   const [historyState, setHistoryState] = useState({ key: "", loading: false, commits: [], error: "" });
+  const [refreshing, setRefreshing] = useState(false);
   const [branchMessage, setBranchMessage] = useState("");
   const [reloadVersion, setReloadVersion] = useState(0);
   const [selectedFiles, setSelectedFiles] = useState([]);
@@ -118,6 +121,8 @@ const RepoPage = () => {
     }
   }, []);
   useEffect(() => { setSearchParamsRef.current = setSearchParams; }, [setSearchParams]);
+  useEffect(() => { snapshotStateRef.current = snapshotState; }, [snapshotState]);
+  useEffect(() => { historyStateRef.current = historyState; }, [historyState]);
   useEffect(() => {
     initialBranch.current = searchParams.get("branch") || "";
     pendingSelectedPath.current = "";
@@ -206,20 +211,27 @@ const RepoPage = () => {
     activeBranchKey.current = cacheKey;
     const cachedSnapshot = snapshotCache.current.get(cacheKey);
     const cachedHistory = historyCache.current.get(cacheKey);
+    const preserveLoadedSnapshot = !branchChanged && snapshotStateRef.current?.key === cacheKey && !snapshotStateRef.current.loading;
+    const preserveLoadedHistory = !branchChanged && historyStateRef.current?.key === cacheKey && !historyStateRef.current.loading;
+    let pendingRequests = Number(!cachedSnapshot) + Number(!cachedHistory);
+    const finishRefresh = () => {
+      pendingRequests -= 1;
+      if (pendingRequests === 0 && snapshotRequest === snapshotRequestId.current && historyRequest === historyRequestId.current) setRefreshing(false);
+    };
     const loadBranch = async () => {
       await Promise.resolve();
+      if (branchChanged) setRefreshing(false);
       setSearchParamsRef.current((current) => {
         const next = new URLSearchParams(current);
         next.set("branch", selectedBranch);
         if (branchChanged && !pendingSelectedPath.current) next.delete("path");
         return next;
       }, { replace: true });
-      setSnapshotState(cachedSnapshot
-        ? { key: cacheKey, loading: false, files: cachedSnapshot.files, state: cachedSnapshot.state, error: "" }
-        : { key: cacheKey, loading: true, files: [], state: null, error: "" });
-      setHistoryState(cachedHistory
-        ? { key: cacheKey, loading: false, commits: cachedHistory, error: "" }
-        : { key: cacheKey, loading: true, commits: [], error: "" });
+      if (cachedSnapshot) setSnapshotState({ key: cacheKey, loading: false, files: cachedSnapshot.files, state: cachedSnapshot.state, error: "" });
+      else if (!preserveLoadedSnapshot) setSnapshotState({ key: cacheKey, loading: true, files: [], state: null, error: "" });
+      if (cachedHistory) setHistoryState({ key: cacheKey, loading: false, commits: cachedHistory, error: "" });
+      else if (!preserveLoadedHistory) setHistoryState({ key: cacheKey, loading: true, commits: [], error: "" });
+      if (pendingRequests === 0) setRefreshing(false);
 
       if (!cachedSnapshot) {
         fetch(`${API_BASE}/repo/${id}/branches/${encodeURIComponent(selectedBranch)}/snapshot`, { headers: authHeaders(), signal: controller.signal })
@@ -241,7 +253,8 @@ const RepoPage = () => {
             }, { replace: true });
           }
         })
-        .catch((error) => { if (error.name !== "AbortError" && snapshotRequest === snapshotRequestId.current) setSnapshotState({ key: cacheKey, loading: false, files: [], state: null, error: error.message }); });
+        .catch((error) => { if (error.name !== "AbortError" && snapshotRequest === snapshotRequestId.current && !preserveLoadedSnapshot) setSnapshotState({ key: cacheKey, loading: false, files: [], state: null, error: error.message }); })
+        .finally(finishRefresh);
       }
       if (!cachedHistory) {
         fetch(`${API_BASE}/repo/${id}/branches/${encodeURIComponent(selectedBranch)}/history`, { headers: authHeaders(), signal: controller.signal })
@@ -253,7 +266,8 @@ const RepoPage = () => {
           setHistoryState({ key: cacheKey, loading: false, commits, error: "" });
           setBranches((current) => current.map((branch) => branch.name === selectedBranch ? { ...branch, commitCount: commits.length } : branch));
         })
-        .catch((error) => { if (error.name !== "AbortError" && historyRequest === historyRequestId.current) setHistoryState({ key: cacheKey, loading: false, commits: [], error: error.message }); });
+        .catch((error) => { if (error.name !== "AbortError" && historyRequest === historyRequestId.current && !preserveLoadedHistory) setHistoryState({ key: cacheKey, loading: false, commits: [], error: error.message }); })
+        .finally(finishRefresh);
       }
     };
     loadBranch();
@@ -264,20 +278,9 @@ const RepoPage = () => {
     const cacheKey = `${id}:${selectedBranch}`;
     snapshotCache.current.delete(cacheKey);
     historyCache.current.delete(cacheKey);
+    setRefreshing(true);
     setReloadVersion((value) => value + 1);
   }, [id, selectedBranch]);
-
-  useEffect(() => {
-    const key = `${id}:${selectedBranch}`;
-    const waitingForExternalContent = selectedBranch && snapshotState.key === key && historyState.key === key
-      && !snapshotState.loading && !historyState.loading && !snapshotState.error && !historyState.error
-      && snapshotState.files.length === 0;
-    if (!waitingForExternalContent) return undefined;
-    const refresh = () => refreshSelectedBranch();
-    const interval = window.setInterval(refresh, 5000);
-    window.addEventListener("focus", refresh);
-    return () => { window.clearInterval(interval); window.removeEventListener("focus", refresh); };
-  }, [historyState.error, historyState.key, historyState.loading, id, refreshSelectedBranch, selectedBranch, snapshotState.error, snapshotState.files.length, snapshotState.key, snapshotState.loading]);
 
   const createBranch = async ({ name, sourceBranch }) => {
     if (!getAuthToken()) {
@@ -512,6 +515,7 @@ const RepoPage = () => {
           onCompare={openCompare}
         />
 
+        {refreshing && <span className="sr-only" role="status">Refreshing repository content</span>}
         <RepoContent loading={contentLoading} error={contentError} empty={emptyBranch} onRetry={refreshSelectedBranch} emptyContent={<EmptyRepositorySetupPanel repository={repo} />}>
           {canWriteContent && hasPendingChanges && <div className="commit-section">
             <input type="text" placeholder={`Commit message for ${selectedBranch || defaultBranch}`} value={commitMessage} onChange={(event) => setCommitMessage(event.target.value)} className="commit-input" />
