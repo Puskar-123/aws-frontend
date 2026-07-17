@@ -8,6 +8,8 @@ CodeHub repository access UI consumes `GET /repo/:id/permissions/me` and the bac
 
 See `../docs/CUSTOM_REPOSITORY_ROLES.md` for the permission matrix and verification workflow.
 
+CodeHub Chat is available at `/chat`, with repository, issue, pull-request, profile/direct-message, and mentor entry points. It provides reconnect catch-up, stable retry IDs, unread badges, presence, typing, search, replies, reactions, attachments, mute, block, and report actions. See `../docs/CODEHUB_CHAT.md` for the backend contract and verification workflow.
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:

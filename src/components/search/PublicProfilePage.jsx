@@ -5,6 +5,7 @@ import Navbar from "../Navbar";
 import RepositorySearchCard from "../explore/RepositorySearchCard";
 import { discoveryRequest } from "../explore/exploreApi";
 import "./search.css";
+import { chatRequest } from "../../services/chatApi";
 
 const PublicProfilePage = () => {
   const { username } = useParams(); const navigate = useNavigate(); const auth = useAuth();
@@ -23,7 +24,7 @@ const PublicProfilePage = () => {
   if (state.error || !profile) return <><Navbar /><main className="public-profile-state public-profile-state--error" role="alert">{state.error || "User not found"}</main></>;
   const user = profile.user;
   return <div className="public-profile-page"><Navbar /><main className="public-profile-container">
-    <aside className="public-profile-sidebar"><div className="public-profile-avatar">{user.avatarUrl ? <img src={user.avatarUrl} alt={`${user.username}'s avatar`} /> : <span aria-hidden="true">{(user.name || user.username).slice(0, 2).toUpperCase()}</span>}</div><h1>{user.name || user.username}</h1><p className="public-profile-username">@{user.username}</p>{user.bio && <p>{user.bio}</p>}<dl><div><dt>Public repositories</dt><dd>{profile.publicRepositoryCount || 0}</dd></div><div><dt>Stars received</dt><dd>{profile.totalStarsReceived || 0}</dd></div></dl></aside>
+    <aside className="public-profile-sidebar"><div className="public-profile-avatar">{user.avatarUrl ? <img src={user.avatarUrl} alt={`${user.username}'s avatar`} /> : <span aria-hidden="true">{(user.name || user.username).slice(0, 2).toUpperCase()}</span>}</div><h1>{user.name || user.username}</h1><p className="public-profile-username">@{user.username}</p>{user.bio && <p>{user.bio}</p>}<dl><div><dt>Public repositories</dt><dd>{profile.publicRepositoryCount || 0}</dd></div><div><dt>Stars received</dt><dd>{profile.totalStarsReceived || 0}</dd></div></dl><button type="button" onClick={async()=>{const data=await chatRequest(`/chat/direct/${user._id}`,{method:"POST"});navigate(`/chat?conversation=${data.conversation._id}`);}}>Message</button></aside>
     <section className="public-profile-repositories"><h2>Public repositories</h2>{repositories.length ? <div className="explore-results">{repositories.map((item) => <RepositorySearchCard key={item._id} repository={item} />)}</div> : <p className="search-state">No public repositories.</p>}{pagination?.pages > 1 && <nav className="search-pagination" aria-label="Public repository pages"><button type="button" disabled={!pagination.hasPreviousPage} onClick={() => setPage((value) => value - 1)}>Previous</button><span>Page {pagination.page} of {pagination.pages}</span><button type="button" disabled={!pagination.hasNextPage} onClick={() => setPage((value) => value + 1)}>Next</button></nav>}</section>
   </main></div>;
 };

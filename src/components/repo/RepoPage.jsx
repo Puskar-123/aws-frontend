@@ -13,6 +13,7 @@ import RepositoryCodeMenu from "./RepositoryCodeMenu";
 import EmptyRepositorySetupPanel from "./EmptyRepositorySetupPanel";
 import AddFileMenu from "./AddFileMenu";
 import { RepoContent, RepoHeader, RepoTabs } from "./RepositoryPageShell";
+import MentorRequestButton from "../chat/MentorRequestButton";
 import { resolveAuthenticatedUserId, resolveRepositoryOwnerId } from "./branchUtils";
 import "./repo.css";
 import "./branch.css";
@@ -564,6 +565,7 @@ const RepoPage = () => {
       <Navbar />
       <main className="repo-container">
         <RepoHeader repository={repo} protectedBranch={selectedProtection?.protected ? selectedBranch : ""}>
+          <MentorRequestButton repositoryId={id} />
           <RepositorySocialActions repository={repo} onForked={(repositoryId) => navigate(`/repo/${repositoryId}`)} />
           <RepositoryCodeMenu repository={repo} defaultBranch={defaultBranch} protection={defaultProtection} role={repo.currentUserRole} />
           {canUploadFiles && <AddFileMenu onCreate={() => createStarterFile("readme", `# ${repo.name}\n`)} onUploadFiles={() => fileInputRef.current?.click()} onUploadFolder={() => folderInputRef.current?.click()} />}

@@ -1,0 +1,5 @@
+import { authenticatedFetch, getResponseError, parseResponse } from "../utils/api";
+export const API_BASE="https://api.codehub.sbs";
+export async function chatRequest(path,options={}){const response=await authenticatedFetch(`${API_BASE}${path}`,options),data=await parseResponse(response);if(!response.ok)throw new Error(getResponseError(data,"Unable to complete chat request"));return data;}
+export const uploadChatAttachment=file=>{const body=new FormData();body.append("file",file);return chatRequest("/chat/attachments",{method:"POST",body});};
+export async function downloadChatAttachment(messageId,attachment){const response=await authenticatedFetch(`${API_BASE}/chat/messages/${messageId}/attachments/${attachment._id}`);if(!response.ok){const data=await parseResponse(response);throw new Error(getResponseError(data,"Unable to download attachment"));}const blob=await response.blob(),url=URL.createObjectURL(blob),link=document.createElement("a");link.href=url;link.download=attachment.originalName;document.body.appendChild(link);link.click();link.remove();URL.revokeObjectURL(url);}

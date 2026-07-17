@@ -30,6 +30,8 @@ import NewReleasePage from "./components/releases/NewReleasePage";
 import ReleaseDetailPage from "./components/releases/ReleaseDetailPage";
 import ActionsPage from "./components/actions/ActionsPage";
 import WorkflowRunPage from "./components/actions/WorkflowRunPage";
+import ChatPage from "./components/chat/ChatPage";
+import RepositoryChatPage from "./components/chat/RepositoryChatPage";
 
 const protectedPage = (page) => <ProtectedRoute>{page}</ProtectedRoute>;
 
@@ -43,6 +45,7 @@ const App = () => <Routes>
   <Route path="/profile" element={protectedPage(<Profile />)} />
   <Route path="/profile/:id" element={protectedPage(<Profile />)} />
   <Route path="/notifications" element={protectedPage(<NotificationsPage />)} />
+  <Route path="/chat" element={protectedPage(<ChatPage />)} />
   <Route path="/invitations" element={protectedPage(<InvitationsPage />)} />
   <Route path="/explore" element={protectedPage(<ExplorePage />)} />
   <Route path="/search" element={protectedPage(<SearchResultsPage />)} />
@@ -52,6 +55,7 @@ const App = () => <Routes>
   <Route path="/repo/:id/settings/access" element={protectedPage(<CollaboratorSettingsPage />)} />
   <Route path="/repo/:id/settings/branches" element={protectedPage(<BranchProtectionSettingsPage />)} />
   <Route path="/repo/:id/compare" element={protectedPage(<ComparePage />)} />
+  <Route path="/repo/:id/chat" element={protectedPage(<RepositoryChatPage />)} />
   <Route path="/repo/:id/pulls/new" element={protectedPage(<NewPullRequest />)} />
   <Route path="/repo/:id/pulls/:number" element={protectedPage(<PullRequestPage />)} />
   <Route path="/repo/:id/pulls" element={protectedPage(<PullRequestList />)} />

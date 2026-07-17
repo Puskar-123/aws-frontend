@@ -3,7 +3,7 @@ import { FiBriefcase, FiCalendar, FiLink, FiMapPin } from "react-icons/fi";
 import { formatJoinedDate } from "../../utils/date";
 import { getProfileInitials } from "./profileUtils";
 
-const ProfileHeader = ({ user, stats, isOwner, onEdit, onLogout }) => {
+const ProfileHeader = ({ user, stats, isOwner, onEdit, onLogout, onMessage }) => {
   const [failedAvatarUrl, setFailedAvatarUrl] = useState("");
   const initials = getProfileInitials(user.name, user.username);
   const joined = formatJoinedDate(user.createdAt);
@@ -41,6 +41,7 @@ const ProfileHeader = ({ user, stats, isOwner, onEdit, onLogout }) => {
           <button type="button" className="profile-secondary-action" onClick={onLogout}>Logout</button>
         </div>
       )}
+      {!isOwner && onMessage && <button type="button" className="profile-primary-action" onClick={onMessage}>Message</button>}
     </aside>
   );
 };

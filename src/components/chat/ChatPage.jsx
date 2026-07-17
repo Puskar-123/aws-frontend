@@ -1,0 +1,54 @@
+import React, { useEffect, useMemo, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import Navbar from "../Navbar";
+import { useChat } from "../../context/ChatContext";
+import { useAuth } from "../../authContext";
+import { chatRequest } from "../../services/chatApi";
+import MessageItem from "./MessageItem";
+import MessageComposer from "./MessageComposer";
+import "./chat.css";
+
+const label = conversation => conversation.title || ({ direct: "Direct message", repository: "Repository / General", issue: "Issue live chat", pull_request: "Pull request chat", mentor: "Mentor chat" }[conversation.type] || "Conversation");
+
+const ChatPage = () => {
+  const chat = useChat(), auth = useAuth(), navigate = useNavigate();
+  const [params, setParams] = useSearchParams(), selected = params.get("conversation");
+  const [reply, setReply] = useState(null), [search, setSearch] = useState(""), [results, setResults] = useState(null), [error, setError] = useState("");
+  const currentUserId = auth.currentUser?._id || auth.currentUser?.id || auth.currentUser || localStorage.getItem("userId");
+  const conversation = chat.conversations.find(value => String(value._id) === selected), rows = chat.messages[selected] || [];
+  const other = conversation?.participants?.find(user => String(user?._id) !== String(currentUserId));
+
+  useEffect(() => { chat.loadConversations(); }, [chat.loadConversations]);
+  useEffect(() => { if (selected) chat.open(selected).catch(value => setError(value.message)); }, [selected, chat.open]);
+  useEffect(() => {
+    if (!selected || !other?._id || conversation?.type !== "direct" || !chat.socket) return undefined;
+    chat.socket.emit("presence:subscribe", { conversationId: selected, userId: other._id });
+    return () => chat.socket.emit("presence:unsubscribe", { userId: other._id });
+  }, [selected, other?._id, conversation?.type, chat.socket]);
+
+  const send = async payload => {
+    const pending = { _id: `pending:${payload.clientMessageId}`, conversation: selected, sender: { _id: currentUserId, username: "You" }, sequence: Number.MAX_SAFE_INTEGER, createdAt: new Date().toISOString(), ...payload, pending: true };
+    chat.setMessages(current => ({ ...current, [selected]: [...(current[selected] || []).filter(value => value.clientMessageId !== payload.clientMessageId), pending] }));
+    try {
+      const saved = await chat.send(selected, payload);
+      chat.setMessages(current => ({ ...current, [selected]: (current[selected] || []).filter(value => value._id !== pending._id).concat(saved).sort((a, b) => a.sequence - b.sequence) }));
+    } catch (value) {
+      chat.setMessages(current => ({ ...current, [selected]: (current[selected] || []).map(item => item._id === pending._id ? { ...item, pending: false, failed: true } : item) }));
+      throw value;
+    }
+  };
+  const update = message => chat.setMessages(current => ({ ...current, [selected]: (current[selected] || []).map(value => String(value._id) === String(message._id) ? message : value) }));
+  const doSearch = async event => { event.preventDefault(); if (search.trim().length < 2) return; const data = await chatRequest(`/chat/conversations/${selected}/search?q=${encodeURIComponent(search)}`); setResults(data.messages || []); };
+  const toggleMute = async () => { await chatRequest(`/chat/conversations/${selected}/mute`, conversation.muted ? { method: "DELETE" } : { method: "PATCH", body: JSON.stringify({ duration: "indefinite" }) }); await chat.loadConversations(); };
+  const grouped = useMemo(() => chat.conversations.reduce((map, value) => { (map[value.type] ||= []).push(value); return map; }, {}), [chat.conversations]);
+  const presenceText = conversation?.type === "direct" && other ? `${chat.presence[other._id]?.online ? "Online" : "Offline"}${!chat.presence[other._id]?.online && other.lastSeenAt ? ` · last seen ${new Date(other.lastSeenAt).toLocaleString()}` : ""}` : conversation?.currentRole ? `${conversation.currentRole} · ${chat.connection}` : chat.connection;
+
+  return <div className="chat-page"><Navbar/><main className={`chat-shell${selected ? " chat-shell--open" : ""}`}>
+    <aside className="chat-sidebar"><header><h1>CodeHub Chat</h1><span className={`chat-connection chat-connection--${chat.connection}`}>{chat.connection}</span></header><input aria-label="Search conversations" placeholder="Search conversations"/>{Object.entries(grouped).map(([type, items]) => <section key={type}><h2>{type.replace("_", " ")}</h2>{items.map(value => <button className={String(value._id) === selected ? "active" : ""} key={value._id} onClick={() => setParams({ conversation: value._id })}><span>{label(value)}</span>{value.muted && <span aria-label="Muted">🔕</span>}{value.unreadCount > 0 && <strong aria-label={`${value.unreadCount} unread`}>{value.unreadCount}</strong>}</button>)}</section>)}</aside>
+    <section className="chat-main">{selected && conversation ? <><header className="chat-header"><button className="chat-back" onClick={() => navigate("/chat")}>Back</button><div><h2>{label(conversation)}</h2><p>{presenceText}</p></div><button type="button" onClick={toggleMute}>{conversation.muted ? "Unmute" : "Mute"}</button>{conversation.type === "direct" && other && <button type="button" onClick={async () => { if (window.confirm(`Block ${other.username}?`)) { await chatRequest(`/chat/users/${other._id}/block`, { method: "POST" }); navigate("/chat"); } }}>Block</button>}<form onSubmit={doSearch}><input aria-label="Search messages" value={search} onChange={event => { setSearch(event.target.value); if (!event.target.value) setResults(null); }}/><button>Search</button></form></header>
+      {error && <p className="chat-error" role="alert">{error}</p>}<div className="chat-messages" aria-live="polite">{!results && rows.length >= 50 && <button className="chat-load-older" onClick={() => chat.loadOlder(selected)}>Load older messages</button>}{(results || rows).map(message => <MessageItem key={message._id} message={message} currentUserId={currentUserId} onReply={setReply} onChanged={update}/>)}{!rows.length && !results && <p className="chat-empty">No messages yet. Start the conversation.</p>}</div>
+      {chat.typing[selected] && <p className="chat-typing" aria-live="polite">{chat.typing[selected].username} is typing…</p>}<MessageComposer reply={reply} onCancelReply={() => setReply(null)} onSend={send} onTyping={() => chat.socket?.emit("typing:start", { conversationId: selected })} onStopTyping={() => chat.socket?.emit("typing:stop", { conversationId: selected })} disabled={chat.connection !== "connected"}/></> : <div className="chat-welcome"><h2>Select a conversation</h2><p>Direct messages and repository conversations stay private to their permitted participants.</p></div>}</section>
+  </main></div>;
+};
+
+export default ChatPage;

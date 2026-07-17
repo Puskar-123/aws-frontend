@@ -5,6 +5,8 @@ import Navbar from "../Navbar";
 import IssueConversation from "./IssueConversation";
 import IssueHeader from "./IssueHeader";
 import IssueSidebar from "./IssueSidebar";
+import ContextChatButton from "../chat/ContextChatButton";
+import MentorRequestButton from "../chat/MentorRequestButton";
 import "./issues.css";
 
 const API_BASE = "https://api.codehub.sbs";
@@ -55,6 +57,7 @@ const IssuePage = () => {
   if (!state.issue) return <div className="issues-page"><Navbar /><main className="issue-state issue-state--error" role="alert">{state.error || "Issue not found"}</main></div>;
   return <div className="issues-page"><Navbar /><main className="issues-container">
     <p><Link to={`/repo/${id}/issues`}>← Issues</Link></p><IssueHeader issue={state.issue} />
+    <div className="issue-live-actions"><ContextChatButton repositoryId={id} type="issue" number={number}/><MentorRequestButton repositoryId={id} issueId={state.issue._id}/></div>
     {state.error && <div className="issue-error" role="alert">{state.error}</div>}
     {editing && <form className="issue-form issue-edit-form" onSubmit={saveEdit}>
       <label>Title<input value={draft.title} maxLength="200" onChange={(event) => setDraft((current) => ({ ...current, title: event.target.value }))} /></label>

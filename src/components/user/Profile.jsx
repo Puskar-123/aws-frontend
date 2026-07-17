@@ -11,6 +11,7 @@ import ProfileRepositories from "./ProfileRepositories";
 import ProfileTabs from "./ProfileTabs";
 import RecentActivity from "./RecentActivity";
 import "./profile.css";
+import { chatRequest } from "../../services/chatApi";
 
 const API_BASE = "https://api.codehub.sbs";
 
@@ -116,7 +117,7 @@ const Profile = () => {
       <div className="profile-shell">
         <ProfileTabs activeTab={activeTab} onChange={setActiveTab} repositoryCount={profile.stats.repositories} starCount={profile.starredRepositories?.length || 0} />
         <div className="profile-layout">
-          <ProfileHeader user={profile.user} stats={profile.stats} isOwner={isOwner} onEdit={() => { setSaveError(""); setEditing(true); }} onLogout={logout} />
+          <ProfileHeader user={profile.user} stats={profile.stats} isOwner={isOwner} onEdit={() => { setSaveError(""); setEditing(true); }} onLogout={logout} onMessage={async()=>{const data=await chatRequest(`/chat/direct/${profile.user._id}`,{method:"POST"});navigate(`/chat?conversation=${data.conversation._id}`);}} />
           <main className="profile-content">
             {activeTab === "overview" && <><HeatMapProfile contributions={profile.contributions} /><PopularRepositories repositories={profile.popularRepositories} onOpen={openRepository} /><RecentActivity activity={profile.recentActivity} username={profile.user.username} onOpenRepository={openRepository} /></>}
             {activeTab === "repositories" && <ProfileRepositories repositories={profile.repositories} showPrivateFilters={isOwner} onOpen={openRepository} />}
