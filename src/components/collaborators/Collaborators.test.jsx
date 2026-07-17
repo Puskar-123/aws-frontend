@@ -3,7 +3,7 @@ import React from "react";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import CollaboratorSettingsPage from "./CollaboratorSettingsPage";
+import CollaboratorSettingsPage, { normalizeDisplayedMembers } from "./CollaboratorSettingsPage";
 import InvitationsPage from "./InvitationsPage";
 import { accessWarning, can, canAll, canAny, roleLabel } from "./accessPermissions";
 
@@ -22,6 +22,10 @@ beforeEach(() => { localStorage.clear(); localStorage.setItem("token", "test-tok
 afterEach(() => { cleanup(); vi.restoreAllMocks(); localStorage.clear(); });
 
 describe("collaborator settings", () => {
+  test("defensively renders owner exactly once when API rows contain duplicates", () => {
+    const rows = normalizeDisplayedMembers(owner, [{ user: owner, role: "viewer" }, { user, role: "read" }, { user, role: "reviewer" }]);
+    expect(rows).toHaveLength(2); expect(rows[0].role).toBe("owner"); expect(rows[0].isOwner).toBe(true);
+  });
   test("owner sees collaborators, role controls, and pending invitations", async () => {
     vi.spyOn(globalThis, "fetch").mockImplementation((url) => String(url).endsWith("/collaborators/invitations")
       ? Promise.resolve(response({ invitations: [pending] }))

@@ -16,6 +16,13 @@ const descriptions = {
 const emptyForm = { username: "", role: "viewer", message: "", accessStartsAt: "", accessExpiresAt: "", allowedBranches: "", retainViewerAfterExpiry: false };
 const dateText = (value) => value ? new Date(value).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" }) : "Not configured";
 const normalizedRole = (role) => ({ read: "viewer", write: "temporary_contributor" }[role] || role);
+const normalizeUserId = (value) => String(value?.user?._id || value?.user?.id || value?._id || value?.id || value || "").trim().toLowerCase();
+export function normalizeDisplayedMembers(owner, rows = []) {
+  const ownerId = normalizeUserId(owner); const seen = new Set(); const result = [];
+  if (ownerId) { seen.add(ownerId); result.push({ user: owner, role: "owner", status: "active", isOwner: true }); }
+  for (const row of rows) { const id = normalizeUserId(row); if (!id || seen.has(id)) continue; seen.add(id); result.push({ ...row, isOwner: row.role === "owner" || row.isOwner }); }
+  return result;
+}
 
 function RoleBadge({ role, status }) {
   const value = status === "expired" || status === "suspended" ? status : normalizedRole(role);
@@ -34,7 +41,7 @@ const CollaboratorSettingsPage = () => {
     try {
       const members = await collaboratorRequest(`/repo/${id}/members`);
       const invitations = members.canManage ? await collaboratorRequest(`/repo/${id}/collaborators/invitations`) : { invitations: [] };
-      setState({ loading: false, error: "", collaborators: members.collaborators || [], invitations: invitations.invitations || [], owner: members.owner,
+      setState({ loading: false, error: "", collaborators: normalizeDisplayedMembers(members.owner, members.members || members.collaborators || []), invitations: invitations.invitations || [], owner: members.owner,
         canManage: Boolean(members.canManage), currentUserRole: members.currentUserRole || null });
     } catch (error) { setState((current) => ({ ...current, loading: false, error: error.message })); }
   }, [id]);
@@ -105,9 +112,9 @@ const CollaboratorSettingsPage = () => {
           <button type="submit" disabled={submitting}>{submitting ? "Sending..." : "Send invitation"}</button>
         </form></section>}
       <section className="collaborator-panel"><div className="collaborator-panel-heading"><h2>Current collaborators</h2><div className="collaborator-filters"><input aria-label="Search members" placeholder="Search members" value={search} onChange={(event) => setSearch(event.target.value)} /><select aria-label="Filter members" value={filter} onChange={(event) => setFilter(event.target.value)}><option value="all">All members</option>{builtInRoles.map((role) => <option key={role} value={role}>{roleLabel(role)}</option>)}<option value="expired">Expired access</option><option value="suspended">Suspended access</option></select></div></div>
-        <ul className="collaborator-list"><li><div className="collaborator-avatar" aria-hidden="true">{state.owner?.username?.[0]?.toUpperCase() || "O"}</div><div><strong>{state.owner?.username || "Repository owner"}</strong><span>{descriptions.owner}</span></div><RoleBadge role="owner" /></li>
-          {members.map((item) => { const warning = accessWarning(item); return <li key={item.user._id}><div className="collaborator-avatar" aria-hidden="true">{item.user.username?.[0]?.toUpperCase()}</div><div><strong>{item.user.username}</strong><span>{descriptions[normalizedRole(item.role)]}</span><span>Joined {dateText(item.joinedAt || item.addedAt)}</span>{item.accessExpiresAt && <span>Expires {dateText(item.accessExpiresAt)}</span>}{item.allowedBranches?.length > 0 && <span>Branches: {item.allowedBranches.join(", ")}</span>}{warning && <span className="collaborator-warning">{warning}</span>}</div>
-            {state.canManage ? <><select aria-label={`Role for ${item.user.username}`} value={item.role} onChange={(event) => changeRole(item, event.target.value)}><option hidden value="read">Read</option><option hidden value="write">Write</option>{assignable.map((role) => <option value={role} key={role}>{roleLabel(role)}</option>)}</select><button className="collaborator-remove" type="button" onClick={() => remove(item)}>Remove</button></> : <RoleBadge role={item.role} status={warning === "Expired" ? "expired" : item.status} />}</li>; })}
+        <ul className="collaborator-list">
+          {members.map((item) => { const warning = accessWarning(item); return <li key={normalizeUserId(item)}><div className="collaborator-avatar" aria-hidden="true">{item.user.username?.[0]?.toUpperCase() || "O"}</div><div><strong>{item.user.username || "Repository owner"}</strong><span>{descriptions[normalizedRole(item.role)]}</span>{!item.isOwner && <span>Joined {dateText(item.joinedAt || item.addedAt)}</span>}{item.accessExpiresAt && <span>Expires {dateText(item.accessExpiresAt)}</span>}{item.allowedBranches?.length > 0 && <span>Branches: {item.allowedBranches.join(", ")}</span>}{warning && <span className="collaborator-warning">{warning}</span>}</div>
+            {item.isOwner ? <RoleBadge role="owner" /> : state.canManage ? <><select aria-label={`Role for ${item.user.username}`} value={item.role} onChange={(event) => changeRole(item, event.target.value)}><option hidden value="read">Read</option><option hidden value="write">Write</option>{assignable.map((role) => <option value={role} key={role}>{roleLabel(role)}</option>)}</select><button className="collaborator-remove" type="button" onClick={() => remove(item)}>Remove</button></> : <RoleBadge role={item.role} status={warning === "Expired" ? "expired" : item.status} />}</li>; })}
         </ul></section>
       {state.canManage && <section className="collaborator-panel"><h2>Pending invitations</h2>{state.invitations.length ? <ul className="collaborator-list">{state.invitations.map((item) => <li key={item._id}><div className="collaborator-avatar" aria-hidden="true">{item.invitedUser.username?.[0]?.toUpperCase()}</div><div><strong>{item.invitedUser.username}</strong><span>Invited {dateText(item.createdAt)} · invitation expires {dateText(item.expiresAt)}</span></div><RoleBadge role={item.repositoryRole || item.role} /><button className="collaborator-remove" type="button" onClick={() => cancel(item)}>Cancel</button></li>)}</ul> : <p className="collaborator-empty">No pending invitations.</p>}</section>}
     </>}

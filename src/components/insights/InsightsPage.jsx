@@ -11,12 +11,13 @@ import InsightsTabs from "./InsightsTabs";
 import IssuePrSummary from "./IssuePrSummary";
 import LanguageBreakdown from "./LanguageBreakdown";
 import MostChangedFiles from "./MostChangedFiles";
+import HealthScoreCard from "./HealthScoreCard";
 import "./insights.css";
 
 const API_BASE = "https://api.codehub.sbs";
-const validRanges = new Set(["7d", "30d", "90d", "1y", "all"]);
+const validRanges = new Set(["7d", "30d", "90d", "180d", "1y", "all"]);
 const endpoints = {
-  overview: ["overview", "commits", "languages", "issues", "pull-requests", "branches", "activity", "files", "actions"],
+  overview: ["health", "overview", "commits", "languages", "issues", "pull-requests", "branches", "activity", "files", "actions"],
   commits: ["commits", "branches"], contributors: ["contributors"], activity: ["activity"],
 };
 
@@ -31,7 +32,8 @@ const InsightsPage = ({ view = "overview" }) => {
     setState((current) => ({ ...current, loading: true, error: "" }));
     try {
       const pairs = await Promise.all(requestPaths.map(async (endpoint) => {
-        const query = new URLSearchParams({ range });
+        const healthRange = ["30d", "90d", "180d"].includes(range) ? range : (["1y", "all"].includes(range) ? "180d" : "30d");
+        const query = new URLSearchParams({ range: endpoint === "health" ? healthRange : range });
         if (endpoint === "commits" && branch) query.set("branch", branch);
         if (endpoint === "activity") { query.set("type", filter); query.set("page", String(page)); }
         const response = await authenticatedFetch(`${API_BASE}/repo/${id}/insights/${endpoint}?${query}`, { signal });
@@ -50,6 +52,7 @@ const InsightsPage = ({ view = "overview" }) => {
     {state.loading && <div className="insights-state" role="status" aria-live="polite">Loading repository insights...</div>}
     {state.error && <div className="insights-state insights-state--error" role="alert"><p>{state.error}</p><button type="button" onClick={retry}>Retry</button></div>}
     {!state.loading && !state.error && view === "overview" && <>
+      <HealthScoreCard data={state.data.health} />
       <section className="insights-cards" aria-label="Repository summary">{[
         ["Commits", overview?.summary?.commits], ["Contributors", overview?.summary?.contributors], ["Branches", overview?.summary?.branches], ["Open issues", overview?.summary?.openIssues], ["Merged PRs", overview?.summary?.mergedPullRequests], ["Workflow runs", overview?.summary?.workflowRuns], ["Successful runs", overview?.summary?.successfulWorkflowRuns], ["Failed runs", overview?.summary?.failedWorkflowRuns], ["Stars", overview?.summary?.stars], ["Forks", overview?.summary?.forks], ["Watchers", overview?.summary?.watchers],
       ].map(([label, value]) => <article key={label}><strong>{Number(value || 0).toLocaleString()}</strong><span>{label}</span></article>)}</section>

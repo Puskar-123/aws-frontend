@@ -9,6 +9,7 @@ vi.mock("../Navbar", () => ({ default: () => <nav>CodeHub</nav> }));
 const id = "507f1f77bcf86cd799439011";
 const response = (body, status = 200) => ({ ok: status >= 200 && status < 300, status, headers: { get: () => "application/json" }, json: async () => body, text: async () => JSON.stringify(body) });
 const fixtures = {
+  health: { score: 72, status: "needs_improvement", insufficientData: false, version: 1, range: "30d", calculatedAt: "2026-07-17T00:00:00Z", recommendations: ["Configure a test workflow"], categories: { automatedTests: { label: "Automated tests", score: 12, max: 20, details: [{ label: "Latest test workflow", points: 0, max: 8, status: "not_configured", evidence: "Not configured", recommendation: "Configure a test workflow" }] } } },
   overview: { summary: { commits: 45, contributors: 3, branches: 2, openIssues: 2, mergedPullRequests: 6, stars: 4, forks: 2, watchers: 3 } },
   commits: { interval: "day", totalCommits: 3, timezone: "UTC", series: [{ date: "2026-07-13", commits: 1 }, { date: "2026-07-14", commits: 2 }] },
   languages: { totalBytes: 1000, languages: [{ name: "JavaScript", bytes: 650, percentage: 65 }, { name: "CSS", bytes: 350, percentage: 35 }] },
@@ -38,6 +39,8 @@ describe("repository insights", () => {
     expect(screen.getByRole("img", { name: /Pull request activity/ })).toBeTruthy();
     expect(screen.getByText("Fix auth")).toBeTruthy(); expect(screen.getByText("src/Login.jsx")).toBeTruthy();
     expect(screen.getByText("18.4 hours")).toBeTruthy(); expect(screen.getByText("12.7 hours")).toBeTruthy();
+    expect(screen.getByRole("img", { name: "Project health score 72 out of 100" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: /Automated tests/ })); expect(screen.getAllByText("Not configured").length).toBeGreaterThan(0);
   });
 
   test("range selector updates URL, refreshes requests, and preserves the active tab", async () => {
@@ -48,7 +51,7 @@ describe("repository insights", () => {
     await waitFor(() => expect(screen.getByTestId("location").textContent).toContain("range=90d"));
     await waitFor(() => expect(calls.some((url) => url.includes("range=90d"))).toBe(true));
     expect(screen.getByRole("link", { name: "Commits" }).getAttribute("href")).toContain("range=90d");
-    expect(calls.length).toBeLessThan(20);
+    expect(calls.length).toBeLessThanOrEqual(20);
   });
 
   test("commit page filters by branch using URL state", async () => {

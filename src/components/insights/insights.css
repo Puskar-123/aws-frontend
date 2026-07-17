@@ -19,6 +19,21 @@
 .insights-panel { min-width: 0; margin-bottom: 18px; padding: 17px; border: 1px solid var(--border-default); border-radius: 8px; background: var(--bg-surface); }
 .insights-panel h2 { margin: 0 0 12px; color: var(--text-primary); font-size: 17px; }
 .insights-panel h3 { margin: 0 0 9px; color: var(--text-primary); font-size: 14px; }
+.health-card { margin-bottom: 18px; padding: 20px; border: 1px solid var(--border-default); border-left: 4px solid var(--accent-primary); border-radius: 9px; background: var(--bg-surface); }
+.health-card--healthy { border-left-color: var(--success); } .health-card--at_risk { border-left-color: var(--danger); }
+.health-summary { display: flex; align-items: center; gap: 20px; } .health-summary h2 { margin: 2px 0 5px; color: var(--text-primary); }
+.health-summary p { margin: 0; color: var(--text-muted); } .health-kicker { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.health-gauge { display: grid; place-content: center; width: 104px; height: 104px; flex: 0 0 auto; border-radius: 50%; background: radial-gradient(circle at center,var(--bg-surface) 59%,transparent 61%),conic-gradient(var(--accent-primary) calc(var(--health-score) * 1%),var(--border-default) 0); text-align:center; }
+.health-gauge strong { color: var(--text-primary); font-size: 30px; line-height: 1; } .health-gauge span { color: var(--text-muted); font-size: 11px; }
+.health-categories { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 9px; margin-top: 20px; }
+.health-categories article { border: 1px solid var(--border-default); border-radius: 7px; overflow: hidden; }
+.health-categories progress { display:block; width:100%; height:4px; border:0; accent-color:var(--accent-primary); }
+.health-categories article>button { display:flex; justify-content:space-between; width:100%; padding:11px 12px; border:0; color:var(--text-primary); background:var(--bg-surface-muted); cursor:pointer; text-align:left; }
+.health-categories ul { margin:0; padding:0 12px; list-style:none; } .health-categories li { padding:10px 0; border-top:1px solid var(--border-default); }
+.health-categories li>div { display:flex; justify-content:space-between; gap:8px; } .health-categories li p { margin:4px 0 0; color:var(--text-muted); font-size:12px; }
+.health-check { color:var(--text-muted); font-size:11px; text-transform:capitalize; } .health-check--pass { color:var(--success); } .health-recommendation { color:var(--accent-link)!important; }
+.health-next,.health-explanation { margin-top:18px; } .health-next h3 { margin:0; color:var(--text-primary); } .health-next ol { margin-bottom:0; } .health-next li { margin:5px 0; }
+.health-trend,.health-meta { color:var(--text-muted); font-size:12px; } .health-explanation summary { color:var(--accent-link); cursor:pointer; } .health-explanation p { color:var(--text-muted); }
 .insights-section-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 12px; }
 .insights-section-heading h2 { margin-bottom: 3px; }
 .insights-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 18px; }
@@ -66,4 +81,5 @@
 .insights-pagination button:disabled { cursor: not-allowed; opacity: .45; }
 .insights-tabs a:focus-visible, .insights-range select:focus-visible, .insights-section-heading select:focus-visible, .insights-state button:focus-visible, .insights-pagination button:focus-visible { outline: 2px solid var(--accent-link); outline-offset: 2px; }
 @media (max-width: 900px) { .insights-cards { grid-template-columns: repeat(2,minmax(0,1fr)); } .insights-grid { grid-template-columns: 1fr; } }
+@media (max-width: 600px) { .health-summary { align-items:flex-start; } .health-gauge { width:82px; height:82px; } .health-categories { grid-template-columns:1fr; } }
 @media (max-width: 600px) { .insights-shell { width: min(100% - 24px,1120px); padding-top: 24px; } .insights-header { align-items: stretch; flex-direction: column; } .insights-range select { width: 100%; } .insights-cards { grid-template-columns: 1fr 1fr; gap: 8px; } .insights-cards article { padding: 13px; } .insights-section-heading { flex-direction: column; } .insights-section-heading label, .insights-section-heading select { width: 100%; } .insights-comparison { grid-template-columns: 1fr; } .activity-list li { grid-template-columns: 10px minmax(0,1fr); } }
