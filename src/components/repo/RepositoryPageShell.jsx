@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { FiActivity, FiAlertCircle, FiBarChart2, FiCode, FiGitPullRequest, FiMessageCircle, FiSettings, FiTag } from "react-icons/fi";
+import { FiActivity, FiAlertCircle, FiBarChart2, FiCode, FiGitPullRequest, FiHeart, FiMessageCircle, FiSettings, FiTag } from "react-icons/fi";
 import { repositoryDescription } from "./repositoryPageUtils";
 
 export const RepoHeader = ({ repository, protectedBranch, children }) => <header className="repo-header">
@@ -17,7 +17,7 @@ export const RepoHeader = ({ repository, protectedBranch, children }) => <header
 
 export const RepoTabs = ({ repositoryId, pathname, counts, settingsPath }) => {
   const tabs = [
-    ["Code", `/repo/${repositoryId}`, undefined, FiCode], ["Issues", `/repo/${repositoryId}/issues`, counts.issues, FiAlertCircle], ["Pull requests", `/repo/${repositoryId}/pulls`, counts.pulls, FiGitPullRequest], ["Chat", `/repo/${repositoryId}/chat`, undefined, FiMessageCircle],
+    ["Code", `/repo/${repositoryId}`, undefined, FiCode], ["Issues", `/repo/${repositoryId}/issues`, counts.issues, FiAlertCircle], ["Pull requests", `/repo/${repositoryId}/pulls`, counts.pulls, FiGitPullRequest], ["Contribute", `/repo/${repositoryId}/contribute`, undefined, FiHeart], ["Chat", `/repo/${repositoryId}/chat`, undefined, FiMessageCircle],
     ["Actions", `/repo/${repositoryId}/actions`, undefined, FiActivity], ["Releases", `/repo/${repositoryId}/releases`, undefined, FiTag], ["Insights", `/repo/${repositoryId}/insights`, undefined, FiBarChart2],
     ...(settingsPath ? [["Settings", settingsPath, undefined, FiSettings]] : []),
   ];

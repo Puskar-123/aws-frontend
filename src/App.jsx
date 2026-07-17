@@ -32,6 +32,10 @@ import ActionsPage from "./components/actions/ActionsPage";
 import WorkflowRunPage from "./components/actions/WorkflowRunPage";
 import ChatPage from "./components/chat/ChatPage";
 import RepositoryChatPage from "./components/chat/RepositoryChatPage";
+import ContributionHome from "./components/contributions/ContributionHome";
+import RepositoryContribute from "./components/contributions/RepositoryContribute";
+import ContributionSession from "./components/contributions/ContributionSession";
+import IssueGuideEditor from "./components/contributions/IssueGuideEditor";
 
 const protectedPage = (page) => <ProtectedRoute>{page}</ProtectedRoute>;
 
@@ -46,6 +50,8 @@ const App = () => <Routes>
   <Route path="/profile/:id" element={protectedPage(<Profile />)} />
   <Route path="/notifications" element={protectedPage(<NotificationsPage />)} />
   <Route path="/chat" element={protectedPage(<ChatPage />)} />
+  <Route path="/contribute" element={protectedPage(<ContributionHome />)} />
+  <Route path="/profile/contributions" element={protectedPage(<ContributionHome />)} />
   <Route path="/invitations" element={protectedPage(<InvitationsPage />)} />
   <Route path="/explore" element={protectedPage(<ExplorePage />)} />
   <Route path="/search" element={protectedPage(<SearchResultsPage />)} />
@@ -56,6 +62,10 @@ const App = () => <Routes>
   <Route path="/repo/:id/settings/branches" element={protectedPage(<BranchProtectionSettingsPage />)} />
   <Route path="/repo/:id/compare" element={protectedPage(<ComparePage />)} />
   <Route path="/repo/:id/chat" element={protectedPage(<RepositoryChatPage />)} />
+  <Route path="/repo/:id/contribute" element={protectedPage(<RepositoryContribute />)} />
+  <Route path="/repo/:id/contribute/recommendations" element={protectedPage(<RepositoryContribute />)} />
+  <Route path="/repo/:id/contribute/session/:sessionId" element={protectedPage(<ContributionSession />)} />
+  <Route path="/repo/:id/issues/:issueId/contribution-guide" element={protectedPage(<IssueGuideEditor />)} />
   <Route path="/repo/:id/pulls/new" element={protectedPage(<NewPullRequest />)} />
   <Route path="/repo/:id/pulls/:number" element={protectedPage(<PullRequestPage />)} />
   <Route path="/repo/:id/pulls" element={protectedPage(<PullRequestList />)} />

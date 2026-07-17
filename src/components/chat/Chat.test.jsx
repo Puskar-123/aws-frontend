@@ -17,7 +17,7 @@ const message=(sequence=1)=>({_id:`m${sequence}`,conversation:"c1",sequence,send
 
 beforeEach(()=>{
   localStorage.setItem("userId","me");
-  mocks.chat={connection:"connected",conversations:[conversation],messages:{c1:[message()]},typing:{c1:{username:"ada"}},presence:{ada:{online:true}},socket:{emit:vi.fn()},loadConversations:vi.fn(async()=>{}),open:vi.fn(async()=>({messages:[message()]})),loadOlder:vi.fn(async()=>{}),send:vi.fn(),setMessages:vi.fn()};
+  mocks.chat={connection:"connected",conversations:[conversation],messages:{c1:[message()]},typing:{c1:{username:"ada"}},presence:{ada:{online:true}},conversationPresence:{},accessError:"",socket:{emit:vi.fn()},loadConversations:vi.fn(async()=>{}),open:vi.fn(async()=>({messages:[message()]})),loadOlder:vi.fn(async()=>{}),send:vi.fn(),setMessages:vi.fn()};
   Object.defineProperty(globalThis.crypto,"randomUUID",{configurable:true,value:vi.fn(()=>"stable-id")});
 });
 afterEach(()=>{cleanup();localStorage.clear();vi.clearAllMocks();});

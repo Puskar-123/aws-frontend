@@ -10,6 +10,8 @@ See `../docs/CUSTOM_REPOSITORY_ROLES.md` for the permission matrix and verificat
 
 CodeHub Chat is available at `/chat`, with repository, issue, pull-request, profile/direct-message, and mentor entry points. It provides reconnect catch-up, stable retry IDs, unread badges, presence, typing, search, replies, reactions, attachments, mute, block, and report actions. See `../docs/CODEHUB_CHAT.md` for the backend contract and verification workflow.
 
+Guided Contribution is available at `/contribute`, `/repo/:id/contribute`, and per-session routes. Contributors can manage a skill profile, inspect transparent scores and missing skills, create an isolated session, refresh stored evidence, explicitly commit/open a PR, request a mentor, and inspect a final report. Maintainers configure guides from issue pages. See `../docs/GUIDED_CONTRIBUTION_SYSTEM.md`.
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:

@@ -17,6 +17,7 @@ const Navbar = () => {
       {isAuthenticated && <GlobalSearch />}
       <div className="codehub-navbar__links">
         {isAuthenticated && <Link to="/explore"><p>Explore</p></Link>}
+        {isAuthenticated && <Link to="/contribute"><p>Contribute</p></Link>}
         {isAuthenticated && <Link to="/invitations"><p>Invitations</p></Link>}
         {isAuthenticated && <Link className="navbar-chat-link" to="/chat" aria-label={`Chat, ${chat?.totalUnread || 0} unread messages`}><p>Chat</p>{chat?.totalUnread > 0 && <span>{chat.totalUnread}</span>}</Link>}
         <ThemeToggle />
