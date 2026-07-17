@@ -58,6 +58,7 @@ const RepoPage = () => {
   const branchRequestId = useRef(0);
   const snapshotRequestId = useRef(0);
   const historyRequestId = useRef(0);
+  const statusRequestId = useRef(0);
   const snapshotStateRef = useRef(null);
   const historyStateRef = useRef(null);
 
@@ -78,6 +79,12 @@ const RepoPage = () => {
   const [commitMessage, setCommitMessage] = useState("");
   const [committing, setCommitting] = useState(false);
   const [pendingCommit, setPendingCommit] = useState(false);
+  const [syncState, setSyncState] = useState({
+    key: "", loading: false, localHead: null, remoteHead: null,
+    aheadCount: 0, behindCount: 0, hasStagedChanges: false,
+    hasUnpushedCommits: false, hasRemoteChanges: false,
+  });
+  const [syncAction, setSyncAction] = useState("");
   const [navigationCounts, setNavigationCounts] = useState({ issues: 0, pulls: 0 });
 
   useEffect(() => {
@@ -130,6 +137,55 @@ const RepoPage = () => {
     // Query-only changes are handled by branch selection; these refs are repository-scoped.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
+
+  const fetchBranchStatus = useCallback(async (branch, signal) => {
+    if (!branch || invalidRepositoryId) return null;
+    const requestId = ++statusRequestId.current;
+    const key = `${id}:${branch}`;
+    setSyncState((current) => current.key === key ? { ...current, loading: true } : {
+      key, loading: true, localHead: null, remoteHead: null, aheadCount: 0,
+      behindCount: 0, hasStagedChanges: false, hasUnpushedCommits: false,
+      hasRemoteChanges: false,
+    });
+    try {
+      const response = await fetch(`${API_BASE}/repo/${id}/branches/${encodeURIComponent(branch)}/status`, { headers: authHeaders(), signal });
+      const data = await requestData(response, "Unable to load repository status");
+      if (requestId !== statusRequestId.current || key !== `${id}:${branch}`) return null;
+      const next = {
+        key, loading: false,
+        localHead: data.localHead || null,
+        remoteHead: data.remoteHead || null,
+        aheadCount: Number(data.aheadCount || 0),
+        behindCount: Number(data.behindCount || 0),
+        hasStagedChanges: Boolean(data.hasStagedChanges),
+        hasUnpushedCommits: Boolean(data.hasUnpushedCommits || Number(data.aheadCount) > 0),
+        hasRemoteChanges: Boolean(data.hasRemoteChanges || Number(data.behindCount) > 0),
+      };
+      setSyncState(next);
+      setPendingCommit(next.hasStagedChanges);
+      return next;
+    } catch (error) {
+      if (error.name !== "AbortError" && requestId === statusRequestId.current) {
+        setSyncState((current) => current.key === key ? { ...current, loading: false } : current);
+      }
+      return null;
+    }
+  }, [id, invalidRepositoryId]);
+
+  useEffect(() => {
+    statusRequestId.current += 1;
+    if (!selectedBranch || invalidRepositoryId) return undefined;
+    const controller = new AbortController();
+    Promise.resolve().then(() => {
+      if (controller.signal.aborted) return;
+      setSelectedFiles([]);
+      setCommitMessage("");
+      setPendingCommit(false);
+      setSyncAction("");
+      fetchBranchStatus(selectedBranch, controller.signal);
+    });
+    return () => controller.abort();
+  }, [fetchBranchStatus, id, invalidRepositoryId, reloadVersion, selectedBranch]);
 
   const fetchRepo = useCallback(async (signal) => {
     if (invalidRepositoryId) return;
@@ -386,6 +442,7 @@ const RepoPage = () => {
       window.alert(data.message);
       setSelectedFiles([]);
       setPendingCommit(true);
+      setSyncState((current) => ({ ...current, key: `${id}:${selectedBranch}`, hasStagedChanges: true }));
       fetchRepo();
       refreshSelectedBranch();
     } catch (error) { window.alert(error.message); }
@@ -410,6 +467,17 @@ const RepoPage = () => {
       window.alert(data.message);
       setCommitMessage("");
       setPendingCommit(false);
+      const status = data.status || data.commit || {};
+      setSyncState((current) => ({
+        ...current,
+        key: `${id}:${selectedBranch}`,
+        localHead: status.localHead || status.hash || current.localHead,
+        remoteHead: status.remoteHead ?? current.remoteHead,
+        aheadCount: Number(status.aheadCount ?? Math.max(1, current.aheadCount + 1)),
+        behindCount: Number(status.behindCount ?? current.behindCount),
+        hasStagedChanges: false,
+        hasUnpushedCommits: true,
+      }));
       refreshSelectedBranch();
       fetchRepo();
     } catch (error) { window.alert(error.message); }
@@ -444,6 +512,7 @@ const RepoPage = () => {
   };
 
   const runRepositoryAction = async (action, successMessage) => {
+    setSyncAction(action);
     try {
       const branchAware = action === "push";
       const response = await fetch(`${API_BASE}/repo/${action}/${id}`, {
@@ -451,11 +520,19 @@ const RepoPage = () => {
         headers: branchAware ? { "Content-Type": "application/json", ...authHeaders() } : authHeaders(),
         ...(branchAware ? { body: JSON.stringify({ branch: selectedBranch || defaultBranch }) } : {}),
       });
-      await requestData(response, `${action} failed`);
-      window.alert(successMessage);
+      const data = await requestData(response, `${action} failed`);
+      window.alert(data.message || successMessage);
+      if (action === "push") setSyncState((current) => ({
+        ...current,
+        localHead: data.localHead || current.localHead,
+        remoteHead: data.remoteHead || data.localHead || current.localHead,
+        aheadCount: 0,
+        hasUnpushedCommits: false,
+      }));
       refreshSelectedBranch();
       fetchRepo();
     } catch (error) { window.alert(error.message); }
+    finally { setSyncAction(""); }
   };
 
   if (invalidRepositoryId) return <><Navbar /><main className="repo-page-state error">Repository not found</main></>;
@@ -476,7 +553,10 @@ const RepoPage = () => {
     : historyState.commits.length;
   const onDefaultBranch = selectedBranch === defaultBranch;
   const emptyBranch = !contentLoading && !contentError && snapshotState.files.length === 0;
-  const hasPendingChanges = pendingCommit || Boolean(snapshotState.state?.hasUncommittedChanges || snapshotState.state?.hasStagedChanges);
+  const hasPendingChanges = pendingCommit || syncState.hasStagedChanges || Boolean(snapshotState.state?.hasUncommittedChanges || snapshotState.state?.hasStagedChanges);
+  const hasUnpushedCommits = syncState.aheadCount > 0 || syncState.hasUnpushedCommits;
+  const hasRemoteChanges = syncState.behindCount > 0 || syncState.hasRemoteChanges;
+  const showSyncActions = canWriteContent && (hasPendingChanges || hasUnpushedCommits || hasRemoteChanges);
   const settingsPath = canManageCollaborators ? `/repo/${id}/settings/collaborators` : `/repo/${id}/settings/branches`;
 
   return (
@@ -517,11 +597,13 @@ const RepoPage = () => {
 
         {refreshing && <span className="sr-only" role="status">Refreshing repository content</span>}
         <RepoContent loading={contentLoading} error={contentError} empty={emptyBranch} onRetry={refreshSelectedBranch} emptyContent={<EmptyRepositorySetupPanel repository={repo} />}>
-          {canWriteContent && hasPendingChanges && <div className="commit-section">
-            <input type="text" placeholder={`Commit message for ${selectedBranch || defaultBranch}`} value={commitMessage} onChange={(event) => setCommitMessage(event.target.value)} className="commit-input" />
-            <button type="button" onClick={handleCommit} className="push-btn" disabled={committing}>{committing ? "Committing..." : "Commit"}</button>
-            <button type="button" onClick={() => runRepositoryAction("push", "Push successful!")} className="repo-secondary-button">Push</button>
-            <button type="button" onClick={() => runRepositoryAction("pull", "Pull successful!")} className="repo-secondary-button">Pull</button>
+          {showSyncActions && <div className="commit-section">
+            {hasPendingChanges && <>
+              <input type="text" placeholder={`Commit message for ${selectedBranch || defaultBranch}`} value={commitMessage} onChange={(event) => setCommitMessage(event.target.value)} className="commit-input" />
+              <button type="button" onClick={handleCommit} className="push-btn" disabled={committing || !commitMessage.trim() || !hasPendingChanges}>{committing ? "Committing..." : "Commit"}</button>
+            </>}
+            {hasUnpushedCommits && <button type="button" onClick={() => runRepositoryAction("push", "Push successful!")} className="repo-secondary-button" disabled={syncAction === "push"}>{syncAction === "push" ? "Pushing..." : `Push${syncState.aheadCount > 0 ? ` (${syncState.aheadCount})` : ""}`}</button>}
+            {hasRemoteChanges && <button type="button" onClick={() => runRepositoryAction("pull", "Pull successful!")} className="repo-secondary-button" disabled={syncAction === "pull"}>{syncAction === "pull" ? "Pulling..." : `Pull${syncState.behindCount > 0 ? ` (${syncState.behindCount})` : ""}`}</button>}
           </div>}
           <RepositoryBrowser
           repositoryId={id}

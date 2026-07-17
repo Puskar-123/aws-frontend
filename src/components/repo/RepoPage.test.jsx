@@ -108,6 +108,55 @@ describe("RepoPage branch integration", () => {
     expect(document.querySelector(".repo-browser")).toBeTruthy(); expect(addRequest).toBeInstanceOf(FormData); expect(addRequest.get("paths")).toBe(uploadedPath);
   });
 
+  test("commit clears working-tree controls while persisted ahead state keeps Push available through refresh and failure", async () => {
+    let staged = false; let ahead = 0; let pushed = false; let failNextPush = true;
+    vi.spyOn(window, "alert").mockImplementation(() => {});
+    vi.spyOn(globalThis, "fetch").mockImplementation((url, options = {}) => {
+      const value = String(url);
+      if (value.endsWith(`/repo/${repositoryId}`)) return Promise.resolve(jsonResponse({
+        _id: repositoryId, name: "project", owner: { _id: ownerId, username: "Puskar" }, visibility: "private",
+        permissions: { canUploadFiles: true, canEditFiles: true },
+      }));
+      if (value.endsWith(`/repo/${repositoryId}/branches`)) return Promise.resolve(jsonResponse({ defaultBranch: "main", branches: [{ name: "main", head: pushed ? "local-1" : "remote-1", isDefault: true }] }));
+      if (value.includes("/branches/main/status")) return Promise.resolve(jsonResponse({
+        branch: "main", localHead: ahead ? "local-1" : "remote-1", remoteHead: pushed ? "local-1" : "remote-1",
+        aheadCount: ahead, behindCount: 0, hasStagedChanges: staged, hasUnpushedCommits: ahead > 0,
+      }));
+      if (value.includes("/branches/main/snapshot")) return Promise.resolve(jsonResponse({ files: [{ filename: "README.md", path: "README.md" }, ...(staged ? [{ filename: "new.txt", path: "new.txt" }] : [])] }));
+      if (value.includes("/branches/main/history")) return Promise.resolve(jsonResponse({ commits: [{ hash: "remote-1", message: "Initial", author: { name: "Puskar" } }] }));
+      if (value.endsWith(`/repo/add/${repositoryId}`) && options.method === "POST") { staged = true; return Promise.resolve(jsonResponse({ message: "Files added", hasStagedChanges: true })); }
+      if (value.endsWith(`/repo/commit/${repositoryId}`) && options.method === "POST") {
+        staged = false; ahead = 1;
+        return Promise.resolve(jsonResponse({ message: "Commit created locally. Push to publish it.", status: { localHead: "local-1", remoteHead: "remote-1", aheadCount: 1, hasUnpushedCommits: true } }));
+      }
+      if (value.endsWith(`/repo/push/${repositoryId}`) && options.method === "POST") {
+        if (failNextPush) { failNextPush = false; return Promise.resolve(jsonResponse({ error: "Temporary storage failure" }, 503)); }
+        ahead = 0; pushed = true;
+        return Promise.resolve(jsonResponse({ message: "Push successful!", localHead: "local-1", remoteHead: "local-1", aheadCount: 0 }));
+      }
+      if (value.includes("/repo/preview/")) return Promise.resolve(jsonResponse({ content: "readme", previewSupported: true }));
+      return Promise.resolve(jsonResponse({ counts: { open: 0 }, pagination: { total: 0 } }));
+    });
+
+    const first = renderPage();
+    await screen.findAllByText("Initial");
+    fireEvent.click(screen.getByRole("button", { name: /Add file/ })); fireEvent.click(screen.getByRole("menuitem", { name: "Upload files" }));
+    fireEvent.change(screen.getByLabelText("Choose files to upload"), { target: { files: [new File(["new"], "new.txt", { type: "text/plain" })] } });
+    const commit = await screen.findByRole("button", { name: "Commit" });
+    expect(commit.disabled).toBe(true);
+    fireEvent.change(screen.getByPlaceholderText("Commit message for main"), { target: { value: "Add new file" } });
+    expect(commit.disabled).toBe(false); fireEvent.click(commit);
+    const push = await screen.findByRole("button", { name: "Push (1)" });
+    expect(push.disabled).toBe(false); expect(screen.queryByPlaceholderText("Commit message for main")).toBeNull();
+    first.unmount(); renderPage();
+    const refreshedPush = await screen.findByRole("button", { name: "Push (1)" });
+    fireEvent.click(refreshedPush);
+    await waitFor(() => expect(window.alert).toHaveBeenCalledWith("Temporary storage failure"));
+    expect(screen.getByRole("button", { name: "Push (1)" }).disabled).toBe(false);
+    fireEvent.click(screen.getByRole("button", { name: "Push (1)" }));
+    await waitFor(() => expect(screen.queryByRole("button", { name: /Push/ })).toBeNull());
+  });
+
   test("an empty repository does not poll or leave setup after sixty seconds", async () => {
     let repositoryRequests = 0; let snapshotRequests = 0; let historyRequests = 0;
     const intervalSpy = vi.spyOn(window, "setInterval");
