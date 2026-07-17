@@ -1,5 +1,9 @@
 # React + Vite
 
+CodeHub repository access UI consumes `GET /repo/:id/permissions/me` and the backend repository/member responses as its authority. The existing Collaborators page supports fixed repository roles, temporary expiry/branch access, audit-oriented status, and both `/settings/collaborators` and `/settings/access`. It does not treat repository roles as global profile roles or trust local storage for permissions.
+
+See `../docs/CUSTOM_REPOSITORY_ROLES.md` for the permission matrix and verification workflow.
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:

@@ -49,6 +49,7 @@ const App = () => <Routes>
   <Route path="/users/:username" element={protectedPage(<PublicProfilePage />)} />
   <Route path="/repo/:id/edit" element={protectedPage(<FileEditorPage />)} />
   <Route path="/repo/:id/settings/collaborators" element={protectedPage(<CollaboratorSettingsPage />)} />
+  <Route path="/repo/:id/settings/access" element={protectedPage(<CollaboratorSettingsPage />)} />
   <Route path="/repo/:id/settings/branches" element={protectedPage(<BranchProtectionSettingsPage />)} />
   <Route path="/repo/:id/compare" element={protectedPage(<ComparePage />)} />
   <Route path="/repo/:id/pulls/new" element={protectedPage(<NewPullRequest />)} />

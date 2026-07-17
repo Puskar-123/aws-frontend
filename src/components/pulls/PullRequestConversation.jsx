@@ -9,6 +9,7 @@ import RequestedReviewers from "./RequestedReviewers";
 import PullRequestReviewActivity from "./PullRequestReviewActivity";
 import { formatPullDate } from "./pullIdentity";
 import PullRequestChecks from "../actions/PullRequestChecks";
+import PullRequestTestResults from "./PullRequestTestResults";
 
 const PullRequestConversation = ({ repositoryId, pullRequest, mergeability, permissions, reviewSummary, currentHead, onComment, onReview, onMerge, onClose, onReopen }) => (
   <div className="pull-conversation">
@@ -20,7 +21,7 @@ const PullRequestConversation = ({ repositoryId, pullRequest, mergeability, perm
       {permissions.canComment && <PullRequestCommentForm repositoryId={repositoryId} number={pullRequest.number} onCreated={onComment} />}
       {permissions.canComment && pullRequest.status === "open" && <PullRequestReviewForm repositoryId={repositoryId} number={pullRequest.number} canDecide={permissions.canReviewDecision} isAuthor={permissions.isAuthor} currentHead={currentHead} onCreated={onReview} />}
     </div>
-    <aside><RequestedReviewers repositoryId={repositoryId} number={pullRequest.number} canManage={permissions.canEdit} /><PullRequestReviewSummary summary={reviewSummary} /><PullRequestChecks repositoryId={repositoryId} number={pullRequest.number} /><MergePanel pullRequest={pullRequest} mergeability={mergeability} reviewSummary={reviewSummary} canMerge={permissions.canMerge} onMerge={onMerge} />{permissions.canEdit && pullRequest.status === "open" && <button className="pull-secondary" type="button" onClick={onClose}>Close pull request</button>}{permissions.canEdit && pullRequest.status === "closed" && <button className="pull-secondary" type="button" onClick={onReopen}>Reopen pull request</button>}</aside>
+    <aside><RequestedReviewers repositoryId={repositoryId} number={pullRequest.number} canManage={permissions.canEdit} /><PullRequestReviewSummary summary={reviewSummary} /><PullRequestChecks repositoryId={repositoryId} number={pullRequest.number} /><PullRequestTestResults repositoryId={repositoryId} number={pullRequest.number} canView={permissions.canViewTests} canSubmit={permissions.canSubmitTestResult} /><MergePanel pullRequest={pullRequest} mergeability={mergeability} reviewSummary={reviewSummary} canMerge={permissions.canMerge} onMerge={onMerge} />{permissions.canEdit && pullRequest.status === "open" && <button className="pull-secondary" type="button" onClick={onClose}>Close pull request</button>}{permissions.canEdit && pullRequest.status === "closed" && <button className="pull-secondary" type="button" onClick={onReopen}>Reopen pull request</button>}</aside>
   </div>
 );
 

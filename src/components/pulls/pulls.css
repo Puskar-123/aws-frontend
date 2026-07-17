@@ -24,6 +24,16 @@
 .pull-protected-badge { display: inline-flex; margin-left: 5px; padding: 2px 7px; color: var(--warning); font-size: 10px; font-weight: 700; border: 1px solid #9e6a03; border-radius: 999px; }
 .pull-state { padding: 42px 20px; border: 1px solid var(--border-default); border-radius: 8px; color: var(--text-muted); background: var(--bg-surface); text-align: center; }
 .pull-state--error, .pull-error { color: var(--danger); border-color: rgba(248,81,73,.4); }
+.pull-test-results { padding: 16px; border: 1px solid var(--border-default); border-radius: 8px; }
+.pull-test-results h2 { margin-top: 0; }
+.pull-test-results form, .pull-test-results label { display: grid; gap: 8px; }
+.pull-test-results form { gap: 12px; }
+.pull-test-results textarea, .pull-test-results select { padding: 8px; color: var(--text-primary); background: var(--bg-page); border: 1px solid var(--border-default); border-radius: 6px; }
+.pull-test-results ul { margin: 14px 0 0; padding: 0; list-style: none; }
+.pull-test-results li { display: grid; gap: 4px; padding: 10px 0; border-top: 1px solid var(--border-muted); }
+.pull-test-results li small { color: var(--text-muted); }
+.test-result--passed { color: var(--success, #2da44e); text-transform: capitalize; }
+.test-result--failed { color: var(--danger); text-transform: capitalize; }
 .pull-container--form { max-width: 780px; }
 .pull-form { display: grid; gap: 17px; padding: 20px; border: 1px solid var(--border-default); border-radius: 8px; background: var(--bg-surface); }
 .pull-form > label, .pull-comment-form label { display: grid; gap: 7px; color: var(--text-primary); font-size: 13px; font-weight: 600; }

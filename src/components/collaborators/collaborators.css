@@ -9,9 +9,22 @@
 .collaborator-breadcrumb a { color: var(--accent-link); }
 .collaborator-panel, .invitation-card { margin-top: 18px; padding: 20px; background: var(--bg-surface); border: 1px solid var(--border-default); border-radius: 8px; }
 .collaborator-panel h2, .invitation-card h2 { margin: 0 0 16px; font-size: 18px; }
+.collaborator-panel-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.collaborator-panel-heading h2 { flex: 0 0 auto; }
+.collaborator-link-button { padding: 0; color: var(--accent-link); background: transparent; border: 0; cursor: pointer; }
+.collaborator-filters { display: flex; flex-wrap: wrap; gap: 8px; }
+.collaborator-filters input, .collaborator-filters select { min-height: 34px; padding: 6px 9px; color: var(--text-primary); background: var(--bg-page); border: 1px solid var(--border-default); border-radius: 6px; }
 .collaborator-invite-form { display: grid; grid-template-columns: minmax(180px, 1fr) 160px; gap: 14px; }
 .collaborator-invite-form label { display: grid; gap: 6px; color: var(--text-secondary); font-size: 13px; font-weight: 600; }
 .collaborator-message { grid-column: 1 / -1; }
+.collaborator-invite-form small { color: var(--text-muted); font-weight: 400; }
+.temporary-access-fields { display: grid; grid-template-columns: 1fr 1fr; grid-column: 1 / -1; gap: 14px; margin: 0; padding: 14px; border: 1px solid var(--border-default); border-radius: 6px; }
+.temporary-access-fields legend { padding: 0 6px; color: var(--text-secondary); font-size: 13px; font-weight: 700; }
+.collaborator-checkbox { display: flex !important; align-items: center; grid-column: 1 / -1; grid-template-columns: auto 1fr; }
+.collaborator-checkbox input { min-height: auto; }
+.permission-matrix { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-bottom: 18px; }
+.permission-matrix article { padding: 12px; background: var(--bg-page); border: 1px solid var(--border-muted); border-radius: 6px; }
+.permission-matrix p { margin: 8px 0 0; color: var(--text-muted); font-size: 13px; }
 .collaborator-invite-form input, .collaborator-invite-form select, .collaborator-list select { min-height: 38px; padding: 7px 10px; color: var(--text-primary); background: var(--bg-page); border: 1px solid var(--border-default); border-radius: 6px; }
 .collaborator-invite-form button, .invitation-actions button, .collaborator-error button { width: fit-content; min-height: 38px; padding: 7px 14px; color: #fff; font-weight: 600; background: var(--accent-primary); border: 1px solid rgba(240,246,252,.1); border-radius: 6px; cursor: pointer; }
 .collaborator-invite-form button:disabled, .invitation-actions button:disabled { cursor: not-allowed; opacity: .6; }
@@ -25,6 +38,9 @@
 .collaborator-list li > div:nth-child(2) { display: grid; min-width: 0; flex: 1; gap: 3px; }
 .collaborator-list li > div:nth-child(2) span { font-size: 12px; }
 .collaborator-role { padding: 3px 9px; color: var(--text-secondary); font-size: 12px; border: 1px solid var(--border-muted); border-radius: 999px; }
+.collaborator-role--owner { color: var(--accent-link); }
+.collaborator-role--expired, .collaborator-role--suspended, .collaborator-warning { color: var(--danger); }
+.collaborator-warning { font-weight: 600; }
 .collaborator-remove { min-height: 34px; padding: 6px 10px; color: var(--danger); background: transparent; border: 1px solid var(--danger); border-radius: 6px; cursor: pointer; }
 .collaborator-empty { color: var(--text-muted); }
 .invitation-card > p { margin: 0 0 6px; color: var(--text-muted); font-size: 12px; text-transform: uppercase; }
@@ -37,4 +53,4 @@
 .invitation-actions { display: flex; gap: 10px; margin-top: 18px; }
 .invitation-actions .secondary { color: var(--text-primary); background: var(--bg-surface-muted); border-color: var(--border-default); }
 .collaborator-page button:focus-visible, .collaborator-page input:focus-visible, .collaborator-page select:focus-visible, .collaborator-page a:focus-visible { outline: 2px solid var(--accent-link); outline-offset: 2px; }
-@media (max-width: 600px) { .collaborator-shell, .invitation-shell { width: min(100% - 20px, 980px); padding-top: 20px; } .collaborator-panel, .invitation-card { padding: 15px; } .collaborator-invite-form { grid-template-columns: 1fr; } .collaborator-message { grid-column: auto; } .collaborator-invite-form button { width: 100%; } .collaborator-list li { align-items: stretch; flex-wrap: wrap; } .collaborator-list li > div:nth-child(2) { flex-basis: calc(100% - 50px); } .collaborator-list select, .collaborator-remove { flex: 1; } .invitation-card dl { flex-direction: column; gap: 10px; } .invitation-actions button { flex: 1; } }
+@media (max-width: 600px) { .collaborator-shell, .invitation-shell { width: min(100% - 20px, 980px); padding-top: 20px; overflow-x: hidden; } .collaborator-panel, .invitation-card { padding: 15px; } .collaborator-invite-form, .temporary-access-fields, .permission-matrix { grid-template-columns: minmax(0, 1fr); } .collaborator-message, .temporary-access-fields, .collaborator-checkbox { grid-column: auto; } .collaborator-panel-heading { align-items: stretch; flex-direction: column; } .collaborator-filters input, .collaborator-filters select { width: 100%; } .collaborator-invite-form button { width: 100%; } .collaborator-list li { align-items: stretch; flex-wrap: wrap; } .collaborator-list li > div:nth-child(2) { flex-basis: calc(100% - 50px); } .collaborator-list select, .collaborator-remove { min-width: 0; flex: 1; } .invitation-card dl { flex-direction: column; gap: 10px; } .invitation-actions button { flex: 1; } }

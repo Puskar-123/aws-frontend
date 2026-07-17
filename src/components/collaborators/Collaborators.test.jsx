@@ -5,6 +5,7 @@ import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import CollaboratorSettingsPage from "./CollaboratorSettingsPage";
 import InvitationsPage from "./InvitationsPage";
+import { accessWarning, can, canAll, canAny, roleLabel } from "./accessPermissions";
 
 vi.mock("../Navbar", () => ({ default: () => <nav>CodeHub</nav> }));
 
@@ -84,5 +85,19 @@ describe("received invitations", () => {
     renderInvitations();
     fireEvent.click(await screen.findByRole("button", { name: "Decline" }));
     expect(await screen.findByText("Invitation declined.")).toBeTruthy();
+  });
+});
+
+describe("repository access helpers", () => {
+  test("permission helpers use only backend permission strings", () => {
+    const state = { permissions: ["file:view", "issue:update"] };
+    expect(can(state, "file:view")).toBe(true); expect(can(state, "file:update")).toBe(false);
+    expect(canAny(state, ["file:update", "issue:update"])).toBe(true); expect(canAll(state, ["file:view", "issue:update"])).toBe(true);
+  });
+  test("role and expiry labels cover specialized and temporary roles", () => {
+    expect(roleLabel("issue_manager")).toBe("Issue Manager"); expect(roleLabel("deployment_manager")).toBe("Deployment Manager");
+    const now = Date.parse("2026-07-17T00:00:00Z");
+    expect(accessWarning({ accessExpiresAt: "2026-07-17T12:00:00Z" }, now)).toBe("Access expires within 24 hours");
+    expect(accessWarning({ legacyIndefiniteAccess: true }, now)).toBe("Legacy write access — expiry not configured");
   });
 });
