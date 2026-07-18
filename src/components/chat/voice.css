@@ -1,0 +1,1 @@
+.voice-recorder,.voice-player{display:flex;align-items:center;flex-wrap:wrap;gap:7px}.voice-player input{min-width:120px}.voice-recorder audio{height:34px;max-width:220px}.voice-recorder [role=alert],.voice-player [role=alert]{color:var(--danger-fg)}

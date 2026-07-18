@@ -1,0 +1,2 @@
+import React,{useState}from"react";import{useParams}from"react-router-dom";import{useCall}from"../../context/CallContext";import"./callHistory.css";
+export default function GuidedCallButton(){const{sessionId}=useParams(),call=useCall(),[error,setError]=useState("");if(!call)return null;return <div className="guided-call-action"><button onClick={()=>call.start({callType:"guided_contribution",contributionSessionId:sessionId,mediaMode:"audio"}).catch(value=>setError(value.message))}>Call mentor</button>{error&&<span role="alert">{error}</span>}</div>;}

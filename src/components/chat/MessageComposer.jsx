@@ -1,34 +1,4 @@
-import React, { useRef, useState } from "react";
-import { uploadChatAttachment } from "../../services/chatApi";
-
-const MessageComposer = ({ onSend, reply, onCancelReply, disabled, onTyping, onStopTyping }) => {
-  const [content, setContent] = useState("");
-  const [mode, setMode] = useState("text");
-  const [file, setFile] = useState(null);
-  const [sending, setSending] = useState(false);
-  const [error, setError] = useState("");
-  const clientId = useRef(null), attachmentId = useRef(null), typingTimer = useRef(null);
-  const changed = (event) => {
-    setContent(event.target.value);
-    if (error) { clientId.current = null; attachmentId.current = null; setError(""); }
-    onTyping?.();
-    clearTimeout(typingTimer.current);
-    typingTimer.current = setTimeout(() => onStopTyping?.(), 1200);
-  };
-  const submit = async (event) => {
-    event?.preventDefault();
-    if (!content.trim() && !file) return;
-    setSending(true); setError(""); onStopTyping?.();
-    try {
-      if (file && !attachmentId.current) attachmentId.current = (await uploadChatAttachment(file)).attachment._id;
-      clientId.current ||= crypto.randomUUID();
-      await onSend({ clientMessageId: clientId.current, messageType: mode, content, codeLanguage: mode === "code" ? "text" : "", replyTo: reply?._id || null, attachmentIds: attachmentId.current ? [attachmentId.current] : [] });
-      setContent(""); setFile(null); setMode("text"); clientId.current = null; attachmentId.current = null; onCancelReply();
-    } catch (value) { setError(value.message); }
-    finally { setSending(false); }
-  };
-  const keyDown = (event) => { if (event.key === "Escape") { onCancelReply(); setMode("text"); } if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); submit(); } };
-  return <form className="chat-composer" onSubmit={submit}>{reply && <div className="chat-composer-reply">Replying to {reply.sender?.username}<button type="button" onClick={onCancelReply}>Cancel</button></div>}{file && <div className="chat-file-preview">{file.name}<button type="button" onClick={() => { setFile(null); attachmentId.current = null; }}>Remove</button></div>}<textarea aria-label={mode === "code" ? "Code snippet" : "Message"} placeholder={mode === "code" ? "Paste a code snippet" : "Write a message"} value={content} onChange={changed} onKeyDown={keyDown} maxLength={mode === "code" ? 20000 : 10000}/><div><button type="button" aria-pressed={mode === "code"} onClick={() => setMode(mode === "code" ? "text" : "code")}>Code</button><label className="chat-attach">Attach<input type="file" onChange={event => { setFile(event.target.files?.[0] || null); attachmentId.current = null; }}/></label><button disabled={disabled || sending || (!content.trim() && !file)}>{sending ? "Sending…" : "Send"}</button></div>{error && <p role="alert">{error} <button type="button" onClick={submit}>Retry</button></p>}</form>;
-};
-
-export default MessageComposer;
+import React,{useRef,useState}from"react";
+import{uploadChatAttachment}from"../../services/chatApi";
+import VoiceRecorder from"./VoiceRecorder";
+export default function MessageComposer({onSend,onVoiceSent,conversationId,reply,onCancelReply=()=>{},disabled,onTyping,onStopTyping}){const[content,setContent]=useState(""),[mode,setMode]=useState("text"),[file,setFile]=useState(null),[sending,setSending]=useState(false),[error,setError]=useState("");const clientId=useRef(null),attachmentId=useRef(null),typingTimer=useRef(null);const changed=event=>{setContent(event.target.value);if(error){clientId.current=null;attachmentId.current=null;setError("");}onTyping?.();clearTimeout(typingTimer.current);typingTimer.current=setTimeout(()=>onStopTyping?.(),1200);};const submit=async event=>{event?.preventDefault();if(!content.trim()&&!file)return;setSending(true);setError("");onStopTyping?.();try{if(file&&!attachmentId.current)attachmentId.current=(await uploadChatAttachment(file)).attachment._id;clientId.current||=crypto.randomUUID();await onSend({clientMessageId:clientId.current,messageType:mode,content,codeLanguage:mode==="code"?"text":"",replyTo:reply?._id||null,attachmentIds:attachmentId.current?[attachmentId.current]:[]});setContent("");setFile(null);setMode("text");clientId.current=null;attachmentId.current=null;onCancelReply();}catch(value){setError(value.message);}finally{setSending(false);}};const keyDown=event=>{if(event.key==="Escape"){onCancelReply();setMode("text");}if(event.key==="Enter"&&!event.shiftKey){event.preventDefault();submit();}};return <form className="chat-composer" onSubmit={submit}>{reply&&<div className="chat-composer-reply">Replying to {reply.sender?.username}<button type="button" onClick={onCancelReply}>Cancel</button></div>}{file&&<div className="chat-file-preview">{file.name}<button type="button" onClick={()=>{setFile(null);attachmentId.current=null;}}>Remove</button></div>}<textarea aria-label={mode==="code"?"Code snippet":"Message"} placeholder={mode==="code"?"Paste a code snippet":"Write a message"} value={content} onChange={changed} onKeyDown={keyDown} maxLength={mode==="code"?20000:10000}/><div><VoiceRecorder conversationId={conversationId} onSent={onVoiceSent} disabled={disabled}/><button type="button" aria-pressed={mode==="code"} onClick={()=>setMode(mode==="code"?"text":"code")}>Code</button><label className="chat-attach">Attach<input aria-label="Attach" type="file" onChange={event=>{setFile(event.target.files?.[0]||null);attachmentId.current=null;}}/></label><button disabled={disabled||sending||(!content.trim()&&!file)}>{sending?"Sending…":"Send"}</button></div>{error&&<p role="alert">{error} <button type="button" onClick={submit}>Retry</button></p>}</form>;}

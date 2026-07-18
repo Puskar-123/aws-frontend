@@ -1,5 +1,7 @@
 # React + Vite
 
+Chat includes explicit-action voice recording and WebRTC audio/video/context calls. See `../docs/CODEHUB_VOICE_AND_CALLING.md` for browser support, privacy, controls, TURN configuration, tests, and known limitations.
+
 ## Project Health Score
 
 The Insights overview displays category progress, expandable evidence, recommendations, calculation metadata, and previous-snapshot change using existing responsive theme tokens.

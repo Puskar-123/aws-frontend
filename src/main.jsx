@@ -5,6 +5,8 @@ import "./index.css";
 import App from "./App.jsx";
 import { ThemeProvider } from "./context/ThemeContext";
 import { ChatProvider } from "./context/ChatContext";
+import { CallProvider } from "./context/CallContext";
+import CallOverlay from "./components/calls/CallOverlay";
 import { AuthProvider } from "./authContext";   // ← add this
 
 createRoot(document.getElementById("root")).render(
@@ -12,7 +14,7 @@ createRoot(document.getElementById("root")).render(
     <BrowserRouter>
       <ThemeProvider>
         <AuthProvider>
-          <ChatProvider><App /></ChatProvider>
+          <ChatProvider><CallProvider><App /><CallOverlay /></CallProvider></ChatProvider>
         </AuthProvider>
       </ThemeProvider>
     </BrowserRouter>
