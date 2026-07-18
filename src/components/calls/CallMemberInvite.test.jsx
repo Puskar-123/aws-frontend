@@ -1,0 +1,22 @@
+// @vitest-environment jsdom
+import React from"react";
+import{cleanup,fireEvent,render,screen}from"@testing-library/react";
+import{afterEach,beforeEach,describe,expect,test,vi}from"vitest";
+import CallMemberInvite from"./CallMemberInvite";
+
+const mocks=vi.hoisted(()=>({members:vi.fn()}));
+vi.mock("../../authContext",()=>({useAuth:()=>({currentUser:{_id:"me"}})}));
+vi.mock("../../services/callApi",()=>({getRepositoryCallMembers:mocks.members}));
+const member=(id,username,role="reviewer",extra={})=>({user:{_id:id,username,name:`${username} name`,avatarUrl:`/${id}.png`},role,status:"active",...extra});
+const activeCall={_id:"call1",repository:"repo1",maxParticipants:4,participants:[{user:{_id:"me"},status:"joined",role:"host"},{user:{_id:"joined"},status:"joined"},{user:{_id:"invited"},status:"invited"}]};
+const values=[member("me","current"),member("joined","joined-user"),member("invited","invited-user"),member("reviewer","review-user"),member("viewer","spectator-user","viewer"),member("expired","expired-user","temporary_contributor",{accessExpiresAt:"2020-01-01T00:00:00Z"}),member("removed","removed-user","tester",{status:"suspended"})];
+const open=async invite=>{render(<CallMemberInvite activeCall={activeCall} invite={invite}/>);expect(screen.queryByText("Invite user ID")).toBeNull();fireEvent.click(screen.getByRole("button",{name:"Invite repository member"}));await screen.findByText("review-user");};
+beforeEach(()=>mocks.members.mockResolvedValue({members:values}));afterEach(()=>{cleanup();vi.clearAllMocks();});
+
+describe("repository call member selector",()=>{
+  test("search loads active members, displays roles and excludes ineligible users",async()=>{await open(vi.fn());expect(mocks.members).toHaveBeenCalledWith("repo1");expect(screen.getByText("Reviewer")).toBeTruthy();expect(screen.getByText("Viewer")).toBeTruthy();for(const name of["current","joined-user","invited-user","expired-user","removed-user"])expect(screen.queryByText(name)).toBeNull();fireEvent.change(screen.getByPlaceholderText("Search repository members"),{target:{value:"spectator"}});expect(screen.getByText("spectator-user")).toBeTruthy();expect(screen.queryByText("review-user")).toBeNull();fireEvent.change(screen.getByPlaceholderText("Search repository members"),{target:{value:"missing"}});expect(screen.getByText("No matching repository members.")).toBeTruthy();});
+  test("selection sends the internal ID and reports success",async()=>{const invite=vi.fn().mockResolvedValue({});await open(invite);fireEvent.click(screen.getByRole("button",{name:/review-user/i}));fireEvent.click(screen.getByRole("button",{name:"Invite"}));await screen.findByText("Invitation sent to review-user.");expect(invite).toHaveBeenCalledWith("reviewer");});
+  test("Invite is disabled while pending and repeated clicks are prevented",async()=>{let release;const invite=vi.fn(()=>new Promise(resolve=>{release=resolve;}));await open(invite);fireEvent.click(screen.getByRole("button",{name:/review-user/i}));const button=screen.getByRole("button",{name:"Invite"});fireEvent.click(button);expect((await screen.findByRole("button",{name:"Sending invitation…"})).disabled).toBe(true);fireEvent.click(screen.getByRole("button",{name:"Sending invitation…"}));expect(invite).toHaveBeenCalledTimes(1);release({});await screen.findByText("Invitation sent to review-user.");});
+  test("permission errors stay inline and the selector remains usable",async()=>{const invite=vi.fn().mockRejectedValue(Object.assign(new Error("denied"),{code:"CALL_FORBIDDEN"}));await open(invite);fireEvent.click(screen.getByRole("button",{name:/review-user/i}));fireEvent.click(screen.getByRole("button",{name:"Invite"}));expect((await screen.findByRole("alert")).textContent).toContain("You do not have permission to invite participants.");expect(screen.getByPlaceholderText("Search repository members")).toBeTruthy();fireEvent.click(screen.getByRole("button",{name:"Close"}));expect(screen.queryByRole("alert")).toBeNull();});
+  test("empty eligible and loading states render",async()=>{let resolve;mocks.members.mockReturnValue(new Promise(done=>{resolve=done;}));render(<CallMemberInvite activeCall={activeCall} invite={vi.fn()}/>);fireEvent.click(screen.getByRole("button",{name:"Invite repository member"}));expect(screen.getByText("Loading repository members…")).toBeTruthy();resolve({members:[member("me","current")]});expect(await screen.findByText("No eligible repository members.")).toBeTruthy();});
+});
