@@ -1,0 +1,1 @@
+.chat-conversation-label{display:grid;min-width:0}.chat-conversation-label strong,.chat-conversation-label span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.chat-conversation-label span{color:var(--text-muted);font-size:12px}

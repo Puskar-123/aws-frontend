@@ -37,4 +37,5 @@ describe("CodeHub Chat UI",()=>{
   test("attachment selection renders a removable preview",()=>{
     render(<MessageComposer onSend={vi.fn()} onCancelReply={()=>{}}/>);const file=new File(["hello"],"notes.txt",{type:"text/plain"});fireEvent.change(screen.getByLabelText("Attach"),{target:{files:[file]}});expect(screen.getByText("notes.txt")).toBeTruthy();fireEvent.click(screen.getByRole("button",{name:"Remove"}));expect(screen.queryByText("notes.txt")).toBeNull();
   });
+  test("separate General conversations display their repository names",()=>{mocks.chat.conversations=[conversation,{_id:"r1",type:"repository",title:"General",repository:{_id:"repo1",name:"todo-app"},participants:[]},{_id:"r2",type:"repository",title:"General",repository:{_id:"repo2",name:"codehub-frontend"},participants:[]}];render(<MemoryRouter initialEntries={["/chat?conversation=c1"]}><ChatPage/></MemoryRouter>);expect(screen.getByText("todo-app")).toBeTruthy();expect(screen.getByText("codehub-frontend")).toBeTruthy();expect(screen.getAllByText("General")).toHaveLength(2);});
 });
