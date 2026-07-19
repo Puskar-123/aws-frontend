@@ -8,7 +8,7 @@ const mocks=vi.hoisted(()=>({members:vi.fn()}));
 vi.mock("../../authContext",()=>({useAuth:()=>({currentUser:{_id:"me"}})}));
 vi.mock("../../services/callApi",()=>({getRepositoryCallMembers:mocks.members}));
 const member=(id,username,role="reviewer",extra={})=>({user:{_id:id,username,name:`${username} name`,avatarUrl:`/${id}.png`},role,status:"active",...extra});
-const activeCall={_id:"call1",repository:"repo1",maxParticipants:4,participants:[{user:{_id:"me"},status:"joined",role:"host"},{user:{_id:"joined"},status:"joined"},{user:{_id:"invited"},status:"invited"}]};
+const activeCall={_id:"call1",callType:"repository",status:"active",repository:"repo1",maxParticipants:4,participants:[{user:{_id:"me"},status:"joined",role:"host"},{user:{_id:"joined"},status:"joined"},{user:{_id:"invited"},status:"invited"}]};
 const values=[member("me","current"),member("joined","joined-user"),member("invited","invited-user"),member("reviewer","review-user"),member("viewer","spectator-user","viewer"),member("expired","expired-user","temporary_contributor",{accessExpiresAt:"2020-01-01T00:00:00Z"}),member("removed","removed-user","tester",{status:"suspended"})];
 const open=async invite=>{render(<CallMemberInvite activeCall={activeCall} invite={invite}/>);expect(screen.queryByText("Invite user ID")).toBeNull();fireEvent.click(screen.getByRole("button",{name:"Invite repository member"}));await screen.findByText("review-user");};
 beforeEach(()=>mocks.members.mockResolvedValue({members:values}));afterEach(()=>{cleanup();vi.clearAllMocks();});
