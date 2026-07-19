@@ -3,6 +3,7 @@ import{useNavigate,useSearchParams}from"react-router-dom";
 import Navbar from"../Navbar";
 import{useChat}from"../../context/ChatContext";
 import{useCall}from"../../context/CallContext";
+import{mergeMessages}from"../../utils/chatMessages";
 import{useAuth}from"../../authContext";
 import{chatRequest}from"../../services/chatApi";
 import MessageItem from"./MessageItem";
@@ -18,7 +19,7 @@ export default function ChatPage(){
   useEffect(()=>{chat.loadConversations();},[chat.loadConversations]);
   useEffect(()=>{setChatError("");call?.clearError?.();if(selected)chat.open(selected).catch(value=>setChatError(value.message));},[selected,chat.open,call?.clearError]);
   useEffect(()=>{if(!selected||!other?._id||conversation?.type!=="direct"||!chat.socket)return undefined;chat.socket.emit("presence:subscribe",{conversationId:selected,userId:other._id});return()=>chat.socket.emit("presence:unsubscribe",{userId:other._id});},[selected,other?._id,conversation?.type,chat.socket]);
-  const send=async payload=>{const pending={_id:`pending:${payload.clientMessageId}`,conversation:selected,sender:{_id:currentUserId,username:"You"},sequence:Number.MAX_SAFE_INTEGER,createdAt:new Date().toISOString(),...payload,pending:true};chat.setMessages(current=>({...current,[selected]:[...(current[selected]||[]).filter(value=>value.clientMessageId!==payload.clientMessageId),pending]}));try{const saved=await chat.send(selected,payload);chat.setMessages(current=>({...current,[selected]:(current[selected]||[]).filter(value=>value._id!==pending._id).concat(saved).sort((a,b)=>a.sequence-b.sequence)}));}catch(value){chat.setMessages(current=>({...current,[selected]:(current[selected]||[]).map(item=>item._id===pending._id?{...item,pending:false,failed:true}:item)}));throw value;}};
+  const send=async payload=>{const pending={_id:`pending:${payload.clientMessageId}`,conversation:selected,sender:{_id:currentUserId,username:"You"},sequence:Number.MAX_SAFE_INTEGER,createdAt:new Date().toISOString(),...payload,pending:true};chat.setMessages(current=>({...current,[selected]:mergeMessages(current[selected]||[],pending)}));try{const saved=await chat.send(selected,payload);chat.setMessages(current=>({...current,[selected]:mergeMessages(current[selected]||[],saved)}));}catch(value){chat.setMessages(current=>({...current,[selected]:(current[selected]||[]).map(item=>item._id===pending._id?{...item,pending:false,failed:true}:item)}));throw value;}};
   const update=message=>chat.setMessages(current=>({...current,[selected]:(current[selected]||[]).map(value=>String(value._id)===String(message._id)?message:value)}));
   const voiceSent=message=>chat.setMessages(current=>({...current,[selected]:[...(current[selected]||[]).filter(value=>String(value._id)!==String(message._id)),message].sort((a,b)=>a.sequence-b.sequence)}));
   const doSearch=async event=>{event.preventDefault();if(search.trim().length<2)return;const data=await chatRequest(`/chat/conversations/${selected}/search?q=${encodeURIComponent(search)}`);setResults(data.messages||[]);};
