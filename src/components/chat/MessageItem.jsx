@@ -8,7 +8,7 @@ export default function MessageItem({ message, currentUserId, senderRole, onRepl
   const edit = async () => { const content = window.prompt("Edit message", message.content); if (content == null) return; const data = await chatRequest(`/chat/messages/${message._id}`, { method: "PATCH", body: JSON.stringify({ content }) }); onChanged(data.message); };
   const remove = async () => { if (!window.confirm("Delete this message?")) return; const data = await chatRequest(`/chat/messages/${message._id}`, { method: "DELETE" }); onChanged(data.message); };
   const author = message.sender?.name || message.sender?.username || "CodeHub user";
-  return <article className={`chat-message${own ? " chat-message--own" : ""}`} tabIndex="0">
+  return <article className={`chat-message${own ? " chat-message--own" : ""}`}>
     <div className="chat-avatar" aria-hidden="true">{author[0]?.toUpperCase() || "?"}</div>
     <div className="chat-message-content"><header className="chat-message-meta"><strong>{author}</strong>{senderRole && <span className="chat-role-badge">{senderRole.replaceAll("_", " ")}</span>}<time dateTime={message.createdAt}>{new Date(message.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</time>{message.editedAt && <span>edited</span>}</header>
       {message.replyTo && <p className="chat-reply-preview">Replying to a message</p>}
