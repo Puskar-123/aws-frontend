@@ -26,8 +26,13 @@
 .call-member-invite label { display: grid; gap: 5px; }
 .call-member-invite input { min-width: 0; padding: 8px; border: 1px solid var(--border-default); border-radius: 6px; background: var(--bg-surface); color: var(--text-primary); }
 .call-member-results { display: grid; gap: 5px; max-height: 220px; margin: 0; padding: 0; overflow: auto; list-style: none; }
-.call-member-results > li > button { display: grid; width: 100%; grid-template-columns: 32px minmax(0,1fr) auto; align-items: center; gap: 7px; padding: 7px; text-align: left; }
-.call-member-results > li > button.selected { outline: 2px solid var(--accent-fg); background: var(--bg-surface); }
+.call-invite-member { display: grid; width: 100%; grid-template-columns: auto minmax(0,1fr) auto; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--border-default); border-radius: 8px; background: transparent; text-align: left; cursor: pointer; }
+.call-invite-member:hover { border-color: var(--accent-link); }
+.call-invite-member--selected { border-color: var(--accent-link); box-shadow: 0 0 0 2px color-mix(in srgb,var(--accent-link) 25%,transparent); }
+.call-invite-member--disabled { cursor: not-allowed; opacity: .55; }
+.call-invite-member-details { min-width: 0; }
+.call-invite-member-role { font-size: 10px; }
+.call-invite-pending { grid-column: 2 / -1; color: var(--text-muted); font-size: 11px; }
 .call-member-results img, .call-member-avatar { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; }
 .call-member-avatar { display: grid; place-items: center; background: var(--bg-surface-muted); }
 .call-member-results small { display: block; color: var(--text-muted); }

@@ -1,6 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useChat } from "./ChatContext";
-import { getActiveCall, getIceServers } from "../services/callApi";
+import { getActiveCall, getIceServers, inviteCallMember } from "../services/callApi";
 import { useAuth } from "../authContext";
 import { canRestartIce, getPeerNetworkStatus, isLiveEnabledTrack, mergeRemoteTracks, normalizeUserId, replacePeerVideoTrack } from "./callParticipantUtils";
 
@@ -634,14 +634,11 @@ export const CallProvider = ({ children }) => {
     }
   }, [controlBusy, emitMediaState, patchActiveCall, socket, stopScreen, syncLocalTracks]);
 
-  const invite = useCallback((user) => new Promise((resolve, reject) => {
-    const userId = normalizeUserId(user);
-    if (!socket?.connected) return reject(new Error("Calling is offline"));
-    socket.emit("call:invite", { callId: callRef.current._id, userId }, (result) => {
-      if (result?.success) resolve(result.data || result);
-      else reject(Object.assign(new Error(result?.message || "The invitation could not be sent."), { code: result?.error, retryAfterSeconds: result?.retryAfterSeconds }));
-    });
-  }), [socket]);
+  const invite = useCallback((user) => {
+    const inviteeId = normalizeUserId(user);
+    if (!callRef.current?._id || !inviteeId) return Promise.reject(new Error("Select a repository member to invite."));
+    return inviteCallMember(callRef.current._id, inviteeId);
+  }, []);
 
   const selectDevice = useCallback(async (kind, deviceId) => {
     if (kind === "audiooutput") return;

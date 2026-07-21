@@ -415,6 +415,10 @@ test("repository header keeps information, mentor request, and navigation in sep
   expect(header.children[0].classList.contains("repo-header-main")).toBe(true);
   expect(header.children[1].classList.contains("mentor-request-section")).toBe(true);
   expect(header.children[2].classList.contains("repo-navigation")).toBe(true);
+  expect(header.children[2].tagName).toBe("NAV");
+  expect(header.querySelector(".repo-header-info")).toBeTruthy();
+  expect(header.querySelector(".repo-owner-name").textContent).toBe("Puskar");
+  expect(header.querySelector(".repo-title-separator").textContent).toBe("/");
   expect(header.querySelector(".repo-title-row").textContent).toContain("Puskar/test-35");
   expect(header.querySelector(".repo-description").textContent).toBe("A normal repository description.");
   expect(header.querySelector(".repo-header-actions").contains(screen.getByRole("button", { name: "Code" }))).toBe(true);

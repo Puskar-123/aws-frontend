@@ -9,6 +9,7 @@
   --repo-green: var(--accent-primary);
   --repo-green-hover: var(--accent-primary-hover);
   min-width: 0;
+  width: 100%;
   overflow-x: clip;
   background: var(--repo-bg);
 }
@@ -16,6 +17,7 @@
 /* ================= CONTAINER ================= */
 .repo-container {
   width: 100%;
+  min-width: 0;
   max-width: 1480px;
   margin: 0 auto;
   padding: 0;
@@ -40,6 +42,7 @@
   width: 100%;
 }
 
+.repo-header-info,
 .repo-header-information {
   flex: 1 1 auto;
   min-width: 0;
@@ -55,6 +58,8 @@
 
 .repo-title {
   margin: 0;
+  width: auto;
+  max-width: 100%;
   color: var(--text-primary);
   font-size: 22px;
   line-height: 1.4;
@@ -64,19 +69,22 @@
 .repo-header__description {
   display: block;
   width: 100%;
-  max-width: 700px;
+  max-width: 760px;
   margin: 10px 0 0;
   color: var(--text-muted);
   white-space: normal;
   word-break: normal;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
   line-height: 1.6;
 }
 .repo-visibility-badge { display: inline-flex; padding: 2px 7px; border: 1px solid var(--border-muted); border-radius: 999px; color: var(--text-muted); font-size: 11px; font-weight: 600; }
 
+.repo-owner-name,
+.repo-title-separator,
 .repo-owner,
 .repo-name,
 .repo-separator {
+  writing-mode: horizontal-tb;
   white-space: nowrap;
   word-break: normal;
   overflow-wrap: normal;
@@ -106,7 +114,7 @@
   flex: 0 0 auto;
   min-height: 34px;
 }
-.repo-body { padding: 0 28px 24px; }
+.repo-body { width: 100%; min-width: 0; padding: 0 28px 24px; box-sizing: border-box; }
 
 .mentor-request-section {
   width: 100%;
@@ -254,7 +262,7 @@
   border-bottom: 2px solid #f78166;
 }
 .repo-tabs > a span { display: inline-flex; min-width: 18px; justify-content: center; padding: 1px 5px; border-radius: 999px; color: var(--text-secondary); background: var(--border-default); font-size: 11px; }
-.repo-content { min-width: 0; }
+.repo-content { width: 100%; min-width: 0; }
 .repo-content-state { min-height: 320px; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 12px; margin-top: 16px; border: 1px solid var(--border-default); border-radius: 8px; color: var(--text-muted); background: var(--bg-surface); text-align: center; }
 .repo-content-state--error { color: var(--danger); }
 .repo-content-state button { min-height: 36px; padding: 6px 12px; border: 1px solid var(--border-muted); border-radius: 6px; color: var(--text-primary); background: var(--bg-surface-muted); cursor: pointer; }
