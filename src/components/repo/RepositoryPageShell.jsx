@@ -3,16 +3,24 @@ import { Link } from "react-router-dom";
 import { FiActivity, FiAlertCircle, FiBarChart2, FiCode, FiGitPullRequest, FiHeart, FiMessageCircle, FiSettings, FiTag } from "react-icons/fi";
 import { repositoryDescription } from "./repositoryPageUtils";
 
-export const RepoHeader = ({ repository, protectedBranch, children }) => <header className="repo-header">
-  <div className="repo-header__identity">
-    <div className="repo-header__title-row">
-      <h1 className="repo-title">{repository.owner?.username && <><span className="repo-title__owner">{repository.owner.username}</span><span className="repo-title__separator" aria-hidden="true">/</span></>}<span className="repo-title__name">{repository.name}</span></h1>
-      <span className="repo-visibility-badge">{repository.visibility === "private" ? "Private" : "Public"}</span>
-      {protectedBranch && <span className="repo-protected-badge">{protectedBranch} Protected</span>}
+export const RepoHeader = ({ repository, protectedBranch, actions, mentor, navigation, children }) => <header className="repo-page-header repo-header">
+  <div className="repo-header-main">
+    <div className="repo-header-information repo-header__identity">
+      <div className="repo-title-row repo-header__title-row">
+        {repository.owner?.username && <>
+          <span className="repo-owner repo-title__owner">{repository.owner.username}</span>
+          <span className="repo-separator repo-title__separator" aria-hidden="true">/</span>
+        </>}
+        <h1 className="repo-name repo-title repo-title__name">{repository.name}</h1>
+        <span className="repo-visibility repo-visibility-badge">{repository.visibility === "private" ? "Private" : "Public"}</span>
+        {protectedBranch && <span className="repo-protected-badge">{protectedBranch} Protected</span>}
+      </div>
+      <p className="repo-description repo-header__description">{repositoryDescription(repository.description)}</p>
     </div>
-    <p className="repo-header__description">{repositoryDescription(repository.description)}</p>
+    <div className="repo-header-actions repo-header__actions">{actions ?? children}</div>
   </div>
-  <div className="repo-header__actions">{children}</div>
+  {mentor && <section className="mentor-request-section" aria-label="Ask a mentor">{mentor}</section>}
+  {navigation && <div className="repo-navigation">{navigation}</div>}
 </header>;
 
 export const RepoTabs = ({ repositoryId, pathname, counts, settingsPath }) => {

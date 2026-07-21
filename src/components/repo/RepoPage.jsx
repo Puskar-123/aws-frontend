@@ -564,17 +564,21 @@ const RepoPage = () => {
     <div className="repo-page">
       <Navbar />
       <main className="repo-container">
-        <RepoHeader repository={repo} protectedBranch={selectedProtection?.protected ? selectedBranch : ""}>
-          <MentorRequestButton repositoryId={id} />
-          <RepositorySocialActions repository={repo} onForked={(repositoryId) => navigate(`/repo/${repositoryId}`)} />
-          <RepositoryCodeMenu repository={repo} defaultBranch={defaultBranch} protection={defaultProtection} role={repo.currentUserRole} />
-          {canUploadFiles && <AddFileMenu onCreate={() => createStarterFile("readme", `# ${repo.name}\n`)} onUploadFiles={() => fileInputRef.current?.click()} onUploadFolder={() => folderInputRef.current?.click()} />}
-        </RepoHeader>
+        <RepoHeader
+          repository={repo}
+          protectedBranch={selectedProtection?.protected ? selectedBranch : ""}
+          actions={<>
+            <RepositorySocialActions repository={repo} onForked={(repositoryId) => navigate(`/repo/${repositoryId}`)} />
+            <RepositoryCodeMenu repository={repo} defaultBranch={defaultBranch} protection={defaultProtection} role={repo.currentUserRole} />
+            {canUploadFiles && <AddFileMenu onCreate={() => createStarterFile("readme", `# ${repo.name}\n`)} onUploadFiles={() => fileInputRef.current?.click()} onUploadFolder={() => folderInputRef.current?.click()} />}
+          </>}
+          mentor={<MentorRequestButton repositoryId={id} />}
+          navigation={<RepoTabs repositoryId={id} pathname={location.pathname} counts={navigationCounts} settingsPath={(canManageCollaborators || canManageBranchProtection) ? settingsPath : ""} />}
+        />
         <input ref={fileInputRef} className="sr-only" type="file" multiple onChange={handleUploadSelection} aria-label="Choose files to upload" />
         <input ref={folderInputRef} className="sr-only" type="file" multiple onChange={handleUploadSelection} aria-label="Choose project folder to upload" />
+        <div className="repo-body">
         {repo.forkedFrom && <p className="repo-fork-source">forked from <Link to={`/repo/${repo.forkedFrom._id}`}>{repo.forkedFrom.owner?.username ? `${repo.forkedFrom.owner.username} / ` : ""}{repo.forkedFrom.name || "Deleted repository"}</Link></p>}
-
-        <RepoTabs repositoryId={id} pathname={location.pathname} counts={navigationCounts} settingsPath={(canManageCollaborators || canManageBranchProtection) ? settingsPath : ""} />
         {repoWarning && <p className="error">{repoWarning}</p>}
 
         <BranchToolbar
@@ -628,6 +632,7 @@ const RepoPage = () => {
           />
           <div ref={historySectionRef}><CommitHistory repositoryId={id} branch={selectedBranch} commits={historyState.commits} emptyText="No commits on this branch yet" /></div>
         </RepoContent>
+        </div>
       </main>
     </div>
   );

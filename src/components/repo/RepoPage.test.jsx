@@ -5,7 +5,7 @@ import { MemoryRouter, Route, Routes, useLocation, useNavigate } from "react-rou
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import RepoPage from "./RepoPage";
 import AddFileMenu from "./AddFileMenu";
-import { RepoContent, RepoHeader } from "./RepositoryPageShell";
+import { RepoContent, RepoHeader, RepoTabs } from "./RepositoryPageShell";
 import { repositoryDescription } from "./repositoryPageUtils";
 import RepositorySidebar from "../repository/RepositorySidebar";
 
@@ -400,6 +400,24 @@ test("public, private, described, and undescribed repositories share one header 
   expect(screen.getByText("Private")).toBeTruthy();
   expect(screen.getByText("A useful project")).toBeTruthy();
   expect(container.querySelector(".repo-header__actions")).toBeTruthy();
+});
+
+test("repository header keeps information, mentor request, and navigation in separate rows", () => {
+  const repository = { name: "test-35", owner: { username: "Puskar" }, visibility: "public", description: "A normal repository description." };
+  const { container } = render(<MemoryRouter><RepoHeader
+    repository={repository}
+    actions={<button type="button">Code</button>}
+    mentor={<button type="button">Ask a Mentor</button>}
+    navigation={<RepoTabs repositoryId="repo-1" pathname="/repo/repo-1" counts={{ issues: 0, pulls: 0 }} />}
+  /></MemoryRouter>);
+
+  const header = container.querySelector(".repo-page-header");
+  expect(header.children[0].classList.contains("repo-header-main")).toBe(true);
+  expect(header.children[1].classList.contains("mentor-request-section")).toBe(true);
+  expect(header.children[2].classList.contains("repo-navigation")).toBe(true);
+  expect(header.querySelector(".repo-title-row").textContent).toContain("Puskar/test-35");
+  expect(header.querySelector(".repo-description").textContent).toBe("A normal repository description.");
+  expect(header.querySelector(".repo-header-actions").contains(screen.getByRole("button", { name: "Code" }))).toBe(true);
 });
 
 test("repository content states are exclusive and loading never exposes command setup", () => {
