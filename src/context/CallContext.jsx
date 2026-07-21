@@ -2,7 +2,7 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useR
 import { useChat } from "./ChatContext";
 import { getActiveCall, getIceServers } from "../services/callApi";
 import { useAuth } from "../authContext";
-import { getParticipantId, mergeRemoteTracks } from "./callParticipantUtils";
+import { canRestartIce, getPeerNetworkStatus, isLiveEnabledTrack, mergeRemoteTracks, normalizeUserId, replacePeerVideoTrack } from "./callParticipantUtils";
 
 const Context = createContext(null);
 
@@ -17,7 +17,13 @@ const mediaError = (error) => error?.name === "NotAllowedError"
   ? "Media permission was denied."
   : error?.name === "NotFoundError"
     ? "The requested microphone or camera is unavailable."
+    : error?.name === "NotReadableError"
+      ? "The microphone or camera is already in use by another application."
     : error?.message || "Unable to access media devices.";
+
+const createStream = (tracks = []) => typeof MediaStream === "function"
+  ? new MediaStream(tracks)
+  : { getTracks: () => tracks, getAudioTracks: () => tracks.filter((track) => track.kind === "audio"), getVideoTracks: () => tracks.filter((track) => track.kind === "video"), addTrack: (track) => tracks.push(track), removeTrack: (track) => tracks.splice(tracks.indexOf(track), 1) };
 
 const mediaStateOf = (participant) => ({
   cameraEnabled: Boolean(participant?.cameraEnabled),
@@ -41,10 +47,14 @@ export const CallProvider = ({ children }) => {
   const [devices, setDevices] = useState([]);
   const [elapsed, setElapsed] = useState(0);
   const [reconnecting, setReconnecting] = useState(false);
+  const [controlBusy, setControlBusy] = useState("");
 
   const peerConnectionsRef = useRef(new Map());
   const remoteStreamsRef = useRef(new Map());
+  const participantMediaRef = useRef(new Map());
   const pendingIceCandidatesRef = useRef(new Map());
+  const peerRecoveryTimersRef = useRef(new Map());
+  const peerNetworkStatesRef = useRef(new Map());
   const callRef = useRef(null);
   const localStreamRef = useRef(null);
   const iceRef = useRef([]);
@@ -53,14 +63,13 @@ export const CallProvider = ({ children }) => {
 
   const updateMediaStatesFromCall = useCallback((value) => {
     if (!value?.participants) return;
-    setParticipantMediaStates((previous) => {
-      const next = new Map(previous);
-      for (const participant of value.participants) {
-        const participantId = getParticipantId(participant);
-        if (participantId) next.set(participantId, mediaStateOf(participant));
-      }
-      return next;
-    });
+    const next = new Map();
+    for (const participant of value.participants) {
+      const participantId = normalizeUserId(participant);
+      if (participantId) next.set(participantId, mediaStateOf(participant));
+    }
+    participantMediaRef.current = next;
+    setParticipantMediaStates(next);
   }, []);
 
   const setActiveCall = useCallback((value) => {
@@ -75,7 +84,6 @@ export const CallProvider = ({ children }) => {
   }, []);
 
   useEffect(() => { callRef.current = call; }, [call]);
-  useEffect(() => { localStreamRef.current = localStream; }, [localStream]);
 
   const signalKey = useCallback((callId, target) => `${String(callId || "")}:${String(target || "")}`, []);
   const queueIceCandidate = useCallback((callId, target, candidate) => {
@@ -120,6 +128,9 @@ export const CallProvider = ({ children }) => {
       peer.ontrack = null;
       peer.onicecandidate = null;
       peer.onnegotiationneeded = null;
+      peer.onconnectionstatechange = null;
+      peer.oniceconnectionstatechange = null;
+      peer.onicegatheringstatechange = null;
       peer.close();
     }
     peerConnectionsRef.current.delete(key);
@@ -134,8 +145,12 @@ export const CallProvider = ({ children }) => {
     setParticipantMediaStates((previous) => {
       const next = new Map(previous);
       next.delete(key);
+      participantMediaRef.current = next;
       return next;
     });
+    clearTimeout(peerRecoveryTimersRef.current.get(key));
+    peerRecoveryTimersRef.current.delete(key);
+    peerNetworkStatesRef.current.delete(key);
     for (const queuedKey of pendingIceCandidatesRef.current.keys()) {
       if (queuedKey.endsWith(`:${key}`)) pendingIceCandidatesRef.current.delete(queuedKey);
     }
@@ -145,7 +160,11 @@ export const CallProvider = ({ children }) => {
     for (const participantId of [...peerConnectionsRef.current.keys()]) cleanupPeer(participantId);
     peerConnectionsRef.current.clear();
     remoteStreamsRef.current.clear();
+    participantMediaRef.current.clear();
     pendingIceCandidatesRef.current.clear();
+    for (const timer of peerRecoveryTimersRef.current.values()) clearTimeout(timer);
+    peerRecoveryTimersRef.current.clear();
+    peerNetworkStatesRef.current.clear();
     for (const track of localStreamRef.current?.getTracks?.() || []) track.stop();
     for (const track of screenRef.current?.getTracks?.() || []) track.stop();
     localStreamRef.current = null;
@@ -158,7 +177,9 @@ export const CallProvider = ({ children }) => {
     setIncoming(null);
     setRecovery(null);
     setElapsed(0);
+    setQuality("good");
     setReconnecting(false);
+    setControlBusy("");
   }, [cleanupPeer]);
 
   const restore = useCallback((value) => {
@@ -166,11 +187,11 @@ export const CallProvider = ({ children }) => {
       setIncoming(null);
       return setRecovery(null);
     }
-    const participant = (value.participants || []).find((row) => getParticipantId(row) === selfId);
+    const participant = (value.participants || []).find((row) => normalizeUserId(row) === selfId);
     const pendingInvitation = participant?.status === "invited";
     const incomingCall = (value.status === "ringing" && participant?.status === "ringing")
       || (value.status === "active" && pendingInvitation);
-    if (incomingCall && getParticipantId(value.initiatedBy) !== selfId) {
+    if (incomingCall && normalizeUserId(value.initiatedBy) !== selfId) {
       setIncoming(value);
       setRecovery(null);
     } else {
@@ -197,15 +218,34 @@ export const CallProvider = ({ children }) => {
     return rows;
   }, []);
 
-  const acquire = useCallback(async (video = false, constraints = {}) => {
+  const ensureLocalMedia = useCallback(async ({ audio = true, video = false } = {}) => {
     if (!navigator.mediaDevices?.getUserMedia) throw new Error("WebRTC media is not supported by this browser.");
-    const stream = await navigator.mediaDevices.getUserMedia({
-      audio: constraints.audio || true,
-      video: video ? (constraints.video || true) : false,
-    });
+    let stream = localStreamRef.current;
+    if (!stream) stream = createStream();
+    const liveAudio = stream.getAudioTracks?.().find((track) => track.readyState === "live");
+    if (audio && !liveAudio) {
+      const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      for (const track of audioStream.getAudioTracks?.() || []) stream.addTrack(track);
+    }
+    const liveVideo = stream.getVideoTracks?.().find((track) => track.readyState === "live");
+    if (video && !liveVideo) {
+      const videoStream = await navigator.mediaDevices.getUserMedia({
+        audio: false,
+        video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: "user" },
+      });
+      for (const track of stream.getVideoTracks?.().filter((track) => track.readyState !== "live") || []) stream.removeTrack(track);
+      for (const track of videoStream.getVideoTracks?.() || []) stream.addTrack(track);
+      if (!stream.getVideoTracks?.().some((track) => track.readyState === "live")) throw new Error("No usable camera track was created.");
+    }
     localStreamRef.current = stream;
-    setLocalStream(stream);
+    setLocalStream(createStream(stream.getTracks()));
     await loadDevices();
+    if (import.meta.env.DEV) {
+      console.debug("[Call] local tracks", {
+        audio: stream.getAudioTracks().map((track) => ({ id: track.id, enabled: track.enabled, readyState: track.readyState })),
+        video: stream.getVideoTracks().map((track) => ({ id: track.id, enabled: track.enabled, readyState: track.readyState })),
+      });
+    }
     return stream;
   }, [loadDevices]);
 
@@ -251,14 +291,14 @@ export const CallProvider = ({ children }) => {
     }
   }, []);
 
-  const sendOffer = useCallback(async (participantId, peer) => {
+  const sendOffer = useCallback(async (participantId, peer, options = {}) => {
     if (!callRef.current?._id || !socket?.connected || peer.signalingState === "closed") return;
     const metadata = peer.__codeHub;
     if (metadata.makingOffer || peer.signalingState !== "stable") return;
     try {
       metadata.makingOffer = true;
       await syncLocalTracks(peer);
-      await peer.setLocalDescription(await peer.createOffer());
+      await peer.setLocalDescription(await peer.createOffer(options));
       await emit(socket, "webrtc:offer", {
         callId: callRef.current._id,
         to: participantId,
@@ -268,6 +308,47 @@ export const CallProvider = ({ children }) => {
       metadata.makingOffer = false;
     }
   }, [socket, syncLocalTracks]);
+
+  const publishNetworkStatus = useCallback(() => {
+    const states = [...peerConnectionsRef.current.values()]
+      .filter((peer) => peer.signalingState !== "closed")
+      .map(getPeerNetworkStatus);
+    const status = states.includes("failed") ? "failed"
+      : states.includes("reconnecting") ? "reconnecting"
+        : states.some((state) => state === "connecting" || state === "disconnected") ? "connecting"
+          : states.length ? "good" : "connecting";
+    setQuality(status);
+    setReconnecting(status === "reconnecting");
+  }, []);
+
+  const handlePeerState = useCallback((participantId, peer) => {
+    const status = getPeerNetworkStatus(peer);
+    peerNetworkStatesRef.current.set(participantId, status);
+    if (import.meta.env.DEV) console.debug("[Call] peer state", { participantId, connectionState: peer.connectionState, iceConnectionState: peer.iceConnectionState, signalingState: peer.signalingState });
+    publishNetworkStatus();
+    const clearRecovery = () => {
+      clearTimeout(peerRecoveryTimersRef.current.get(participantId));
+      peerRecoveryTimersRef.current.delete(participantId);
+    };
+    if (status === "good") return clearRecovery();
+    const restart = async () => {
+      if (getPeerNetworkStatus(peer) === "good" || peer.signalingState === "closed") return clearRecovery();
+      const now = Date.now();
+      if (!canRestartIce(peer.__codeHub.lastIceRestartAt, now)) return;
+      peer.__codeHub.lastIceRestartAt = now;
+      peer.restartIce?.();
+      await sendOffer(participantId, peer, { iceRestart: true }).catch((restartError) => setError(restartError.message));
+    };
+    if (status === "failed") {
+      clearRecovery();
+      restart();
+    } else if (status === "reconnecting" && !peerRecoveryTimersRef.current.has(participantId)) {
+      peerRecoveryTimersRef.current.set(participantId, setTimeout(() => {
+        peerRecoveryTimersRef.current.delete(participantId);
+        restart();
+      }, 3000));
+    }
+  }, [publishNetworkStatus, sendOffer]);
 
   const peerFor = useCallback(async (target) => {
     const participantId = String(target || "");
@@ -279,18 +360,21 @@ export const CallProvider = ({ children }) => {
       participantId,
       makingOffer: false,
       ignoreOffer: false,
+      isSettingRemoteAnswerPending: false,
       polite: selfId.localeCompare(participantId) > 0,
+      lastIceRestartAt: 0,
       senders: { audio: null, video: null },
     };
     peerConnectionsRef.current.set(participantId, peer);
 
     peer.ontrack = (event) => {
       if (import.meta.env.DEV) {
-        console.debug("[Call] remote track received", {
+        console.debug("[Call] remote track", {
           participantId,
           kind: event.track.kind,
-          trackId: event.track.id,
-          streams: event.streams?.length,
+          id: event.track.id,
+          muted: event.track.muted,
+          readyState: event.track.readyState,
         });
       }
       setRemoteStreams((previous) => {
@@ -317,14 +401,13 @@ export const CallProvider = ({ children }) => {
       }, () => {});
     };
     peer.onnegotiationneeded = () => sendOffer(participantId, peer).catch((offerError) => setError(offerError.message));
-    peer.onconnectionstatechange = () => {
-      const state = peer.connectionState;
-      setQuality(state === "connected" ? "good" : state === "connecting" ? "fair" : state === "disconnected" ? "reconnecting" : state === "failed" ? "poor" : "good");
-      setReconnecting(state === "disconnected" || state === "connecting");
-    };
+    peer.onconnectionstatechange = () => handlePeerState(participantId, peer);
+    peer.oniceconnectionstatechange = () => handlePeerState(participantId, peer);
+    peer.onicegatheringstatechange = () => handlePeerState(participantId, peer);
     await syncLocalTracks(peer);
+    handlePeerState(participantId, peer);
     return peer;
-  }, [ensureIce, removeRemoteTrack, selfId, sendOffer, socket, syncLocalTracks]);
+  }, [ensureIce, handlePeerState, removeRemoteTrack, selfId, sendOffer, socket, syncLocalTracks]);
 
   const offerTo = useCallback(async (target) => {
     const participantId = String(target);
@@ -343,8 +426,9 @@ export const CallProvider = ({ children }) => {
       screenSharing: Boolean(screenRef.current?.getVideoTracks?.().some((track) => track.readyState === "live")),
       ...patch,
     };
-    setParticipantMediaStates((previous) => new Map(previous).set(selfId, state));
-    await emit(socket, "call-media-state", { callId: callRef.current._id, ...state });
+    participantMediaRef.current.set(selfId, state);
+    setParticipantMediaStates(new Map(participantMediaRef.current));
+    await emit(socket, "call:media-state", { callId: callRef.current._id, ...state });
   }, [selfId, socket]);
 
   const start = useCallback(async ({ recipientId, conversationId, mediaMode = "audio", ...context }) => {
@@ -358,7 +442,7 @@ export const CallProvider = ({ children }) => {
         restore(existing);
         return null;
       }
-      await acquire(mediaMode === "video");
+      await ensureLocalMedia({ audio: true, video: mediaMode === "video" });
       const value = await emit(socket, "call:initiate", { recipientId, conversationId, mediaMode, ...context });
       setRecovery(null);
       setActiveCall(value);
@@ -377,14 +461,15 @@ export const CallProvider = ({ children }) => {
       startingRef.current = false;
       setChecking(false);
     }
-  }, [acquire, refreshActive, restore, setActiveCall, socket]);
+  }, [ensureLocalMedia, refreshActive, restore, setActiveCall, socket]);
 
   const accept = useCallback(async (camera = true) => {
     setError("");
     try {
-      await acquire(incoming?.mediaMode === "video" && camera);
-      const microphoneEnabled = Boolean(localStreamRef.current?.getAudioTracks?.()[0]?.enabled);
-      const value = await emit(socket, incoming?.invitation ? "call:join" : "call:accept", { callId: incoming._id, cameraEnabled: camera, microphoneEnabled });
+      await ensureLocalMedia({ audio: true, video: incoming?.mediaMode === "video" && camera });
+      const microphoneEnabled = isLiveEnabledTrack(localStreamRef.current?.getAudioTracks?.()[0]);
+      const cameraEnabled = isLiveEnabledTrack(localStreamRef.current?.getVideoTracks?.()[0]);
+      const value = await emit(socket, incoming?.invitation ? "call:join" : "call:accept", { callId: incoming._id, cameraEnabled, microphoneEnabled });
       setRecovery(null);
       setActiveCall(value);
       setIncoming(null);
@@ -394,7 +479,7 @@ export const CallProvider = ({ children }) => {
       setError(mediaError(value));
       throw value;
     }
-  }, [acquire, emitMediaState, incoming, setActiveCall, socket]);
+  }, [emitMediaState, ensureLocalMedia, incoming, setActiveCall, socket]);
 
   const reject = useCallback(async () => {
     try {
@@ -419,11 +504,11 @@ export const CallProvider = ({ children }) => {
     setChecking(true);
     setError("");
     try {
-      await acquire(recovery.mediaMode === "video");
+      await ensureLocalMedia({ audio: true, video: recovery.mediaMode === "video" });
       const value = await emit(socket, "call:rejoin", {
         callId: recovery._id,
-        cameraEnabled: recovery.mediaMode === "video",
-        microphoneEnabled: true,
+        cameraEnabled: isLiveEnabledTrack(localStreamRef.current?.getVideoTracks?.()[0]),
+        microphoneEnabled: isLiveEnabledTrack(localStreamRef.current?.getAudioTracks?.()[0]),
       });
       setRecovery(null);
       setActiveCall(value);
@@ -434,13 +519,13 @@ export const CallProvider = ({ children }) => {
     } finally {
       setChecking(false);
     }
-  }, [acquire, checking, emitMediaState, recovery, refreshActive, setActiveCall, socket]);
+  }, [checking, emitMediaState, ensureLocalMedia, recovery, refreshActive, setActiveCall, socket]);
 
   const leaveRecovery = useCallback(async () => {
     if (!recovery || checking) return;
     setChecking(true);
     try {
-      const caller = getParticipantId(recovery.initiatedBy) === selfId;
+      const caller = normalizeUserId(recovery.initiatedBy) === selfId;
       const event = recovery.status === "ringing" && caller ? "call:cancel" : "call:leave";
       await emit(socket, event, { callId: recovery._id });
       setRecovery(null);
@@ -457,83 +542,106 @@ export const CallProvider = ({ children }) => {
   const clearError = useCallback(() => setError(""), []);
 
   const toggleMicrophone = useCallback(async () => {
-    const track = localStreamRef.current?.getAudioTracks?.()[0];
-    if (!track) return;
-    track.enabled = !track.enabled;
-    await emitMediaState({ microphoneEnabled: track.enabled });
-    patchActiveCall({ localMicrophoneEnabled: track.enabled });
-  }, [emitMediaState, patchActiveCall]);
+    if (controlBusy) return;
+    setControlBusy("microphone");
+    try {
+      const stream = await ensureLocalMedia({ audio: true, video: false });
+      const track = stream.getAudioTracks().find((candidate) => candidate.readyState === "live");
+      if (!track) throw new Error("No usable microphone track was created.");
+      track.enabled = !track.enabled;
+      setLocalStream(createStream(stream.getTracks()));
+      await emitMediaState({ microphoneEnabled: track.enabled });
+      patchActiveCall({ localMicrophoneEnabled: track.enabled });
+      setError("");
+    } catch (toggleError) {
+      setError(mediaError(toggleError));
+    } finally {
+      setControlBusy("");
+    }
+  }, [controlBusy, emitMediaState, ensureLocalMedia, patchActiveCall]);
 
   const toggleCamera = useCallback(async () => {
-    let track = localStreamRef.current?.getVideoTracks?.().find((candidate) => candidate.readyState === "live");
-    let needsNegotiation = false;
-    if (!track) {
-      const extra = await navigator.mediaDevices.getUserMedia({ video: true });
-      track = extra.getVideoTracks()[0];
-      if (!localStreamRef.current) localStreamRef.current = new MediaStream();
-      for (const endedTrack of localStreamRef.current.getVideoTracks().filter((candidate) => candidate.readyState !== "live")) {
-        localStreamRef.current.removeTrack(endedTrack);
-      }
-      localStreamRef.current.addTrack(track);
-      setLocalStream(localStreamRef.current);
-      for (const [participantId, peer] of peerConnectionsRef.current) {
-        const sender = peer.__codeHub?.senders.video
-          || peer.getSenders().find((candidate) => candidate.track?.kind === "video")
-          || peer.getTransceivers?.().find((candidate) => candidate.receiver?.track?.kind === "video")?.sender;
-        if (screenRef.current) continue;
-        if (sender?.replaceTrack) {
-          await sender.replaceTrack(track);
-        } else {
-          needsNegotiation = true;
-          await syncLocalTracks(peer);
-          await offerTo(participantId);
+    if (controlBusy) return;
+    setControlBusy("camera");
+    try {
+      const currentTrack = localStreamRef.current?.getVideoTracks?.().find((candidate) => candidate.readyState === "live");
+      const turningOn = !isLiveEnabledTrack(currentTrack);
+      const stream = turningOn ? await ensureLocalMedia({ audio: false, video: true }) : localStreamRef.current;
+      const track = stream?.getVideoTracks?.().find((candidate) => candidate.readyState === "live");
+      if (!track && turningOn) throw new Error("No usable camera track was created.");
+      if (track) track.enabled = turningOn;
+      if (turningOn && !screenRef.current) {
+        for (const [participantId, peer] of peerConnectionsRef.current) {
+          const result = await replacePeerVideoTrack(peer, track, stream);
+          if (result.requiresNegotiation) await offerTo(participantId);
         }
       }
-    } else {
-      track.enabled = !track.enabled;
-      if (track.enabled && !screenRef.current) {
-        for (const peer of peerConnectionsRef.current.values()) {
-          const sender = peer.__codeHub?.senders.video;
-          if (sender?.track !== track) await sender?.replaceTrack?.(track);
-        }
-      }
+      setLocalStream(createStream(stream?.getTracks?.() || []));
+      await emitMediaState({ cameraEnabled: Boolean(track?.enabled), screenSharing: Boolean(screenRef.current) });
+      patchActiveCall({ localCameraEnabled: Boolean(track?.enabled) });
+      setError("");
+    } catch (toggleError) {
+      setError(mediaError(toggleError));
+    } finally {
+      setControlBusy("");
     }
-    await emitMediaState({ cameraEnabled: track.enabled, screenSharing: Boolean(screenRef.current) });
-    patchActiveCall({ localCameraEnabled: track.enabled });
-    if (needsNegotiation && import.meta.env.DEV) console.debug("[Call] video sender added through renegotiation");
-  }, [emitMediaState, offerTo, patchActiveCall, syncLocalTracks]);
+  }, [controlBusy, emitMediaState, ensureLocalMedia, offerTo, patchActiveCall]);
 
   const stopScreen = useCallback(async () => {
-    if (!callRef.current) return;
-    const camera = localStreamRef.current?.getVideoTracks?.()[0] || null;
-    for (const peer of peerConnectionsRef.current.values()) {
-      const sender = peer.__codeHub?.senders.video || peer.getSenders().find((value) => value.track?.kind === "video");
-      if (sender) await sender.replaceTrack(camera);
+    if (!callRef.current || controlBusy === "screen") return;
+    setControlBusy("screen");
+    try {
+      const camera = localStreamRef.current?.getVideoTracks?.().find((track) => track.readyState === "live") || null;
+      for (const peer of peerConnectionsRef.current.values()) {
+        const sender = peer.__codeHub?.senders.video || peer.getSenders().find((value) => value.track?.kind === "video");
+        if (sender) await sender.replaceTrack(camera);
+      }
+      for (const track of screenRef.current?.getTracks?.() || []) { track.onended = null; track.stop(); }
+      screenRef.current = null;
+      await emit(socket, "media:screen-stop", { callId: callRef.current._id });
+      await emitMediaState({ screenSharing: false });
+      patchActiveCall({ screenSharing: false });
+      setError("");
+    } catch (screenError) {
+      setError(screenError.message || "Screen sharing could not be stopped.");
+    } finally {
+      setControlBusy("");
     }
-    for (const track of screenRef.current?.getTracks?.() || []) track.stop();
-    screenRef.current = null;
-    await emit(socket, "media:screen-stop", { callId: callRef.current._id });
-    await emitMediaState({ screenSharing: false });
-    patchActiveCall({ screenSharing: false });
-  }, [emitMediaState, patchActiveCall, socket]);
+  }, [controlBusy, emitMediaState, patchActiveCall, socket]);
 
   const shareScreen = useCallback(async () => {
-    if (!navigator.mediaDevices?.getDisplayMedia) throw new Error("Screen sharing is not supported by this browser.");
-    const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
-    const track = stream.getVideoTracks()[0];
-    await emit(socket, "media:screen-start", { callId: callRef.current._id });
-    screenRef.current = stream;
-    for (const peer of peerConnectionsRef.current.values()) {
-      const sender = peer.__codeHub?.senders.video || peer.getSenders().find((value) => value.track?.kind === "video");
-      if (sender) await sender.replaceTrack(track);
-      else await syncLocalTracks(peer);
+    if (controlBusy) return;
+    setControlBusy("screen");
+    try {
+      if (!navigator.mediaDevices?.getDisplayMedia) throw new Error("Screen sharing is not supported by this browser.");
+      const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
+      const track = stream.getVideoTracks()[0];
+      await emit(socket, "media:screen-start", { callId: callRef.current._id });
+      screenRef.current = stream;
+      for (const peer of peerConnectionsRef.current.values()) {
+        const sender = peer.__codeHub?.senders.video || peer.getSenders().find((value) => value.track?.kind === "video");
+        if (sender) await sender.replaceTrack(track);
+        else await syncLocalTracks(peer);
+      }
+      track.onended = () => stopScreen().catch(() => {});
+      await emitMediaState({ screenSharing: true });
+      patchActiveCall({ screenSharing: true });
+      setError("");
+    } catch (screenError) {
+      setError(mediaError(screenError));
+    } finally {
+      setControlBusy("");
     }
-    track.onended = () => stopScreen().catch(() => {});
-    await emitMediaState({ screenSharing: true });
-    patchActiveCall({ screenSharing: true });
-  }, [emitMediaState, patchActiveCall, socket, stopScreen, syncLocalTracks]);
+  }, [controlBusy, emitMediaState, patchActiveCall, socket, stopScreen, syncLocalTracks]);
 
-  const invite = useCallback((user) => emit(socket, "call:invite", { callId: callRef.current._id, userId: user }), [socket]);
+  const invite = useCallback((user) => new Promise((resolve, reject) => {
+    const userId = normalizeUserId(user);
+    if (!socket?.connected) return reject(new Error("Calling is offline"));
+    socket.emit("call:invite", { callId: callRef.current._id, userId }, (result) => {
+      if (result?.success) resolve(result.data || result);
+      else reject(Object.assign(new Error(result?.message || "The invitation could not be sent."), { code: result?.error, retryAfterSeconds: result?.retryAfterSeconds }));
+    });
+  }), [socket]);
 
   const selectDevice = useCallback(async (kind, deviceId) => {
     if (kind === "audiooutput") return;
@@ -548,7 +656,7 @@ export const CallProvider = ({ children }) => {
       const sender = peer.__codeHub?.senders[track.kind] || peer.getSenders().find((value) => value.track?.kind === track.kind);
       if (sender) await sender.replaceTrack(track);
     }
-    setLocalStream(localStreamRef.current);
+    setLocalStream(createStream(localStreamRef.current.getTracks()));
     await emitMediaState();
   }, [emitMediaState]);
 
@@ -563,9 +671,9 @@ export const CallProvider = ({ children }) => {
     const onAccepted = async (value) => {
       setActiveCall(value);
       setIncoming(null);
-      if (getParticipantId(value.initiatedBy) === selfId) {
+      if (normalizeUserId(value.initiatedBy) === selfId) {
         for (const participant of value.participants || []) {
-          const participantId = getParticipantId(participant);
+          const participantId = normalizeUserId(participant);
           if (participantId !== selfId && participant.status === "joined") await offerTo(participantId).catch((offerError) => setError(offerError.message));
         }
       }
@@ -574,15 +682,16 @@ export const CallProvider = ({ children }) => {
     const onJoined = async (value) => {
       if (value.call) setActiveCall(value.call);
       else if (value.participants) setActiveCall({ ...callRef.current, participants: value.participants });
-      const participantId = String(value.userId || "");
+      const participantId = normalizeUserId(value.userId);
       if (participantId && participantId !== selfId) await offerTo(participantId).catch(() => {});
     };
     const onParticipants = (value) => { if (value.call) setActiveCall(value.call); };
     const onOffer = async (value) => {
-      const participantId = String(value.from);
+      const participantId = normalizeUserId(value.from);
       const peer = await peerFor(participantId);
       const metadata = peer.__codeHub;
-      const offerCollision = metadata.makingOffer || peer.signalingState !== "stable";
+      const readyForOffer = !metadata.makingOffer && (peer.signalingState === "stable" || metadata.isSettingRemoteAnswerPending);
+      const offerCollision = !readyForOffer;
       metadata.ignoreOffer = !metadata.polite && offerCollision;
       if (metadata.ignoreOffer) return;
       if (offerCollision && metadata.polite) await peer.setLocalDescription({ type: "rollback" });
@@ -593,38 +702,45 @@ export const CallProvider = ({ children }) => {
       await emit(socket, "webrtc:answer", { callId: value.callId, to: participantId, description: peer.localDescription });
     };
     const onAnswer = async (value) => {
-      const participantId = String(value.from);
+      const participantId = normalizeUserId(value.from);
       const peer = await peerFor(participantId);
       if (peer.__codeHub.ignoreOffer || peer.signalingState === "closed") return;
-      await peer.setRemoteDescription(value.description);
-      await flushIceCandidates(value.callId, participantId, peer);
+      peer.__codeHub.isSettingRemoteAnswerPending = true;
+      try {
+        await peer.setRemoteDescription(value.description);
+        await flushIceCandidates(value.callId, participantId, peer);
+      } finally {
+        peer.__codeHub.isSettingRemoteAnswerPending = false;
+      }
     };
     const onIce = async (value) => {
       if (!value.candidate) return;
-      const participantId = String(value.from);
+      const participantId = normalizeUserId(value.from);
       const peer = await peerFor(participantId);
       if (peer.__codeHub.ignoreOffer) return;
       if (!peer.remoteDescription) queueIceCandidate(value.callId, participantId, value.candidate);
       else await peer.addIceCandidate(value.candidate);
     };
     const onMediaState = (payload) => {
-      const participantId = String(payload?.userId || "");
+      if (String(payload?.callId || "") !== String(callRef.current?._id || "")) return;
+      const participantId = normalizeUserId(payload?.userId);
       if (!participantId) return;
-      setParticipantMediaStates((previous) => new Map(previous).set(participantId, {
+      participantMediaRef.current.set(participantId, {
         cameraEnabled: Boolean(payload.cameraEnabled),
         microphoneEnabled: Boolean(payload.microphoneEnabled),
         screenSharing: Boolean(payload.screenSharing),
-      }));
+      });
+      setParticipantMediaStates(new Map(participantMediaRef.current));
     };
     const onMediaSnapshot = (payload) => {
-      setParticipantMediaStates((previous) => {
-        const next = new Map(previous);
-        for (const state of payload?.states || []) {
-          const participantId = String(state.userId || "");
-          if (participantId) next.set(participantId, mediaStateOf(state));
-        }
-        return next;
-      });
+      if (String(payload?.callId || "") !== String(callRef.current?._id || "")) return;
+      const next = new Map();
+      for (const state of payload?.states || []) {
+        const participantId = normalizeUserId(state.userId);
+        if (participantId) next.set(participantId, mediaStateOf(state));
+      }
+      participantMediaRef.current = next;
+      setParticipantMediaStates(next);
     };
     const onRevoked = () => {
       setError("Your access to this call was revoked.");
@@ -635,7 +751,7 @@ export const CallProvider = ({ children }) => {
       ["call:ended", onEnded], ["call:cancelled", onEnded], ["call:rejected", onEnded], ["call:missed", onEnded],
       ["call:participant-joined", onJoined], ["call:participants-updated", onParticipants], ["call:participant-declined", onParticipants],
       ["webrtc:offer", onOffer], ["webrtc:answer", onAnswer], ["webrtc:ice-candidate", onIce],
-      ["call-media-state-updated", onMediaState], ["call-media-state-snapshot", onMediaSnapshot], ["call:access-revoked", onRevoked],
+      ["call:media-state-updated", onMediaState], ["call:media-state-snapshot", onMediaSnapshot], ["call:access-revoked", onRevoked],
     ];
     for (const [event, handler] of listeners) socket.on(event, handler);
     return () => { for (const [event, handler] of listeners) socket.off(event, handler); };
@@ -644,7 +760,7 @@ export const CallProvider = ({ children }) => {
   useEffect(() => {
     if (!socket) return undefined;
     const clearPeer = (value) => {
-      const participantId = String(value?.userId || "");
+      const participantId = normalizeUserId(value?.userId);
       if (participantId) cleanupPeer(participantId);
     };
     socket.on("call:participant-left", clearPeer);
@@ -690,11 +806,11 @@ export const CallProvider = ({ children }) => {
     incoming, call, recovery, checking, localStream, remoteStreams, participantMediaStates, selfId,
     error, quality, devices, elapsed, reconnecting, start, refreshActive, rejoin, leaveRecovery,
     clearError, accept, reject, end, toggleMicrophone, toggleCamera, shareScreen, stopScreen,
-    invite, selectDevice, loadDevices,
+    invite, selectDevice, loadDevices, controlBusy,
   }), [incoming, call, recovery, checking, localStream, remoteStreams, participantMediaStates, selfId,
     error, quality, devices, elapsed, reconnecting, start, refreshActive, rejoin, leaveRecovery,
     clearError, accept, reject, end, toggleMicrophone, toggleCamera, shareScreen, stopScreen,
-    invite, selectDevice, loadDevices]);
+    invite, selectDevice, loadDevices, controlBusy]);
 
   return <Context.Provider value={value}>{children}</Context.Provider>;
 };
